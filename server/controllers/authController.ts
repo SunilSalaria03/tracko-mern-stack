@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import * as helper from '../helpers/commonHelpers';
 import { signInService } from '../services/authService';
-import { signInValidation } from '../validations/common';
+import { signInValidation } from '../validations/commonValidations';
 
 export const signIn = async (req: Request, res: Response): Promise<Response | void> => {
   try {

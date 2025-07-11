@@ -1,6 +1,20 @@
 # tracko-mern-stack
 Tracko - MERN stack project with user/admin roles, to track the output of employee on the bahlf of daily basis.
 
+# How to start project
+
+1. Open Tracko-mern-stack repository in terminal.
+2. To run the server use following commands : 
+    A. cd server 
+    B. npm run start || npm run dev
+    <!-- optional to run the build -->
+    C. npm run build 
+3. To run the client use these follwing commands: 
+    A. cd client
+    B. npm run dev 
+    <!-- optional to run the build -->
+    C. npm run build 
+
 # Tracko Documentation
 
 Admin:
