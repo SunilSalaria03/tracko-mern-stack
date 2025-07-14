@@ -1,5 +1,5 @@
-import React from 'react';
-import { HiOutlineSearch, HiOutlineViewGrid, HiOutlineSwitchHorizontal, HiOutlineUserGroup, HiOutlineDocumentText, HiOutlineCog, HiOutlineCube, HiOutlineStar, HiOutlineCreditCard, HiOutlineChartBar, HiOutlineDatabase, HiOutlinePuzzle, HiOutlineChevronDown } from 'react-icons/hi';
+import React, { useState } from 'react';
+import { HiOutlineSearch, HiOutlineViewGrid, HiOutlineSwitchHorizontal, HiOutlineUserGroup, HiOutlineDocumentText, HiOutlineCog, HiOutlineCube, HiOutlineStar, HiOutlineCreditCard, HiOutlineChartBar, HiOutlineDatabase, HiOutlinePuzzle, HiOutlineChevronDown, HiOutlineChevronRight } from 'react-icons/hi';
 
 const sidebarMenu = [
   { icon: <HiOutlineViewGrid className="w-5 h-5" />, label: 'Dashboard' },
@@ -15,31 +15,48 @@ const sidebarMenu = [
 ];
 
 const Dashboard: React.FC = () => {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
+
   return (
     <div className="flex min-h-screen h-screen bg-[#fafbfc] overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col justify-between min-h-0 h-full">
+      <aside className={`${isSidebarCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 flex flex-col justify-between min-h-0 h-full transition-all duration-300 ease-in-out shadow-sm`}>
         <div>
           {/* Workspace Info */}
           <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-            <span className="block w-7 h-7 bg-blue-600 rounded-full" />
-            <div className="flex flex-col">
-              <span className="text- text-gray-500 leading-none">Tracko</span>
-            </div>
-            <HiOutlineChevronDown className="ml-auto w-4 h-4 text-gray-400" />
+            <span className="block w-7 h-7 bg-blue-600 rounded-full flex-shrink-0" />
+            {!isSidebarCollapsed && (
+              <div className="flex flex-col">
+                <span className="text-gray-500 leading-none">Tracko</span>
+              </div>
+            )}
+            <button
+              onClick={toggleSidebar}
+              className={`ml-auto w-6 h-6 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-200 ${isSidebarCollapsed ? 'mx-auto' : ''}`}
+            >
+              {isSidebarCollapsed ? <HiOutlineChevronRight className="w-4 h-4" /> : <HiOutlineChevronDown className="w-4 h-4" />}
+            </button>
           </div>
+          
           {/* Search */}
-          <div className="px-4 py-2">
-            <div className="flex items-center bg-[#f5f6fa] rounded-md px-2 py-1 border border-gray-200">
-              <HiOutlineSearch className="w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search"
-                className="bg-transparent outline-none px-2 py-1 text-sm flex-1"
-              />
-              <button className="text-xs text-gray-400 px-2 py-1 rounded hover:bg-gray-100">S8K</button>
+          {!isSidebarCollapsed && (
+            <div className="px-4 py-2">
+              <div className="flex items-center bg-[#f5f6fa] rounded-md px-2 py-1 border border-gray-200">
+                <HiOutlineSearch className="w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search"
+                  className="bg-transparent outline-none px-2 py-1 text-sm flex-1"
+                />
+                <button className="text-xs text-gray-400 px-2 py-1 rounded hover:bg-gray-100">S8K</button>
+              </div>
             </div>
-          </div>
+          )}
+          
           {/* Menu */}
           <nav className="mt-2">
             {sidebarMenu.map((item, idx) =>
@@ -48,23 +65,32 @@ const Dashboard: React.FC = () => {
               ) : (
                 <button
                   key={item.label}
-                  className={`flex items-center gap-3 w-full px-5 py-2 text-gray-700 hover:bg-[#f5f6fa] rounded transition text-sm ${item.label === 'Dashboard' ? 'bg-[#f5f6fa] font-semibold' : ''}`}
+                  className={`flex items-center gap-3 w-full px-5 py-2 text-gray-700 hover:bg-[#f5f6fa] rounded transition-all duration-200 text-sm ${item.label === 'Dashboard' ? 'bg-[#f5f6fa] font-semibold' : ''} ${isSidebarCollapsed ? 'justify-center px-2' : ''}`}
+                  title={isSidebarCollapsed ? item.label : undefined}
                 >
                   {item.icon}
-                  <span>{item.label}</span>
+                  {!isSidebarCollapsed && <span>{item.label}</span>}
                 </button>
               )
             )}
           </nav>
         </div>
+        
         {/* Settings at bottom */}
         <div className="mb-4 px-4">
-          <button className="flex items-center gap-2 text-gray-500 text-sm hover:text-gray-700 w-full mb-2">
+          <button 
+            className={`flex items-center gap-2 text-gray-500 text-sm hover:text-gray-700 hover:bg-gray-50 w-full mb-2 px-2 py-2 rounded transition-all duration-200 ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            title={isSidebarCollapsed ? 'Settings' : undefined}
+          >
             <HiOutlineCog className="w-5 h-5" />
-            <span>Settings</span>
+            {!isSidebarCollapsed && <span>Settings</span>}
           </button>
-          <button className="flex items-center gap-2 text-gray-500 text-sm hover:text-gray-700 w-full">
+          <button 
+            className={`flex items-center gap-2 text-gray-500 text-sm hover:text-gray-700 hover:bg-gray-50 w-full px-2 py-2 rounded transition-all duration-200 ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            title={isSidebarCollapsed ? 'View Grid' : undefined}
+          >
             <HiOutlineViewGrid className="w-5 h-5" />
+            {!isSidebarCollapsed && <span>View Grid</span>}
           </button>
         </div>
       </aside>
