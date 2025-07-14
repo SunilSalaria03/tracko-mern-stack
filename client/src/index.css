@@ -58,6 +58,92 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* Common Label Styles */
+label {
+  display: block;
+  text-align: start;
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: #374151;
+  margin-bottom: 0.25rem;
+  cursor: pointer;
+}
+
+/* Label for required fields */
+label.required::after {
+  content: " *";
+  color: #ef4444;
+}
+
+/* Label for disabled fields */
+label:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Label with error state */
+label.error {
+  color: #ef4444;
+}
+
+/* Label with success state */
+label.success {
+  color: #10b981;
+}
+
+/* Label with warning state */
+label.warning {
+  color: #f59e0b;
+}
+
+/* Label with info state */
+label.info {
+  color: #3b82f6;
+}
+
+/* Label for form groups */
+.form-group label {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+/* Label for checkboxes and radio buttons */
+label.checkbox,
+label.radio {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 400;
+  margin-bottom: 0;
+}
+
+/* Label for inline forms */
+label.inline {
+  display: inline-block;
+  margin-right: 1rem;
+  margin-bottom: 0;
+}
+
+/* Label with icon */
+label.with-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Label for small text */
+label.small {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+/* Label for large text */
+label.large {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
