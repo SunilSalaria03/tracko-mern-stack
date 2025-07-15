@@ -27,13 +27,10 @@ export interface IUser extends Document {
     phone_number?: string;
     country_code?: string;
     password: string;
-    loginTime: number;
-    is_otp_verified?: boolean;
     socialId?: string;
     socialType?: "0" | "1" | "2" | "3";
     resetPasswordToken?: string;
     emailOtpExpiry?: Date;
-    otp?: string;
     isDeleted?: boolean;
     createdAt?: Date;
     updatedAt?: Date;

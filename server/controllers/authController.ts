@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import * as helper from '../helpers/commonHelpers';
-import { signInService } from '../services/authService';
-import { signInValidation } from '../validations/commonValidations';
+import { signInService, signUpService, deleteAccountService, logoutService, forgotPasswordService, resetPasswordService } from '../services/authService';
+import { signInValidation, signUpValidation, forgotPasswordValidation, resetPasswordValidation } from '../validations/commonValidations';
+import { AuthRequest } from '../helpers/commonInterfaces';
 
 export const signIn = async (req: Request, res: Response): Promise<Response | void> => {
   try {
@@ -25,3 +26,142 @@ export const signIn = async (req: Request, res: Response): Promise<Response | vo
     return helper.error(res, 'Something went wrong');
   }
 };
+
+export const signUp = async (req: Request, res: Response): Promise<Response | void> => {
+  try {
+    const { error } = signUpValidation(req.body);
+    if (error) {
+      return helper.failed(res, error.details[0].message);
+    }
+
+    const signUpData = {
+      email: req.body.email,
+      password: req.body.password,
+      role: req.body.role,
+      name: req.body.name,
+      phone_number: req.body.phone_number,
+      country_code: req.body.country_code,
+    };
+
+    const result = await signUpService(signUpData, req.files);
+
+    if ('error' in result) {
+      return helper.failed(res, result.error);
+    }
+
+    return helper.success(res, 'Signup successful and your free trial has been started', result);
+  } catch (error) {
+    console.error('Signup error:', error);
+    return helper.error(res, 'Something went wrong');
+  }
+};
+export const deleteAccount = async (req: AuthRequest, res: Response): Promise<Response | void> => {
+  try {
+    if (!req.user) {
+      return helper.failed(res, 'User not authenticated');
+    }
+
+    const result = await deleteAccountService(req.user);
+
+    if ('error' in result) {
+      return helper.failed(res, result.error);
+    }
+
+    return helper.success(res, 'Account deleted successfully', result);
+  } catch (error) {
+    console.error('Delete account error:', error);
+    return helper.error(res, 'Something went wrong');
+  }
+};
+
+export const logout = async (req: AuthRequest, res: Response): Promise<Response | void> => {
+  try {
+    if (!req.user) {
+      return helper.failed(res, 'User not authenticated');
+    }
+
+    const result = await logoutService(req.user);
+
+    if ('error' in result) {
+      return helper.failed(res, result.error);
+    }
+
+    return helper.success(res, 'User Logged Out Successfully', result);
+  } catch (error) {
+    console.error('Logout error:', error);
+    return helper.error(res, 'Something went wrong');
+  }
+};
+
+export const forgotPassword = async (req: Request, res: Response): Promise<Response | void> => {
+  try {
+    const { error } = forgotPasswordValidation(req.body);
+    if (error) {
+      return helper.failed(res, error.details[0].message);
+    }
+
+    const result = await forgotPasswordService(req.body);
+
+    if ('error' in result) {
+      return helper.failed(res, result.error);
+    }
+
+    return helper.success(res, 'Mail sent successfully', result);
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    return helper.error(res, 'Something went wrong');
+  }
+};
+
+export const resetPasswordLink = async (req: Request, res: Response): Promise<Response | void> => {
+  try {
+    const { token, email } = req.query;
+    
+    if (!token || !email) {
+      return helper.failed(res, 'Token and email are required');
+    }
+
+    const result = await resetPasswordService({ token: token as string, email: email as string });
+
+    if ('error' in result) {
+      return res.render('reset-password', { 
+        error: result.error, 
+        token: null, 
+        email: null 
+      });
+    }
+
+    return res.render('reset-password', { 
+      error: null, 
+      token: token as string, 
+      email: email as string 
+    });
+  } catch (error) {
+    console.error('Reset password link error:', error);
+    return res.render('reset-password', { 
+      error: 'Something went wrong', 
+      token: null, 
+      email: null 
+    });
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response): Promise<Response | void> => {
+  try {
+    const { error } = resetPasswordValidation(req.body);
+    if (error) {
+      return helper.failed(res, error.details[0].message);
+    }
+
+    const result = await resetPasswordService(req.body);
+
+    if ('error' in result) {
+      return helper.failed(res, result.error);
+    }
+
+    return helper.success(res, 'Password reset successfully', result);
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return helper.error(res, 'Something went wrong');
+  }
+};  

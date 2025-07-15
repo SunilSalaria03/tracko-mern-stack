@@ -61,15 +61,6 @@ const UserSchema = new mongoose_1.Schema({
         type: String,
         required: true,
     },
-    is_otp_verified: {
-        type: Boolean,
-        default: false,
-    },
-    loginTime: {
-        type: Number,
-        default: 0,
-        required: true,
-    },
     socialId: {
         type: String,
         default: '',
@@ -84,7 +75,6 @@ const UserSchema = new mongoose_1.Schema({
         default: '',
     },
     emailOtpExpiry: Date,
-    otp: String,
     isDeleted: {
         type: Boolean,
         default: false,

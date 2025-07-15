@@ -21,21 +21,11 @@ const UserSchema = new Schema<IUser>(
       type: String,
       enum: ['1', '0'],
       default: '1',
-      required: true,
     },
     phone_number: String,
     country_code: String,
     password: {
       type: String,
-      required: true,
-    },
-    is_otp_verified: {
-      type: Boolean,
-      default: false,
-    },
-    loginTime: {
-      type: Number,
-      default: 0,
       required: true,
     },
     socialId: {
@@ -52,7 +42,6 @@ const UserSchema = new Schema<IUser>(
       default: '',
     },
     emailOtpExpiry: Date,
-    otp: String,
     isDeleted: {
         type: Boolean,
         default: false,

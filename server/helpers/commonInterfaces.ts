@@ -8,7 +8,7 @@ export interface DatabaseConfig {
 }
 
 export interface AuthRequest extends Request {
-  user?: Record<string, any>;
+  user?: UserToken;
 }
 
 export interface ApiResponse<T = any> {
@@ -23,6 +23,18 @@ export interface SignInInput {
   password: string;
 }
 
+export interface SignUpInput {
+  name: string,
+  email: string;
+  password: string;
+  role: "0" | "1" | "2";
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string;
+  country_code?: string;
+  image?: string;
+}
+
 export interface IUser extends Document {
   role: "0" | "1" | "2";
   email: string;
@@ -32,14 +44,31 @@ export interface IUser extends Document {
   phone_number?: string;
   country_code?: string;
   password: string;
-  loginTime: number;
-  is_otp_verified?: boolean;
   socialId?: string;
   socialType?: "0" | "1" | "2" | "3";
   resetPasswordToken?: string;
   emailOtpExpiry?: Date;
-  otp?: string;
   isDeleted?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+export interface ForgotPasswordInput {
+  email: string;
+}
+
+export interface ResetPasswordInput {
+  email: string;
+  tokenFound: string;
+  password: string;
+}
+
+export interface ResetPasswordLinkInput {
+  token: string;
+  email: string;
+}
+
+export interface UserToken {
+  id: string;
+  email: string;
 }
