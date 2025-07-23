@@ -1,5 +1,5 @@
 import React from 'react';
-import type { LogoutModelProps } from '../common/interfaces';
+import type { LogoutModelProps } from '../utils/interfaces/modalInterface';
 import {
   Dialog,
   DialogTitle,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { ForgotPasswordFormData } from '../common/interfaces';
+import type { ForgotPasswordFormData } from '../utils/interfaces/authInterface';
 import {
   Box,
   Button,
@@ -11,11 +11,16 @@ import {
 } from '@mui/material';
 
 const ForgotPassword: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [formData, setFormData] = useState<ForgotPasswordFormData>({
+    email: ''
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle reset logic here
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, email: e.target.value });
   };
 
   return (
@@ -35,8 +40,8 @@ const ForgotPassword: React.FC = () => {
               type="email"
               autoComplete="email"
               required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
+              value={formData.email}
+              onChange={handleEmailChange}
               fullWidth
               variant="outlined"
             />
@@ -55,7 +60,6 @@ const ForgotPassword: React.FC = () => {
               color="primary"
               fullWidth
               sx={{ mt: 2, fontWeight: 500, fontSize: 16 }}
-              // onClick={...} // Add navigation logic as needed
             >
               Cancel
             </Button>
