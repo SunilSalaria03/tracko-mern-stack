@@ -1,36 +1,56 @@
 import React, { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
-import { HiEye, HiEyeOff } from 'react-icons/hi';
-import { HiChevronRight } from 'react-icons/hi';
+import { HiEye, HiEyeOff, HiChevronRight } from 'react-icons/hi';
 import {
   Box,
   Button,
   Checkbox,
   Container,
+  Divider,
   FormControlLabel,
   IconButton,
   InputAdornment,
   Link,
   Paper,
+  Stack,
   TextField,
   Typography,
-  Stack,
-  Divider
 } from '@mui/material';
+import { loginValidation, validateField } from '../utils/validations/AuthValidations';
+import { Link as RouterLink } from 'react-router-dom';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
+
+    const emailErr = validateField('email', email, loginValidation);
+    const passwordErr = validateField('password', password, loginValidation);
+
+    setEmailError(emailErr);
+    setPasswordError(passwordErr);
+
+    if (!emailErr && !passwordErr) {
+      console.log('Logging in:', { email, password, rememberMe });
+    }
   };
 
   return (
-    <Container maxWidth="sm" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <Container
+      maxWidth="sm"
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       <Paper elevation={6} sx={{ p: 5, width: '100%', borderRadius: 4 }}>
         <Typography variant="h5" align="center" fontWeight={600} mb={1}>
           Log into Tracko
@@ -57,7 +77,14 @@ const Login: React.FC = () => {
               autoComplete="email"
               required
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setEmail(value);
+                const error = validateField('email', value, loginValidation);
+                setEmailError(error);
+              }}
+              error={!!emailError}
+              helperText={emailError}
               fullWidth
               variant="outlined"
             />
@@ -68,22 +95,31 @@ const Login: React.FC = () => {
               autoComplete="current-password"
               required
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setPassword(value);
+                const error = validateField('password', value, loginValidation);
+                setPasswordError(error);
+              }}
+              error={!!passwordError}
+              helperText={passwordError}
               fullWidth
               variant="outlined"
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={() => setShowPassword(!showPassword)}
-                      edge="end"
-                      size="small"
-                    >
-                      {showPassword ? <HiEyeOff /> : <HiEye />}
-                    </IconButton>
-                  </InputAdornment>
-                )
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                        size="small"
+                      >
+                        {showPassword ? <HiEyeOff /> : <HiEye />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
               }}
             />
             <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -91,13 +127,19 @@ const Login: React.FC = () => {
                 control={
                   <Checkbox
                     checked={rememberMe}
-                    onChange={e => setRememberMe(e.target.checked)}
+                    onChange={(e) => setRememberMe(e.target.checked)}
                     color="primary"
                   />
                 }
                 label={<Typography variant="body2">Remember me</Typography>}
               />
-              <Link href="#" variant="body2" color="text.secondary" underline="hover">
+              <Link
+                component={RouterLink}
+                to="/forgot-password"
+                variant="body2"
+                color="text.secondary"
+                underline="hover"
+              >
                 Forgot Password?
               </Link>
             </Stack>
@@ -123,4 +165,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login; 
+export default Login;

@@ -23,10 +23,8 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="flex min-h-screen h-screen bg-[#fafbfc] overflow-hidden">
-      {/* Sidebar */}
       <aside className={`${isSidebarCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 flex flex-col justify-between min-h-0 h-full transition-all duration-300 ease-in-out shadow-sm`}>
         <div>
-          {/* Workspace Info */}
           <div className="flex items-center gap-2 px-4 pt-4 pb-2">
             <span className="block w-7 h-7 bg-blue-600 rounded-full flex-shrink-0" />
             {!isSidebarCollapsed && (
@@ -42,7 +40,6 @@ const Dashboard: React.FC = () => {
             </button>
           </div>
           
-          {/* Search */}
           {!isSidebarCollapsed && (
             <div className="px-4 py-2">
               <div className="flex items-center bg-[#f5f6fa] rounded-md px-2 py-1 border border-gray-200">
@@ -57,7 +54,6 @@ const Dashboard: React.FC = () => {
             </div>
           )}
           
-          {/* Menu */}
           <nav className="mt-2">
             {sidebarMenu.map((item, idx) =>
               item.divider ? (
@@ -76,7 +72,6 @@ const Dashboard: React.FC = () => {
           </nav>
         </div>
         
-        {/* Settings at bottom */}
         <div className="mb-4 px-4">
           <button 
             className={`flex items-center gap-2 text-gray-500 text-sm hover:text-gray-700 hover:bg-gray-50 w-full mb-2 px-2 py-2 rounded transition-all duration-200 ${isSidebarCollapsed ? 'justify-center' : ''}`}
@@ -95,9 +90,7 @@ const Dashboard: React.FC = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 min-h-0 h-full p-8 overflow-auto">
-        {/* Topbar */}
         <div className="flex items-center justify-between mb-6">
           <span className="text-sm text-gray-500">Home</span>
           <div className="flex gap-2">
@@ -106,7 +99,6 @@ const Dashboard: React.FC = () => {
             <button className="px-3 py-1 rounded border text-sm text-gray-600 bg-white hover:bg-gray-50">All Projects</button>
           </div>
         </div>
-        {/* Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="flex flex-col items-center bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
             <span className="mb-2"><HiOutlineChartBar className="w-8 h-8 text-gray-400" /></span>
@@ -129,7 +121,6 @@ const Dashboard: React.FC = () => {
             <span className="text-2xl font-bold">19,258</span>
           </div>
         </div>
-        {/* Charts Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm min-h-[260px] flex flex-col">
             <h3 className="font-semibold mb-2">Sessions</h3>
@@ -140,7 +131,6 @@ const Dashboard: React.FC = () => {
             <div className="flex-1 flex items-center justify-center text-gray-400">[Modules Usage Chart]</div>
           </div>
         </div>
-        {/* Error Log */}
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm min-h-[260px] flex flex-col">
           <h3 className="font-semibold mb-2">Error Log</h3>
           <div className="flex-1 flex items-center justify-center text-gray-400">[Error Log Chart]</div>

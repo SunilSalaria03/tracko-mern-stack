@@ -7,24 +7,49 @@ import {
   Paper,
   TextField,
   Typography,
-  Stack
+  Stack,
 } from '@mui/material';
+
+import {
+  forgotPasswordValidation,
+  validateField,
+} from '../utils/validations/AuthValidations';
 
 const ForgotPassword: React.FC = () => {
   const [formData, setFormData] = useState<ForgotPasswordFormData>({
-    email: ''
+    email: '',
   });
+
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const error = validateField('email', formData.email, forgotPasswordValidation);
+    setEmailError(error);
+
+    if (!error) {
+      console.log('Submitting forgot password for:', formData.email);
+    }
   };
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, email: e.target.value });
+    const value = e.target.value;
+    setFormData({ ...formData, email: value });
+    const error = validateField('email', value, forgotPasswordValidation);
+    setEmailError(error);
   };
 
   return (
-    <Container maxWidth="sm" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <Container
+      maxWidth="sm"
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       <Paper elevation={6} sx={{ p: 5, width: '100%', borderRadius: 4 }}>
         <Typography variant="h5" align="center" fontWeight={600} mb={1}>
           Reset Your Password
@@ -42,6 +67,8 @@ const ForgotPassword: React.FC = () => {
               required
               value={formData.email}
               onChange={handleEmailChange}
+              error={!!emailError}
+              helperText={emailError}
               fullWidth
               variant="outlined"
             />
@@ -60,6 +87,7 @@ const ForgotPassword: React.FC = () => {
               color="primary"
               fullWidth
               sx={{ mt: 2, fontWeight: 500, fontSize: 16 }}
+              onClick={() => console.log('Cancelled')}
             >
               Cancel
             </Button>
@@ -70,4 +98,4 @@ const ForgotPassword: React.FC = () => {
   );
 };
 
-export default ForgotPassword; 
+export default ForgotPassword;
