@@ -35,24 +35,6 @@ export interface SignUpInput {
   image?: string;
 }
 
-export interface IUser extends Document {
-  role: "0" | "1" | "2";
-  email: string;
-  image?: string;
-  name?: string;
-  status: "1" | "0";
-  phone_number?: string;
-  country_code?: string;
-  password: string;
-  socialId?: string;
-  socialType?: "0" | "1" | "2" | "3";
-  resetPasswordToken?: string;
-  emailOtpExpiry?: Date;
-  isDeleted?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
 export interface ForgotPasswordInput {
   email: string;
 }

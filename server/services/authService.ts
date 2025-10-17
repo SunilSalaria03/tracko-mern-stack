@@ -1,8 +1,9 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import * as helper from '../helpers/commonHelpers';
-import { SignInInput, SignUpInput, ForgotPasswordInput, ResetPasswordInput, ResetPasswordLinkInput, UserToken } from '../helpers/commonInterfaces';
+import { SignInInput, SignUpInput, ForgotPasswordInput, ResetPasswordInput, ResetPasswordLinkInput, UserToken } from '../interfaces/commonInterfaces';
 import userModel from '../models/userModel';
+import { IUser } from '@/interfaces/userInterfaces';
 
 export const signInService = async (data: SignInInput) => {
   try {
@@ -12,6 +13,7 @@ export const signInService = async (data: SignInInput) => {
     }
 
     const passwordMatch = await bcrypt.compare(data.password, user.password);
+    console.log(passwordMatch)
     if (!passwordMatch) {
       return { error: 'Password is incorrect' };
     }
@@ -38,9 +40,15 @@ export const signInService = async (data: SignInInput) => {
   }
 };
 
-export const signUpService = async (data: SignUpInput, files?: any) => {
+export const signUpService = async (data: Partial<IUser>, files?: any) => {
   try {
-    // Check if email already exists
+    if(data.role == 0) {
+      const adminExist = await userModel.findOne({ role: 0, isDeleted: false });
+      if (adminExist) {
+        return { error: 'Admin already exists' };
+      }
+    }
+    
     const isEmailExist = await userModel.findOne({ 
       email: data.email, 
       isDeleted: false 
@@ -50,10 +58,9 @@ export const signUpService = async (data: SignUpInput, files?: any) => {
       return { error: 'Email already exists' };
     }
 
-    // Check if phone number already exists (if provided)
-    if (data.phone_number) {
+    if (data.phoneNumber) {
       const isPhoneExist = await userModel.findOne({ 
-        phone_number: data.phone_number, 
+        phoneNumber: data.phoneNumber, 
         isDeleted: false 
       });
       
@@ -62,43 +69,35 @@ export const signUpService = async (data: SignUpInput, files?: any) => {
       }
     }
 
-    // Handle image upload if provided
     let imagePath = '';
-    if (files && files.image) {
-      imagePath = helper.imageUpload(files.image, 'images');
+    if (files && files.profileImage) {
+      imagePath = helper.imageUpload(files.profileImage, 'images');
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(data.password, 12);
+    const salt = process.env.SALT_ROUNDS || 12;
+    const hashedPassword = await bcrypt.hash(data.password || '', salt);
 
-    // Prepare user data
-    const userData: any = {
-      email: data.email,
+    const objToCreate = {
+      ...data,
       password: hashedPassword,
-      role: data.role,
+      profileImage: imagePath,
     };
 
-    // Add optional fields
-    if (data.name) userData.name = data.name;
-    if (data.phone_number) userData.phone_number = data.phone_number;
-    if (data.country_code) userData.country_code = data.country_code;
-    if (imagePath) userData.image = imagePath;
-    // Create user
-    const user = await userModel.create(userData);
+    const user = await userModel.create(objToCreate);
 
     // Send welcome email
-    const bgImageLink = `${process.env.BASE_URL}/app-assets/images/email_templates/bg.png`;
-    const logoImageLink = `${process.env.BASE_URL}/app-assets/images/email_templates/logo.png`;
+    // const bgImageLink = `${process.env.BASE_URL}/app-assets/images/email_templates/bg.png`;
+    // const logoImageLink = `${process.env.BASE_URL}/app-assets/images/email_templates/logo.png`;
     
-    const mailData = {
-      to: data.email,
-      subject: "Welcome to the Tracko",
-      html: helper.welcomeHtml(bgImageLink, logoImageLink),
-    };
+    // const mailData = {
+    //   to: data.email,
+    //   subject: "Welcome to the Tracko",
+    //   html: helper.welcomeHtml(bgImageLink, logoImageLink),
+    // };
     
-    await helper.mailSender(mailData);
+    // await helper.mailSender(mailData);
 
-    // Generate JWT token
     const token = jwt.sign(
       { 
         id: user._id, 
@@ -111,6 +110,7 @@ export const signUpService = async (data: SignUpInput, files?: any) => {
     // Prepare response
     const userInfo = {
       ...user.toObject(),
+      password: hashedPassword,
       authToken: token,
     };
 
@@ -163,108 +163,108 @@ export const logoutService = async (user: UserToken) => {
   }
 };
 
-export const forgotPasswordService = async (data: ForgotPasswordInput) => {
-  try {
-    const user = await userModel.findOne({
-      email: data.email,
-      isDeleted: false
-    });
+// export const forgotPasswordService = async (data: ForgotPasswordInput) => {
+//   try {
+//     const user = await userModel.findOne({
+//       email: data.email,
+//       isDeleted: false
+//     });
 
-    if (!user) {
-      return { error: 'User not registered' };
-    }
+//     if (!user) {
+//       return { error: 'User not registered' };
+//     }
 
-    const generatedString = helper.generateRandomNumbers(6);
-    const newToken = helper.encrypt(generatedString);
-    const emailOtpExpiryTime = Date.now() + 10 * 60 * 1000; // 10 minutes
+//     const generatedString = helper.generateRandomNumbers(6);
+//     const newToken = helper.encrypt(generatedString);
+//     const emailOtpExpiryTime = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-    await userModel.updateOne(
-      { email: data.email, isDeleted: false },
-      { 
-        resetPasswordToken: newToken, 
-        emailOtpExpiry: emailOtpExpiryTime 
-      }
-    );
+//     await userModel.updateOne(
+//       { email: data.email, isDeleted: false },
+//       { 
+//         resetPasswordToken: newToken, 
+//         emailOtpExpiry: emailOtpExpiryTime 
+//       }
+//     );
 
-    const bgImageLink = `${process.env.BASE_URL}/app-assets/images/email_templates/bg.png`;
-    const logoImageLink = `${process.env.BASE_URL}/app-assets/images/email_templates/logo.png`;
-    const resetPasswordLink = `${process.env.BASE_URL}/api/reset_password_link?email=${data.email}&token=${newToken}`;
+//     const bgImageLink = `${process.env.BASE_URL}/app-assets/images/email_templates/bg.png`;
+//     const logoImageLink = `${process.env.BASE_URL}/app-assets/images/email_templates/logo.png`;
+//     const resetPasswordLink = `${process.env.BASE_URL}/api/reset_password_link?email=${data.email}&token=${newToken}`;
     
-    const userName = user.name || 'Dear User';
+//     const userName = user.name || 'Dear User';
 
-    const mailData = {
-      to: data.email,
-      subject: 'Reset Password Link',
-      html: helper.resetPasswordHtml(resetPasswordLink, logoImageLink, bgImageLink, userName),
-    };
+//     const mailData = {
+//       to: data.email,
+//       subject: 'Reset Password Link',
+//       html: helper.resetPasswordHtml(resetPasswordLink, logoImageLink, bgImageLink, userName),
+//     };
 
-    await helper.mailSender(mailData);
+//     await helper.mailSender(mailData);
 
-    return { message: 'Mail sent successfully' };
-  } catch (err: any) {
-    return { error: err.message || 'Something went wrong' };
-  }
-};
+//     return { message: 'Mail sent successfully' };
+//   } catch (err: any) {
+//     return { error: err.message || 'Something went wrong' };
+//   }
+// };
 
-export const resetPasswordService = async (data: ResetPasswordInput | ResetPasswordLinkInput) => {
-  try {
-    if ('token' in data && 'email' in data && !('password' in data)) {
-      const user = await userModel.findOne({ 
-        email: data.email, 
-        isDeleted: false 
-      });
+// export const resetPasswordService = async (data: ResetPasswordInput | ResetPasswordLinkInput) => {
+//   try {
+//     if ('token' in data && 'email' in data && !('password' in data)) {
+//       const user = await userModel.findOne({ 
+//         email: data.email, 
+//         isDeleted: false 
+//       });
 
-      if (!user) {
-        return { error: 'User not found' };
-      }
+//       if (!user) {
+//         return { error: 'User not found' };
+//       }
 
-      const currentTime = Date.now();
-      const expiryTime = user.emailOtpExpiry ? new Date(user.emailOtpExpiry).getTime() : 0;
+//       const currentTime = Date.now();
+//       const expiryTime = user.emailOtpExpiry ? new Date(user.emailOtpExpiry).getTime() : 0;
 
-      if (expiryTime > currentTime && user.resetPasswordToken === data.token) {
-        await userModel.updateOne(
-          { email: data.email, isDeleted: false },
-          { resetPasswordToken: null, emailOtpExpiry: null }
-        );
-        return { message: 'Token verified successfully' };
-      } else {
-        return { error: 'Token expired or invalid' };
-      }
-    }
+//       if (expiryTime > currentTime && user.resetPasswordToken === data.token) {
+//         await userModel.updateOne(
+//           { email: data.email, isDeleted: false },
+//           { resetPasswordToken: null, emailOtpExpiry: null }
+//         );
+//         return { message: 'Token verified successfully' };
+//       } else {
+//         return { error: 'Token expired or invalid' };
+//       }
+//     }
 
-    // Handle password reset
-    if ('password' in data && 'email' in data && 'tokenFound' in data) {
-      const user = await userModel.findOne({ 
-        email: data.email, 
-        isDeleted: false 
-      });
+//     // Handle password reset
+//     if ('password' in data && 'email' in data && 'tokenFound' in data) {
+//       const user = await userModel.findOne({ 
+//         email: data.email, 
+//         isDeleted: false 
+//       });
 
-      if (!user) {
-        return { error: 'User not registered' };
-      }
+//       if (!user) {
+//         return { error: 'User not registered' };
+//       }
 
-      const expiryTime = user.emailOtpExpiry ? new Date(user.emailOtpExpiry).getTime() : 0;
+//       const expiryTime = user.emailOtpExpiry ? new Date(user.emailOtpExpiry).getTime() : 0;
       
-      if (user.resetPasswordToken !== data.tokenFound || expiryTime < Date.now()) {
-        return { error: 'Invalid or expired token' };
-      }
+//       if (user.resetPasswordToken !== data.tokenFound || expiryTime < Date.now()) {
+//         return { error: 'Invalid or expired token' };
+//       }
 
-      const hashedPassword = await bcrypt.hash(data.password, 10);
+//       const hashedPassword = await bcrypt.hash(data.password, 10);
       
-      await userModel.updateOne(
-        { email: data.email, isDeleted: false },
-        { 
-          password: hashedPassword, 
-          resetPasswordToken: null, 
-          emailOtpExpiry: null 
-        }
-      );
+//       await userModel.updateOne(
+//         { email: data.email, isDeleted: false },
+//         { 
+//           password: hashedPassword, 
+//           resetPasswordToken: null, 
+//           emailOtpExpiry: null 
+//         }
+//       );
 
-      return { message: 'Password reset successfully' };
-    }
+//       return { message: 'Password reset successfully' };
+//     }
 
-    return { error: 'Invalid request data' };
-  } catch (err: any) {
-    return { error: err.message || 'Something went wrong' };
-  }
-};
+//     return { error: 'Invalid request data' };
+//   } catch (err: any) {
+//     return { error: err.message || 'Something went wrong' };
+//   }
+// };

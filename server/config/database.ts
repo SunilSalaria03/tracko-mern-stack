@@ -1,4 +1,4 @@
-import { DatabaseConfig } from '../helpers/commonInterfaces';
+import { DatabaseConfig } from '../interfaces/commonInterfaces';
 import mongoose from 'mongoose';
 
 const databaseConfig: DatabaseConfig = {

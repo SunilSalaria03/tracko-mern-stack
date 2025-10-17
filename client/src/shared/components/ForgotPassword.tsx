@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { ForgotPasswordFormData } from '../utils/interfaces/authInterface';
+import type { ForgotPasswordFormData } from '../../utils/interfaces/authInterface';
 import {
   Box,
   Button,
@@ -13,7 +13,7 @@ import {
 import {
   forgotPasswordValidation,
   validateField,
-} from '../utils/validations/AuthValidations';
+} from '../../utils/validations/AuthValidations';
 
 const ForgotPassword: React.FC = () => {
   const [formData, setFormData] = useState<ForgotPasswordFormData>({
@@ -51,7 +51,7 @@ const ForgotPassword: React.FC = () => {
       }}
     >
       <Paper elevation={6} sx={{ p: 5, width: '100%', borderRadius: 4 }}>
-        <Typography variant="h5" align="center" fontWeight={600} mb={1}>
+        <Typography variant="h5" align="center" fontWeight={600} mb={1} color="primary">
           Reset Your Password
         </Typography>
         <Typography variant="body2" align="center" color="text.secondary" mb={3}>

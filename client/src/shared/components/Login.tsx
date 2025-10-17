@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { FcGoogle } from 'react-icons/fc';
-import { HiEye, HiEyeOff, HiChevronRight } from 'react-icons/hi';
+import React, { useEffect, useState } from 'react';
+import { HiEye, HiEyeOff } from 'react-icons/hi';
 import {
   Box,
   Button,
@@ -16,8 +15,13 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { loginValidation, validateField } from '../utils/validations/AuthValidations';
+import { loginValidation, validateField } from '../../utils/validations/AuthValidations';
 import { Link as RouterLink } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { loginUser } from '../../store/actions/authActions';
+import { selectAppState } from '../../store/selectors';
+import type { AppDispatch } from '../../store';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -26,6 +30,21 @@ const Login: React.FC = () => {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const {
+    authLoading: isLoading,
+    authError: error,
+    isAuthenticated,
+  } = useSelector(selectAppState);
+  
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +56,7 @@ const Login: React.FC = () => {
     setPasswordError(passwordErr);
 
     if (!emailErr && !passwordErr) {
-      console.log('Logging in:', { email, password, rememberMe });
+      dispatch(loginUser({ email, password }));
     }
   };
 
@@ -52,22 +71,13 @@ const Login: React.FC = () => {
       }}
     >
       <Paper elevation={6} sx={{ p: 5, width: '100%', borderRadius: 4 }}>
-        <Typography variant="h5" align="center" fontWeight={600} mb={1}>
+        <Typography variant="h5" align="center" fontWeight={600} mb={1} color="primary">
           Log into Tracko
         </Typography>
-        <Typography variant="body2" align="center" color="text.secondary" mb={3}>
-          Select your preferred sign-in method to proceed.
+        <Typography variant="body2" align="center" color="text.secondary" mb={2}>
+          Welcome! Please enter your details.
         </Typography>
-        <Button
-          variant="outlined"
-          fullWidth
-          startIcon={<FcGoogle style={{ fontSize: 22 }} />}
-          endIcon={<HiChevronRight style={{ color: '#9ca3af', fontSize: 22 }} />}
-          sx={{ mb: 3, py: 1.2, textTransform: 'none', fontWeight: 500 }}
-        >
-          Sign in using Google
-        </Button>
-        <Divider sx={{ mb: 3 }}>or</Divider>
+        <Divider sx={{ mb: 5 }}></Divider>
         <Box component="form" onSubmit={handleSubmit} noValidate>
           <Stack spacing={2}>
             <TextField
@@ -143,23 +153,23 @@ const Login: React.FC = () => {
                 Forgot Password?
               </Link>
             </Stack>
+            {error && (
+              <Typography color="error" variant="body2" align="center">
+                {error}
+              </Typography>
+            )}
             <Button
               type="submit"
               variant="contained"
               color="primary"
               fullWidth
               sx={{ py: 1.3, fontWeight: 600, fontSize: 16 }}
+              disabled={isLoading}
             >
-              Sign In
+              {isLoading ? 'Signing In...' : 'Sign In'}
             </Button>
           </Stack>
         </Box>
-        <Typography align="center" mt={3} variant="body2" color="text.secondary">
-          Don't have an account?{' '}
-          <Link href="#" color="primary" underline="hover" fontWeight={500}>
-            Create Account
-          </Link>
-        </Typography>
       </Paper>
     </Container>
   );
