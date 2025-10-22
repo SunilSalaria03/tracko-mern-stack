@@ -3,8 +3,20 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import type { AuthState } from '../../utils/interfaces/storeInterface';
 import { getCurrentUser, loginUser, logoutUser, registerUser } from '../actions/authActions';
 
+const getUserFromLocalStorage = () => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    try {
+      return JSON.parse(userStr);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+};
+
 const initialState: AuthState = {
-  user: null,
+  user: getUserFromLocalStorage(),
   token: localStorage.getItem('token'),
   isAuthenticated: !!localStorage.getItem('token'),
   isLoading: false,
@@ -30,12 +42,16 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload.user as typeof state.user;
-        state.token = action.payload.token as string | null;
-        state.error = null;
+        if (action.payload) {
+          state.isAuthenticated = true;
+          state.user = action.payload.user as typeof state.user;
+          state.token = action.payload.token as string | null;
+          state.error = null;
+        }
+      })
+      .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as unknown as string;
+        state.error = action.payload as string;
       });
 
     // Register
@@ -46,10 +62,12 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload.user as typeof state.user;
-        state.token = action.payload.token as string | null;
-        state.error = null;
+        if (action.payload) {
+          state.isAuthenticated = true;
+          state.user = action.payload.user as typeof state.user;
+          state.token = action.payload.token as string | null;
+          state.error = null;
+        }
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.isLoading = false;

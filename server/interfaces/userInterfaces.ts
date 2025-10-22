@@ -10,6 +10,10 @@ export interface IUser extends Document {
     countryCode?: string;
     password: string;
     isDeleted?: boolean;
+    resetPasswordToken?: string | null;
+    emailOtpExpiry?: Date | null;
     createdAt?: Date;
     updatedAt?: Date;
+    deviceToken?: string;
+    deviceType?: string;
   }

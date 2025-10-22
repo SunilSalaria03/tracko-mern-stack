@@ -54,3 +54,10 @@ export interface UserToken {
   id: string;
   email: string;
 }
+
+export interface IMailData {
+  to: string;
+  subject: string;
+  text?: string;
+  html: string;
+}

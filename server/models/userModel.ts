@@ -43,6 +43,22 @@ const UserSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    deviceToken: {
+      type: String,
+      default: '',
+    },
+    deviceType: {
+      type: String,
+      default: '',
+    },
+    resetPasswordToken: {
+      type: String,
+      default: null,
+    },
+    emailOtpExpiry: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

@@ -14,7 +14,8 @@ export function createGetThunk<T>(
         if (!response.success) {
           return rejectWithValue(response.error || 'Request failed');
         }
-        return response.data as T;
+        // Handle both 'data' and 'body' fields for server response compatibility
+        return (response.body || response.data) as T;
       } catch (error) {
         return rejectWithValue(handleApiError(error));
       }
@@ -34,7 +35,8 @@ export function createPostThunk<T, D>(
         if (!response.success) {
           return rejectWithValue(response.error || 'Request failed');
         }
-        return response.data as T;
+        // Handle both 'data' and 'body' fields for server response compatibility
+        return (response.body || response.data) as T;
       } catch (error) {
         return rejectWithValue(handleApiError(error));
       }
@@ -54,7 +56,8 @@ export function createPutThunk<T, D>(
         if (!response.success) {
           return rejectWithValue(response.error || 'Request failed');
         }
-        return response.data as T;
+        // Handle both 'data' and 'body' fields for server response compatibility
+        return (response.body || response.data) as T;
       } catch (error) {
         return rejectWithValue(handleApiError(error));
       }
@@ -74,7 +77,8 @@ export function createDeleteThunk<T>(
         if (!response.success) {
           return rejectWithValue(response.error || 'Request failed');
         }
-        return response.data as T;
+        // Handle both 'data' and 'body' fields for server response compatibility
+        return (response.body || response.data) as T;
       } catch (error) {
         return rejectWithValue(handleApiError(error));
       }

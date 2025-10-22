@@ -1,17 +1,55 @@
+import { createAsyncThunk } from '@reduxjs/toolkit';
 import { createPostThunk, createGetThunk } from './indexThunkApis';
 import { API_ENDPOINTS } from '../apiEndpoints';
+import { apiClient } from '../apiClient';
+import { handleApiError } from '../../utils/common/helpers';
 
 type Credentials = { email: string; password: string };
 type AuthResponse = { user: unknown; token: string };
+type ServerAuthResponse = { authToken: string; [key: string]: unknown };
 
-export const loginUser = createPostThunk<AuthResponse, Credentials>(
-  'auth/login',
-  () => API_ENDPOINTS.AUTH.LOGIN
+// Custom login thunk to handle server's authToken -> token transformation
+export const loginUser = createAsyncThunk<AuthResponse, Credentials, { rejectValue: string }>(
+  'auth/loginUser',
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.post<ServerAuthResponse, Credentials>(API_ENDPOINTS.AUTH.LOGIN, data);
+      if (!response.success) {
+        return rejectWithValue(response.error || response.message || 'Login failed');
+      }
+      const serverData = (response.body || response.data) as ServerAuthResponse;
+      // Transform server response (authToken) to client format (token)
+      const { authToken, ...userData } = serverData;
+      return {
+        user: userData,
+        token: authToken
+      };
+    } catch (error) {
+      return rejectWithValue(handleApiError(error));
+    }
+  }
 );
 
-export const registerUser = createPostThunk<AuthResponse, Credentials>(
-  'auth/register',
-  () => API_ENDPOINTS.AUTH.REGISTER
+// Custom register thunk to handle server's authToken -> token transformation
+export const registerUser = createAsyncThunk<AuthResponse, Credentials, { rejectValue: string }>(
+  'auth/registerUser',
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.post<ServerAuthResponse, Credentials>(API_ENDPOINTS.AUTH.REGISTER, data);
+      if (!response.success) {
+        return rejectWithValue(response.error || response.message || 'Registration failed');
+      }
+      const serverData = (response.body || response.data) as ServerAuthResponse;
+      // Transform server response (authToken) to client format (token)
+      const { authToken, ...userData } = serverData;
+      return {
+        user: userData,
+        token: authToken
+      };
+    } catch (error) {
+      return rejectWithValue(handleApiError(error));
+    }
+  }
 );
 
 export const logoutUser = createPostThunk<void, void>(
@@ -24,7 +62,16 @@ export const getCurrentUser = createGetThunk<unknown>(
   () => API_ENDPOINTS.AUTH.ME
 );
 
-export const forgotPassword = createPostThunk<unknown, Credentials>(
+export const forgotPassword = createPostThunk<unknown, { email: string }>(
   'auth/forgotPassword',
   () => API_ENDPOINTS.AUTH.FORGOT_PASSWORD
+);
+
+export const resetPassword = createPostThunk<unknown, {
+  encryptedEmail: string;
+  resetPasswordToken: string;
+  password: string;
+}>(
+  'auth/resetPassword',
+  () => API_ENDPOINTS.AUTH.RESET_PASSWORD
 );

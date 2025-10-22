@@ -1,8 +1,10 @@
 export interface ApiResponse<T = unknown> {
     success: boolean;
     data?: T;
+    body?: T; // Server sends data in 'body' field
     message: string;
     error?: string;
+    code?: number;
   }
   
   export interface PaginatedResponse<T> {

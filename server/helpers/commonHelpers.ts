@@ -1,8 +1,9 @@
 import { Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
-import nodemailer from 'nodemailer';
 import crypto from 'crypto';
+import dotenv from 'dotenv';
+dotenv.config();
 
 interface ApiResponse {
   success: boolean;
@@ -98,51 +99,6 @@ export const encrypt = (text: string): string => {
   return iv.toString('hex') + ':' + encrypted;
 };
 
-// Email sender helper function using nodemailer
-export const mailSender = async (mailData: {
-  to: string;
-  subject: string;
-  html: string;
-}): Promise<boolean> => {
-  try {
-    const transport = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: 587,
-      auth: {
-        user: process.env.SMTP_USERNAME,
-        pass: process.env.SMTP_PASSWORD
-      }
-    });
-
-    console.log(process.env.SMTP_HOST, process.env.SMTP_USERNAME, process.env.SMTP_PASSWORD, "ooooooo");
-
-    const mailOptions = {
-      from: process.env.SMTP_USERNAME,
-      to: mailData?.to,
-      subject: mailData?.subject,
-      html: mailData?.html
-    };
-
-    return new Promise((resolve, reject) => {
-      transport.sendMail(mailOptions, (err: any, info: any) => {
-        if (err) {
-          console.log(err, "err==>");
-          reject(err);
-        } else if (info) {
-          console.log(info, "info");
-          resolve(true);
-        } else {
-          reject(new Error('No response from email service'));
-        }
-      });
-    });
-  } catch (error) {
-    console.error('Email sending error:', error);
-    return false;
-  }
-};
-
-// Welcome email HTML template
 export const welcomeHtml = (bgImageLink: string, logoImageLink: string): string => {
   return `
     <!DOCTYPE html>
@@ -190,6 +146,45 @@ export const resetPasswordHtml = (resetPasswordLink: string, logoImageLink: stri
         <div style="background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); max-width: 500px; width: 90%;">
           <div style="text-align: center; margin-bottom: 30px;">
             <img src="${logoImageLink}" alt="Tracko Logo" style="max-width: 200px; height: auto;">
+          </div>
+          <h1 style="color: #333; text-align: center; margin-bottom: 20px;">Reset Your Password</h1>
+          <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+            Hello ${userName},
+          </p>
+          <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+            We received a request to reset your password. Click the button below to create a new password:
+          </p>
+          <div style="text-align: center; margin-top: 30px; margin-bottom: 30px;">
+            <a href="${resetPasswordLink}" style="background: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
+          </div>
+          <p style="color: #666; line-height: 1.6; margin-bottom: 20px; font-size: 14px;">
+            If you didn't request this password reset, you can safely ignore this email. The link will expire in 10 minutes.
+          </p>
+          <p style="color: #666; line-height: 1.6; margin-bottom: 20px; font-size: 14px;">
+            If the button doesn't work, copy and paste this link into your browser: ${resetPasswordLink}
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
+// Modern reset email template with Cloudinary logo
+export const resetEmailTemplate = (resetPasswordLink: string, userName: string): string => {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Reset Password</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: Arial, sans-serif;">
+      <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background-color: #f5f5f5;">
+        <div style="background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); max-width: 500px; width: 90%;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <img src="https://res.cloudinary.com/douhm2cpi/image/upload/v1755082255/uploads/images/finallogo.png" alt="Logo" style="max-width: 200px; height: auto;">
           </div>
           <h1 style="color: #333; text-align: center; margin-bottom: 20px;">Reset Your Password</h1>
           <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">

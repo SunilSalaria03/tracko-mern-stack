@@ -11,12 +11,15 @@ export function createApiError(status: number, message: string): Error & { statu
 export async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
   const token = localStorage.getItem('token');
 
+  // Only add Content-Type header if there's a body
+  const headers: Record<string, string> = {
+    ...(options.body && { 'Content-Type': 'application/json' }),
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...(options.headers as Record<string, string>),
+  };
+
   const config: RequestInit = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    },
+    headers,
     ...options,
   };
 

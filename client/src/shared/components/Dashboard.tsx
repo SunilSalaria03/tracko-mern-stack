@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { HiOutlineSearch, HiOutlineViewGrid, HiOutlineSwitchHorizontal, HiOutlineUserGroup, HiOutlineDocumentText, HiOutlineCog, HiOutlineCube, HiOutlineStar, HiOutlineCreditCard, HiOutlineChartBar, HiOutlineDatabase, HiOutlinePuzzle, HiOutlineChevronDown, HiOutlineChevronRight } from 'react-icons/hi';
+import Navbar from './Navbar';
 
 const sidebarMenu = [
   { icon: <HiOutlineViewGrid className="w-5 h-5" />, label: 'Dashboard' },
@@ -22,8 +23,10 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen h-screen bg-[#fafbfc] overflow-hidden">
-      <aside className={`${isSidebarCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 flex flex-col justify-between min-h-0 h-full transition-all duration-300 ease-in-out shadow-sm`}>
+    <div className="flex flex-col min-h-screen h-screen bg-[#fafbfc] overflow-hidden">
+      <Navbar />
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <aside className={`${isSidebarCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 flex flex-col justify-between min-h-0 h-full transition-all duration-300 ease-in-out shadow-sm`}>
         <div>
           <div className="flex items-center gap-2 px-4 pt-4 pb-2">
             <span className="block w-7 h-7 bg-blue-600 rounded-full flex-shrink-0" />
@@ -136,6 +139,7 @@ const Dashboard: React.FC = () => {
           <div className="flex-1 flex items-center justify-center text-gray-400">[Error Log Chart]</div>
         </div>
       </main>
+      </div>
     </div>
   );
 };

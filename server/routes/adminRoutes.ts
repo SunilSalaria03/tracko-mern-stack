@@ -4,7 +4,7 @@ import { authMiddleware } from '../middlewares/auth';
 
 const router = Router();
 
-router.get('/login', authController.signIn);
+// router.get('/login', authController.signIn);
 
 // Protected routes
 router.use(authMiddleware);

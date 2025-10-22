@@ -1,9 +1,11 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import * as helper from '../helpers/commonHelpers';
+import { mailSender } from '../config/sendGrid';
 import { SignInInput, SignUpInput, ForgotPasswordInput, ResetPasswordInput, ResetPasswordLinkInput, UserToken } from '../interfaces/commonInterfaces';
 import userModel from '../models/userModel';
 import { IUser } from '@/interfaces/userInterfaces';
+import { AUTH_MESSAGES, USER_MESSAGES, GENERAL_MESSAGES } from '../utils/constants/messages';
 
 export const signInService = async (data: SignInInput) => {
   try {
@@ -13,7 +15,6 @@ export const signInService = async (data: SignInInput) => {
     }
 
     const passwordMatch = await bcrypt.compare(data.password, user.password);
-    console.log(passwordMatch)
     if (!passwordMatch) {
       return { error: 'Password is incorrect' };
     }
@@ -146,10 +147,9 @@ export const logoutService = async (user: UserToken) => {
 
     const updateResult = await userModel.findByIdAndUpdate(
       user.id,
-      { 
-        loginTime: 0, 
-        authToken: '', 
-        device_token: '' 
+      {
+        deviceToken: '',
+        deviceType: '',
       }
     );
 
@@ -163,108 +163,94 @@ export const logoutService = async (user: UserToken) => {
   }
 };
 
-// export const forgotPasswordService = async (data: ForgotPasswordInput) => {
-//   try {
-//     const user = await userModel.findOne({
-//       email: data.email,
-//       isDeleted: false
-//     });
-
-//     if (!user) {
-//       return { error: 'User not registered' };
-//     }
-
-//     const generatedString = helper.generateRandomNumbers(6);
-//     const newToken = helper.encrypt(generatedString);
-//     const emailOtpExpiryTime = Date.now() + 10 * 60 * 1000; // 10 minutes
-
-//     await userModel.updateOne(
-//       { email: data.email, isDeleted: false },
-//       { 
-//         resetPasswordToken: newToken, 
-//         emailOtpExpiry: emailOtpExpiryTime 
-//       }
-//     );
-
-//     const bgImageLink = `${process.env.BASE_URL}/app-assets/images/email_templates/bg.png`;
-//     const logoImageLink = `${process.env.BASE_URL}/app-assets/images/email_templates/logo.png`;
-//     const resetPasswordLink = `${process.env.BASE_URL}/api/reset_password_link?email=${data.email}&token=${newToken}`;
+export const forgotPasswordService = async (data: { email: string }) => {
+  try {
+    const user = await userModel.findOne({
+      email: data.email,
+      isDeleted: false,
+    });
     
-//     const userName = user.name || 'Dear User';
+    if (!user) {
+      return { error: AUTH_MESSAGES.USER_NOT_REGISTERED };
+    }
 
-//     const mailData = {
-//       to: data.email,
-//       subject: 'Reset Password Link',
-//       html: helper.resetPasswordHtml(resetPasswordLink, logoImageLink, bgImageLink, userName),
-//     };
+    const generatedString = helper.generateRandomNumbers(6);
+    const newToken = helper.encrypt(generatedString);
+    const emailOtpExpiryTime = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-//     await helper.mailSender(mailData);
+    await userModel.updateOne(
+      { email: data.email, isDeleted: false },
+      { resetPasswordToken: newToken, emailOtpExpiry: emailOtpExpiryTime }
+    );
 
-//     return { message: 'Mail sent successfully' };
-//   } catch (err: any) {
-//     return { error: err.message || 'Something went wrong' };
-//   }
-// };
+    const resetPasswordLink = `${
+      process.env.CLIENT_BASE_URL || "http://localhost:5173"
+    }/reset-password?email=${encodeURIComponent(data.email)}&token=${newToken}`;
+    
+    const userName = user.name || "Dear User";
 
-// export const resetPasswordService = async (data: ResetPasswordInput | ResetPasswordLinkInput) => {
-//   try {
-//     if ('token' in data && 'email' in data && !('password' in data)) {
-//       const user = await userModel.findOne({ 
-//         email: data.email, 
-//         isDeleted: false 
-//       });
+    const mailData = {
+      to: data.email,
+      subject: "Tracko - Reset Password",
+      html: helper.resetEmailTemplate(resetPasswordLink, userName),
+    };
 
-//       if (!user) {
-//         return { error: 'User not found' };
-//       }
+    try {
+      await mailSender(mailData);
+      // Always log reset link for development/testing
+      console.log("🔗 Password Reset Link:", resetPasswordLink);
+    } catch (emailError) {
+      console.error("Email sending failed:", emailError);
+      // For development: Log the reset link
+      console.log("🔗 Password Reset Link:", resetPasswordLink);
+    }
 
-//       const currentTime = Date.now();
-//       const expiryTime = user.emailOtpExpiry ? new Date(user.emailOtpExpiry).getTime() : 0;
+    return { message: AUTH_MESSAGES.PASSWORD_RESET_MAIL_SENT };
+  } catch (error: any) {
+    console.error("Forgot password service error:", error);
+    console.error("Error details:", error.message, error.stack);
+    return { error: GENERAL_MESSAGES.SOMETHING_WENT_WRONG };
+  }
+};
 
-//       if (expiryTime > currentTime && user.resetPasswordToken === data.token) {
-//         await userModel.updateOne(
-//           { email: data.email, isDeleted: false },
-//           { resetPasswordToken: null, emailOtpExpiry: null }
-//         );
-//         return { message: 'Token verified successfully' };
-//       } else {
-//         return { error: 'Token expired or invalid' };
-//       }
-//     }
+export const resetPasswordService = async (data: { encryptedEmail: string; resetPasswordToken: string; password: string }) => {
+  try {
+    const user = await userModel.findOne({
+      email: data.encryptedEmail,
+      isDeleted: false,
+    });
+    
+    if (!user) {
+      return { error: USER_MESSAGES.USER_NOT_FOUND };
+    }
 
-//     // Handle password reset
-//     if ('password' in data && 'email' in data && 'tokenFound' in data) {
-//       const user = await userModel.findOne({ 
-//         email: data.email, 
-//         isDeleted: false 
-//       });
+    const currentTime = Date.now();
+    const expiryTime = (user as any).emailOtpExpiry
+      ? new Date((user as any).emailOtpExpiry).getTime()
+      : 0;
 
-//       if (!user) {
-//         return { error: 'User not registered' };
-//       }
+    if (
+      expiryTime > currentTime &&
+      (user as any).resetPasswordToken === data.resetPasswordToken
+    ) {
+      const saltRounds = parseInt(process.env.SALT_ROUNDS || "12", 10);
+      const hashedPassword = await bcrypt.hash(data.password, saltRounds);
 
-//       const expiryTime = user.emailOtpExpiry ? new Date(user.emailOtpExpiry).getTime() : 0;
-      
-//       if (user.resetPasswordToken !== data.tokenFound || expiryTime < Date.now()) {
-//         return { error: 'Invalid or expired token' };
-//       }
+      await userModel.updateOne(
+        { email: data.encryptedEmail, isDeleted: false },
+        {
+          resetPasswordToken: null,
+          emailOtpExpiry: null,
+          password: hashedPassword,
+        }
+      );
+    } else {
+      return { error: AUTH_MESSAGES.TOKEN_EXPIRED };
+    }
 
-//       const hashedPassword = await bcrypt.hash(data.password, 10);
-      
-//       await userModel.updateOne(
-//         { email: data.email, isDeleted: false },
-//         { 
-//           password: hashedPassword, 
-//           resetPasswordToken: null, 
-//           emailOtpExpiry: null 
-//         }
-//       );
-
-//       return { message: 'Password reset successfully' };
-//     }
-
-//     return { error: 'Invalid request data' };
-//   } catch (err: any) {
-//     return { error: err.message || 'Something went wrong' };
-//   }
-// };
+    return { message: AUTH_MESSAGES.PASSWORD_RESET_SUCCESS };
+  } catch (error) {
+    console.error("Reset password service error:", error);
+    return { error: GENERAL_MESSAGES.SOMETHING_WENT_WRONG };
+  }
+};

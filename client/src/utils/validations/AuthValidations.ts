@@ -74,3 +74,25 @@ export const forgotPasswordValidation = {
     },
   },
 };
+
+export const resetPasswordValidation = {
+  password: {
+    required: true,
+    pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])[^\s]{4,10}$/,
+    minLength: 4,
+    maxLength: 10,
+    errorMessage: {
+      requiredMsg: 'Password is required',
+      patternMsg:
+        'Password must contain uppercase, lowercase, number, special character, and no spaces',
+      minLengthMsg: 'Password must be at least 4 characters long',
+      maxLengthMsg: 'Password must not exceed 10 characters',
+    },
+  },
+  confirmPassword: {
+    required: true,
+    errorMessage: {
+      requiredMsg: 'Confirm password is required',
+    },
+  },
+};

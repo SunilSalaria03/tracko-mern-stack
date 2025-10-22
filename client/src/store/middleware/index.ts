@@ -26,6 +26,7 @@ export const errorMiddleware: Middleware = () => (next) => (action) => {
 export const tokenMiddleware: Middleware = () => (next) => (action) => {
   const result = next(action);
 
+  // Handle login and register - save both token and user
   if (
     typeof action === 'object' &&
     action !== null &&
@@ -34,20 +35,48 @@ export const tokenMiddleware: Middleware = () => (next) => (action) => {
       (action as { type?: string }).type === 'auth/registerUser/fulfilled'
     )
   ) {
-    const token = (action as { payload?: { token?: string } }).payload?.token;
-    if (token) {
-      localStorage.setItem('token', token);
+    const payload = (action as { payload?: { token?: string; user?: unknown } }).payload;
+    if (payload?.token) {
+      localStorage.setItem('token', payload.token);
+    }
+    if (payload?.user) {
+      localStorage.setItem('user', JSON.stringify(payload.user));
     }
   }
 
+  // Handle getCurrentUser - update user in localStorage
+  if (
+    typeof action === 'object' &&
+    action !== null &&
+    (action as { type?: string }).type === 'auth/getCurrentUser/fulfilled'
+  ) {
+    const payload = (action as { payload?: unknown }).payload;
+    if (payload) {
+      localStorage.setItem('user', JSON.stringify(payload));
+    }
+  }
+
+  // Handle logout - clear all auth data
   if (
     typeof action === 'object' &&
     action !== null &&
     (
-      (action as { type?: string }).type === 'auth/logoutUser/fulfilled'
+      (action as { type?: string }).type === 'auth/logoutUser/fulfilled' ||
+      (action as { type?: string }).type === 'auth/logoutUser/rejected'
     )
   ) {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  }
+
+  // Handle getCurrentUser rejection - clear all auth data
+  if (
+    typeof action === 'object' &&
+    action !== null &&
+    (action as { type?: string }).type === 'auth/getCurrentUser/rejected'
+  ) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   }
 
   return result;

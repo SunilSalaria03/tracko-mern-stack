@@ -11,17 +11,24 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
     
     if (!token) {
       res.status(401).json({
-        error: 'Access denied. No token provided.'
+        success: false,
+        code: 401,
+        message: 'Access denied. No token provided.',
+        body: {}
       });
       return;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || '123@321');
     req.user = decoded;
     next();
   } catch (error) {
+    console.error('Token verification error:', error);
     res.status(401).json({
-      error: 'Invalid token.'
+      success: false,
+      code: 401,
+      message: 'Invalid token.',
+      body: {}
     });
   }
 };
