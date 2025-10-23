@@ -24,7 +24,11 @@ const Navbar: React.FC = () => {
   const { authUser: user } = useSelector(selectAppState);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-
+  
+  const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_API_URL || 'http://localhost:5002';
+  const userProfileImage = user?.profileImage
+    ? `${IMAGE_BASE_URL}${user.profileImage}`
+    : '';
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -81,9 +85,6 @@ const Navbar: React.FC = () => {
       >
         <Toolbar sx={{ justifyContent: 'space-between', minHeight: '64px !important' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="h6" sx={{ color: '#1f2937', fontWeight: 600 }}>
-              Dashboard
-            </Typography>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -105,7 +106,7 @@ const Navbar: React.FC = () => {
                 </Box>
                 {user?.profileImage ? (
                   <Avatar
-                    src={user.profileImage}
+                    src={userProfileImage || ''}
                     alt={user?.name || 'User'}
                     sx={{ width: 40, height: 40, border: '2px solid #e5e7eb' }}
                   />
@@ -161,7 +162,7 @@ const Navbar: React.FC = () => {
                 </Typography>
               </Box>
               <Divider />
-              <MenuItem onClick={handleMenuClose}>
+              <MenuItem onClick={() => { handleMenuClose(); navigate('/profile'); }}>
                 <HiOutlineUser className="w-5 h-5 text-gray-600" />
                 <Typography variant="body2">Profile</Typography>
               </MenuItem>

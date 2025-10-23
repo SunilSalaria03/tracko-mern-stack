@@ -17,15 +17,6 @@ if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY.startsWith('SG.
 
 export const mailSender = async (mailData: IMailData): Promise<boolean> => {
     try {
-      if (!process.env.SENDGRID_API_KEY) {
-        console.warn('⚠️  SendGrid not configured. Email will not be sent.');
-        console.log('📧 Email Preview:');
-        console.log('   To:', mailData.to);
-        console.log('   Subject:', mailData.subject);
-        console.log('   From:', process.env.SENDGRID_FROM_EMAIL || 'noreply@tracko.com');
-        return true; // Return true to allow development without email
-      }
-  
       const msg = {
         to: mailData.to,
         from: process.env.SENDGRID_FROM_EMAIL || 'noreply@tracko.com',
@@ -33,9 +24,9 @@ export const mailSender = async (mailData: IMailData): Promise<boolean> => {
         text: mailData.text,
         html: mailData.html,
       };
-  
+      console.log('msg', msg);  
       await sgMail.send(msg);
-      console.log('✅ Email sent successfully to:', mailData.to);
+      console.log('✅ Email sent successfully to:', mailData.text);
       return true;
     } catch (error: any) {
       console.error('❌ SendGrid Error:', error.response?.body || error.message || error);

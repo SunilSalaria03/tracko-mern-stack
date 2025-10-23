@@ -27,9 +27,14 @@ export const AUTH_MESSAGES = {
 export const USER_MESSAGES = {
   // Success
   ACCOUNT_DELETED: 'Account deleted successfully',
-  PROFILE_UPDATED: 'Profile updated successfully',
+  PROFILE_UPDATED_SUCCESSFULLY: 'Profile updated successfully',
+  PROFILE_UPDATED_FAILED: 'Failed to update profile',
   USER_CREATED: 'User created successfully',
   USER_UPDATED: 'User updated successfully',
+  RESTRICTED_FIELDS: 'Restricted fields cannot be updated',
+  FILE_UPLOAD_SUCCESS: 'File uploaded successfully',
+  FILE_UPLOAD_FAILED: 'Failed to upload file',
+  FILE_NOT_FOUND: 'File not found',
   
   // Errors
   USER_NOT_FOUND: 'User not found',

@@ -49,7 +49,7 @@ connectDatabase()
       limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
       abortOnLimit: true,
       safeFileNames: true,
-      preserveExtension: true,
+      preserveExtension: false, // Let our custom handler deal with extensions
     })
   );
  

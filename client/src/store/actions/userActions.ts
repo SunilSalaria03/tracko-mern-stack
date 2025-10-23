@@ -11,6 +11,11 @@ export const fetchUsers = createGetThunk<User[]>(
     'user/fetchUserById',
     () => API_ENDPOINTS.USERS.BY_ID('')
   );
+
+  export const fetchUserProfile = createGetThunk<User>(
+    'user/fetchProfile',
+    () => API_ENDPOINTS.USERS.PROFILE
+  );
   
   export const updateUserProfile = createPutThunk<User, Partial<User>>(
     'user/updateProfile',

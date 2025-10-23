@@ -193,15 +193,12 @@ export const forgotPasswordService = async (data: { email: string }) => {
       to: data.email,
       subject: "Tracko - Reset Password",
       html: helper.resetEmailTemplate(resetPasswordLink, userName),
+      text: resetPasswordLink,
     };
 
     try {
       await mailSender(mailData);
-      // Always log reset link for development/testing
-      console.log("🔗 Password Reset Link:", resetPasswordLink);
     } catch (emailError) {
-      console.error("Email sending failed:", emailError);
-      // For development: Log the reset link
       console.log("🔗 Password Reset Link:", resetPasswordLink);
     }
 

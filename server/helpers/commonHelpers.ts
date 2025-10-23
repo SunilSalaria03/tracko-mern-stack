@@ -60,17 +60,67 @@ export const imageUpload = (file: any, folder: string): string => {
   try {
     const uploadDir = path.join(__dirname, '..', 'public', folder);
     
-    // Create directory if it doesn't exist
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
 
-    const fileName = `${Date.now()}_${file.name}`;
+    // Debug: Log file information
+    console.log('📁 File upload info:', {
+      name: file.name,
+      mimetype: file.mimetype,
+      size: file.size
+    });
+
+    // Get proper file extension from mimetype first (more reliable)
+    const mimeToExt: { [key: string]: string } = {
+      'image/jpeg': 'jpg',
+      'image/jpg': 'jpg',
+      'image/png': 'png',
+      'image/gif': 'gif',
+      'image/webp': 'webp',
+      'image/svg+xml': 'svg',
+      'image/bmp': 'bmp',
+      'image/tiff': 'tiff',
+      'image/x-icon': 'ico',
+    };
+
+    let fileExtension = '';
+    
+    // Priority 1: Use mimetype (most reliable)
+    if (file.mimetype) {
+      fileExtension = mimeToExt[file.mimetype.toLowerCase()];
+      console.log(`🔍 Extension from mimetype '${file.mimetype}': ${fileExtension}`);
+    }
+    
+    // Priority 2: Extract from original filename if mimetype fails
+    if (!fileExtension && file.name) {
+      const nameParts = file.name.split('.');
+      if (nameParts.length > 1) {
+        const originalExt = nameParts[nameParts.length - 1].toLowerCase();
+        // Validate it's a known image extension
+        const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tiff', 'ico'];
+        if (validExtensions.includes(originalExt)) {
+          fileExtension = originalExt;
+          console.log(`🔍 Extension from filename: ${fileExtension}`);
+        }
+      }
+    }
+    
+    // Fallback to jpg if nothing works
+    if (!fileExtension) {
+      fileExtension = 'jpg';
+      console.log('⚠️  Using fallback extension: jpg');
+    }
+    
+    // Create safe filename with timestamp and random string
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 8);
+    const fileName = `${timestamp}_${randomString}.${fileExtension}`;
     const filePath = path.join(uploadDir, fileName);
     
-    // Move file to upload directory
     file.mv(filePath);
     
+    console.log(`✅ Image uploaded successfully: /${folder}/${fileName}`);
     return `/${folder}/${fileName}`;
   } catch (error) {
     console.error('Image upload error:', error);

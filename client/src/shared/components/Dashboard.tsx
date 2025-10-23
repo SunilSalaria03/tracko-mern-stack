@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HiOutlineSearch, HiOutlineViewGrid, HiOutlineSwitchHorizontal, HiOutlineUserGroup, HiOutlineDocumentText, HiOutlineCog, HiOutlineCube, HiOutlineStar, HiOutlineCreditCard, HiOutlineChartBar, HiOutlineDatabase, HiOutlinePuzzle, HiOutlineChevronDown, HiOutlineChevronRight } from 'react-icons/hi';
+import { HiOutlineViewGrid, HiOutlineSwitchHorizontal, HiOutlineUserGroup, HiOutlineDocumentText, HiOutlineCog, HiOutlineCube, HiOutlineStar, HiOutlineCreditCard, HiOutlineChartBar, HiOutlineDatabase, HiOutlinePuzzle, HiOutlineChevronDown, HiOutlineChevronRight, HiChevronRight, HiChevronLeft } from 'react-icons/hi';
 import Navbar from './Navbar';
 
 const sidebarMenu = [
@@ -39,23 +39,9 @@ const Dashboard: React.FC = () => {
               onClick={toggleSidebar}
               className={`ml-auto w-6 h-6 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-200 ${isSidebarCollapsed ? 'mx-auto' : ''}`}
             >
-              {isSidebarCollapsed ? <HiOutlineChevronRight className="w-4 h-4" /> : <HiOutlineChevronDown className="w-4 h-4" />}
+              {isSidebarCollapsed ? <HiChevronRight className="w-4 h-4" /> : <HiChevronLeft className="w-4 h-4" />}
             </button>
           </div>
-          
-          {!isSidebarCollapsed && (
-            <div className="px-4 py-2">
-              <div className="flex items-center bg-[#f5f6fa] rounded-md px-2 py-1 border border-gray-200">
-                <HiOutlineSearch className="w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search"
-                  className="bg-transparent outline-none px-2 py-1 text-sm flex-1"
-                />
-                <button className="text-xs text-gray-400 px-2 py-1 rounded hover:bg-gray-100">S8K</button>
-              </div>
-            </div>
-          )}
           
           <nav className="mt-2">
             {sidebarMenu.map((item, idx) =>

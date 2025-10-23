@@ -2,6 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { AuthState } from '../../utils/interfaces/storeInterface';
 import { getCurrentUser, loginUser, logoutUser, registerUser } from '../actions/authActions';
+import { updateUserProfile, fetchUserProfile } from '../actions/userActions';
 
 const getUserFromLocalStorage = () => {
   const userStr = localStorage.getItem('user');
@@ -111,6 +112,24 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.error = action.payload as string;
+      });
+
+    // Update user profile - also update auth user
+    builder
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        // Update the authenticated user's data
+        if (state.user && action.payload._id === state.user._id) {
+          state.user = { ...state.user, ...action.payload };
+          localStorage.setItem('user', JSON.stringify(action.payload));
+        }
+      });
+
+    // Fetch user profile - update auth user
+    builder
+      .addCase(fetchUserProfile.fulfilled, (state, action) => {
+        // Update the authenticated user's data with fresh profile
+        state.user = action.payload as typeof state.user;
+        localStorage.setItem('user', JSON.stringify(action.payload));
       });
   },
 });

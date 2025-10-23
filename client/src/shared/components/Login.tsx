@@ -145,7 +145,7 @@ const Login: React.FC = () => {
               />
               <Link
                 component={RouterLink}
-                to="/forgotPassword"
+                to="/forgot-password"
                 variant="body2"
                 color="text.secondary"
                 underline="hover"
