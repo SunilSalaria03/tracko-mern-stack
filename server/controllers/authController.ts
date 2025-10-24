@@ -106,19 +106,15 @@ export const forgotPassword = async (
   req: Request,
   res: Response
 ): Promise<Response | void> => {
-  try {
-    console.log('Forgot password request body:', req.body);
-    
+  try {    
     const { error } = forgotPasswordValidation(req.body);
     if (error) {
-      console.log('Validation error:', error.details[0].message);
       return helper.failed(res, error.details[0].message);
     }
 
     const result = await forgotPasswordService(req.body);
 
     if ("error" in result) {
-      console.log('Service error:', result.error);
       return helper.failed(res, result.error);
     }
 

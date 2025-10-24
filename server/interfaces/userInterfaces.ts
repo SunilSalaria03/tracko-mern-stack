@@ -8,6 +8,7 @@ export interface IUser extends Document {
     status: 1 | 0;
     phoneNumber?: string;
     countryCode?: string;
+    dateOfBirth?: string;
     password: string;
     isDeleted?: boolean;
     resetPasswordToken?: string | null;

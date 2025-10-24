@@ -25,6 +25,7 @@ export const signInService = async (data: SignInInput) => {
       {
         id: user._id,
         email: user.email,
+        role: user.role,
       },
       process.env.JWT_SECRET || '123@321',
       { expiresIn: '7d' }
@@ -76,8 +77,8 @@ export const signUpService = async (data: Partial<IUser>, files?: any) => {
     }
 
     // Hash password
-    const salt = process.env.SALT_ROUNDS || 12;
-    const hashedPassword = await bcrypt.hash(data.password || '', salt);
+    const saltRounds = parseInt(process.env.SALT_ROUNDS || '10', 10);
+    const hashedPassword = await bcrypt.hash(data.password || '', saltRounds);
 
     const objToCreate = {
       ...data,
@@ -87,22 +88,11 @@ export const signUpService = async (data: Partial<IUser>, files?: any) => {
 
     const user = await userModel.create(objToCreate);
 
-    // Send welcome email
-    // const bgImageLink = `${process.env.BASE_URL}/app-assets/images/email_templates/bg.png`;
-    // const logoImageLink = `${process.env.BASE_URL}/app-assets/images/email_templates/logo.png`;
-    
-    // const mailData = {
-    //   to: data.email,
-    //   subject: "Welcome to the Tracko",
-    //   html: helper.welcomeHtml(bgImageLink, logoImageLink),
-    // };
-    
-    // await helper.mailSender(mailData);
-
     const token = jwt.sign(
       { 
         id: user._id, 
-        email: data.email, 
+        email: data.email,
+        role: user.role,
       },
       process.env.JWT_SECRET || '123@321',
       { expiresIn: '7d' }
@@ -199,7 +189,6 @@ export const forgotPasswordService = async (data: { email: string }) => {
     try {
       await mailSender(mailData);
     } catch (emailError) {
-      console.log("🔗 Password Reset Link:", resetPasswordLink);
     }
 
     return { message: AUTH_MESSAGES.PASSWORD_RESET_MAIL_SENT };
@@ -230,7 +219,7 @@ export const resetPasswordService = async (data: { encryptedEmail: string; reset
       expiryTime > currentTime &&
       (user as any).resetPasswordToken === data.resetPasswordToken
     ) {
-      const saltRounds = parseInt(process.env.SALT_ROUNDS || "12", 10);
+      const saltRounds = parseInt(process.env.SALT_ROUNDS || '10', 10);
       const hashedPassword = await bcrypt.hash(data.password, saltRounds);
 
       await userModel.updateOne(

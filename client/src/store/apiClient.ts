@@ -27,13 +27,21 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
     const contentType = response.headers.get('Content-Type');
 
-    if (!response.ok) {
-      throw createApiError(response.status, `HTTP error! status: ${response.status}`);
-    }
-
+    // Parse JSON response regardless of status
     if (contentType?.includes('application/json')) {
       const data = await response.json();
+      
+      if (!response.ok) {
+        // Extract error message from API response
+        const errorMessage = data.message || data.error || `HTTP error! status: ${response.status}`;
+        throw createApiError(response.status, errorMessage);
+      }
+      
       return data;
+    }
+
+    if (!response.ok) {
+      throw createApiError(response.status, `HTTP error! status: ${response.status}`);
     }
 
     return { success: false, errors: ['Unexpected response format'], message: 'Unexpected response format' } as ApiResponse<T>;

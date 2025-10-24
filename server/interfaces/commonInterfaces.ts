@@ -53,6 +53,7 @@ export interface ResetPasswordLinkInput {
 export interface UserToken {
   id: string;
   email: string;
+  role: 0 | 1 | 2;
 }
 
 export interface IMailData {

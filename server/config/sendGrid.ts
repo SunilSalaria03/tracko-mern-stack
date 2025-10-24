@@ -24,7 +24,6 @@ export const mailSender = async (mailData: IMailData): Promise<boolean> => {
         text: mailData.text,
         html: mailData.html,
       };
-      console.log('msg', msg);  
       await sgMail.send(msg);
       console.log('✅ Email sent successfully to:', mailData.text);
       return true;

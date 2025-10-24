@@ -64,13 +64,6 @@ export const imageUpload = (file: any, folder: string): string => {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
 
-    // Debug: Log file information
-    console.log('📁 File upload info:', {
-      name: file.name,
-      mimetype: file.mimetype,
-      size: file.size
-    });
-
     // Get proper file extension from mimetype first (more reliable)
     const mimeToExt: { [key: string]: string } = {
       'image/jpeg': 'jpg',
@@ -89,7 +82,6 @@ export const imageUpload = (file: any, folder: string): string => {
     // Priority 1: Use mimetype (most reliable)
     if (file.mimetype) {
       fileExtension = mimeToExt[file.mimetype.toLowerCase()];
-      console.log(`🔍 Extension from mimetype '${file.mimetype}': ${fileExtension}`);
     }
     
     // Priority 2: Extract from original filename if mimetype fails
@@ -101,7 +93,6 @@ export const imageUpload = (file: any, folder: string): string => {
         const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tiff', 'ico'];
         if (validExtensions.includes(originalExt)) {
           fileExtension = originalExt;
-          console.log(`🔍 Extension from filename: ${fileExtension}`);
         }
       }
     }
@@ -109,7 +100,6 @@ export const imageUpload = (file: any, folder: string): string => {
     // Fallback to jpg if nothing works
     if (!fileExtension) {
       fileExtension = 'jpg';
-      console.log('⚠️  Using fallback extension: jpg');
     }
     
     // Create safe filename with timestamp and random string
@@ -120,7 +110,6 @@ export const imageUpload = (file: any, folder: string): string => {
     
     file.mv(filePath);
     
-    console.log(`✅ Image uploaded successfully: /${folder}/${fileName}`);
     return `/${folder}/${fileName}`;
   } catch (error) {
     console.error('Image upload error:', error);

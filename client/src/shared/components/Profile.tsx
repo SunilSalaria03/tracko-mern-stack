@@ -133,8 +133,6 @@ const Profile: React.FC = () => {
         return;
       }
 
-      console.log('Sending changes:', { fields: changedFields, hasImage: !!selectedImage });
-
       // If there's an image, use FormData, otherwise use regular JSON
       if (selectedImage) {
         const formDataToSend = new FormData();

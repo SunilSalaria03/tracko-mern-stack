@@ -53,6 +53,12 @@ export const signUpValidation = (data: Partial<IUser>) => {
     countryCode: Joi.string().required().messages({
       'any.required': 'Country code is required',
     }),
+    dateOfBirth: Joi.date().required().messages({
+      'any.required': 'Date of birth is required',
+    }),
+    profileImage: Joi.string().optional().messages({
+      'any.required': 'Profile image is required',
+    }),
   });
 
   return schema.validate(data, { abortEarly: false });

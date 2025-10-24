@@ -5,7 +5,7 @@ const UserSchema = new Schema<IUser>(
   {
     role: {
       type: Number,
-      enum: [0, 1, 2], // 0: admin, 1: employee
+      enum: [0, 1, 2], // 0: admin, 1: employee, 2: moderator
       default: 1,
       required: true,
     },
@@ -13,6 +13,9 @@ const UserSchema = new Schema<IUser>(
       type: String,
       required: true,
       unique: true,
+    },
+    dateOfBirth: {
+      type: String,
     },
     profileImage: {
       type: String,
