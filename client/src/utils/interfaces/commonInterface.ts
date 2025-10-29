@@ -48,3 +48,8 @@ export interface SelectOption {
   label: string;
   disabled?: boolean;
 }
+
+export interface ProtectedRouteProps {
+  requiredRole?: number | number[];
+  redirectTo?: string;
+}

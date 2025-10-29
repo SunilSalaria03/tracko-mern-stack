@@ -14,9 +14,9 @@ import { HiOutlineArrowRight } from 'react-icons/hi';
 import {
   forgotPasswordValidation,
   validateField,
-} from '../../utils/validations/AuthValidations';
-import { forgotPassword } from '../../store/actions/authActions';
-import type { AppDispatch } from '../../store';
+} from '../../../utils/validations/AuthValidations';
+import { forgotPassword } from '../../../store/actions/authActions';
+import type { AppDispatch } from '../../../store';
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -147,3 +147,4 @@ const ForgotPassword: React.FC = () => {
 };
 
 export default ForgotPassword;
+

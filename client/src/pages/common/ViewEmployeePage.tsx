@@ -2,12 +2,12 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { HiArrowLeft, HiOutlineMail, HiOutlinePhone, HiOutlineCake, HiOutlineCalendar } from 'react-icons/hi';
-import Navbar from '../shared/components/Navbar';
-import Sidebar from '../shared/components/Sidebar';
-import { useAppDispatch } from '../store';
-import { apiClient } from '../store/apiClient';
-import { API_ENDPOINTS } from '../store/apiEndpoints';
-import type { Employee } from '../utils/interfaces/employeeInterface';
+import Navbar from '../../shared/components/common/Navbar';
+import Sidebar from '../../shared/components/common/Sidebar';
+import { useAppDispatch } from '../../store';
+import { apiClient } from '../../store/apiClient';
+import { API_ENDPOINTS } from '../../store/apiEndpoints';
+import type { Employee } from '../../utils/interfaces/employeeInterface';
 
 const ViewEmployeePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();

@@ -13,10 +13,10 @@ import {
   Divider,
 } from '@mui/material';
 import { HiOutlineLogout, HiOutlineUser, HiOutlineCog } from 'react-icons/hi';
-import { selectAppState } from '../../store/selectors';
-import { logoutUser } from '../../store/actions/authActions';
-import type { AppDispatch } from '../../store';
-import LogoutModel from '../../models/logoutModel';
+import { selectAppState } from '../../../store/selectors';
+import { logoutUser } from '../../../store/actions/authActions';
+import type { AppDispatch } from '../../../store';
+import LogoutModel from '../../../models/logoutModel';
 
 const Navbar: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);

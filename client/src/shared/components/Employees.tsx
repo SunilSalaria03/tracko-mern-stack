@@ -10,8 +10,8 @@ import {
   HiOutlinePencil
 } from 'react-icons/hi';
 import { Switch } from '@mui/material';
-import Navbar from './Navbar';
-import Sidebar from './Sidebar';
+import Navbar from './common/Navbar';
+import Sidebar from './common/Sidebar';
 import AddEmployeeModal from '../../models/addEmployeeModal';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { fetchEmployees, updateEmployee } from '../../store/actions/employeeActions';

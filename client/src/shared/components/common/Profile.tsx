@@ -14,9 +14,9 @@ import {
   Divider,
 } from '@mui/material';
 import { HiOutlineCamera, HiOutlineArrowLeft, HiOutlinePencil, HiOutlineX } from 'react-icons/hi';
-import { selectAppState } from '../../store/selectors';
-import { updateUserProfile, fetchUserProfile } from '../../store/actions/userActions';
-import type { AppDispatch } from '../../store';
+import { selectAppState } from '../../../store/selectors';
+import { updateUserProfile, fetchUserProfile } from '../../../store/actions/userActions';
+import type { AppDispatch } from '../../../store';
 import Navbar from './Navbar';
 
 const Profile: React.FC = () => {

@@ -1,24 +1,17 @@
 import React from 'react';
 import { HiOutlineSwitchHorizontal, HiOutlineChartBar, HiOutlineCreditCard, HiOutlineStar } from 'react-icons/hi';
-import Navbar from './Navbar';
-import Sidebar from './Sidebar';
-
+ 
 const Dashboard: React.FC = () => {
   return (
-    <div className="flex flex-col min-h-screen h-screen bg-[#fafbfc] overflow-hidden">
-      <Navbar />
-      <div className="flex flex-1 min-h-0 overflow-hidden">
-        <Sidebar />
-
-      <main className="flex-1 min-h-0 h-full p-8 overflow-auto">
-        <div className="flex items-center justify-between mb-6">
-          <span className="text-sm text-gray-500">Home</span>
-          <div className="flex gap-2">
-            <button className="px-3 py-1 rounded border text-sm text-gray-600 bg-white hover:bg-gray-50">Filter</button>
-            <button className="px-3 py-1 rounded border text-sm text-gray-600 bg-white hover:bg-gray-50">All Time Activity</button>
-            <button className="px-3 py-1 rounded border text-sm text-gray-600 bg-white hover:bg-gray-50">All Projects</button>
-          </div>
+    <div>
+       <div className="flex items-center justify-between mb-6">
+        <span className="text-sm text-gray-500">Home</span>
+        <div className="flex gap-2">
+          <button className="px-3 py-1 rounded border text-sm text-gray-600 bg-white hover:bg-gray-50">Filter</button>
+          <button className="px-3 py-1 rounded border text-sm text-gray-600 bg-white hover:bg-gray-50">All Time Activity</button>
+          <button className="px-3 py-1 rounded border text-sm text-gray-600 bg-white hover:bg-gray-50">All Projects</button>
         </div>
+      </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="flex flex-col items-center bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
             <span className="mb-2"><HiOutlineChartBar className="w-8 h-8 text-gray-400" /></span>
@@ -55,10 +48,9 @@ const Dashboard: React.FC = () => {
           <h3 className="font-semibold mb-2">Error Log</h3>
           <div className="flex-1 flex items-center justify-center text-gray-400">[Error Log Chart]</div>
         </div>
-      </main>
-      </div>
-    </div>
+   </div>
   );
 };
 
-export default Dashboard; 
+export default Dashboard;
+

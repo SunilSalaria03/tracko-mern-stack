@@ -16,9 +16,9 @@ import { HiEye, HiEyeOff, HiOutlineArrowRight } from 'react-icons/hi';
 import {
   resetPasswordValidation,
   validateField,
-} from '../../utils/validations/AuthValidations';
-import { resetPassword } from '../../store/actions/authActions';
-import type { AppDispatch } from '../../store';
+} from '../../../utils/validations/AuthValidations';
+import { resetPassword } from '../../../store/actions/authActions';
+import type { AppDispatch } from '../../../store';
 
 const ResetPassword: React.FC = () => {
   const [searchParams] = useSearchParams();

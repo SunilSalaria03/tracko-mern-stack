@@ -1,5 +1,5 @@
 import React from 'react';
-import Login from '../shared/components/Login';
+import Login from '../../shared/components/auth/Login';
 
 const LoginPage: React.FC = () => {
   return (
@@ -7,4 +7,5 @@ const LoginPage: React.FC = () => {
   );
 };
 
-export default LoginPage; 
+export default LoginPage;
+

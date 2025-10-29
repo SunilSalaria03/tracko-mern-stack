@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HiArrowLeft } from 'react-icons/hi';
 import { Alert, CircularProgress } from '@mui/material';
-import Navbar from '../shared/components/Navbar';
-import Sidebar from '../shared/components/Sidebar';
-import { useAppDispatch } from '../store';
-import { updateEmployee } from '../store/actions/employeeActions';
-import { apiClient } from '../store/apiClient';
-import { API_ENDPOINTS } from '../store/apiEndpoints';
-import type { Employee } from '../utils/interfaces/employeeInterface';
+import Navbar from '../../shared/components/common/Navbar';
+import Sidebar from '../../shared/components/common/Sidebar';
+import { useAppDispatch } from '../../store';
+import { updateEmployee } from '../../store/actions/employeeActions';
+import { apiClient } from '../../store/apiClient';
+import { API_ENDPOINTS } from '../../store/apiEndpoints';
+import type { Employee } from '../../utils/interfaces/employeeInterface';
 
 interface EditFormData {
   name: string;

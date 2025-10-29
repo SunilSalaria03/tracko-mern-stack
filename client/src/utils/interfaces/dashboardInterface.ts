@@ -22,4 +22,20 @@ export interface SidebarItem {
       borderWidth?: number;
     }[];
   }
+
+  export interface ProjectHours {
+    projectId: string;
+    projectName: string;
+    productiveHours: number;
+    color: string;
+  }
+
+  export interface ProductiveHoursSummary {
+    today: ProjectHours[];
+    week: ProjectHours[];
+    month: ProjectHours[];
+    lastMonth: ProjectHours[];
+  }
+
+  export type TimePeriod = 'today' | 'week' | 'month' | 'lastMonth';
   
