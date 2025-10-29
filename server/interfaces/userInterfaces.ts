@@ -15,6 +15,15 @@ export interface IUser extends Document {
     emailOtpExpiry?: Date | null;
     createdAt?: Date;
     updatedAt?: Date;
-    deviceToken?: string;
-    deviceType?: string;
+    tempPassword?: string | null;
+    Designation?: string;
+    Department?: string;
+    Location?: string;
+    addedBy?: string | null;
   }
+
+export interface IChangePassword {
+  userId: string;
+  oldPassword: string;
+  newPassword: string;
+}

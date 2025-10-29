@@ -7,7 +7,7 @@ const router = Router();
 
 // Public routes (no authentication required)
 router.post('/auth/login', authController.signIn);
-router.post('/auth/signup', authController.signUp);
+// router.post('/auth/signup', authController.signUp);
 router.post('/auth/forgotPassword', authController.forgotPassword);
 router.post('/auth/resetPassword', authController.resetPassword);
 
@@ -24,5 +24,7 @@ router.delete('/delete-account', authController.deleteAccount);
 // User profile routes
 router.get('/users/profile', userController.getProfile);
 router.put('/users/profile', userController.updateProfile);
+router.put('/users/changePassword', userController.changePassword);
+router.post('/users/add', userController.addUser);
 
 export default router;

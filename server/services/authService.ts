@@ -4,7 +4,7 @@ import * as helper from '../helpers/commonHelpers';
 import { mailSender } from '../config/sendGrid';
 import { SignInInput, SignUpInput, ForgotPasswordInput, ResetPasswordInput, ResetPasswordLinkInput, UserToken } from '../interfaces/commonInterfaces';
 import userModel from '../models/userModel';
-import { IUser } from '@/interfaces/userInterfaces';
+import { IUser } from '../interfaces/userInterfaces';
 import { AUTH_MESSAGES, USER_MESSAGES, GENERAL_MESSAGES } from '../utils/constants/messages';
 
 export const signInService = async (data: SignInInput) => {
@@ -42,22 +42,96 @@ export const signInService = async (data: SignInInput) => {
   }
 };
 
-export const signUpService = async (data: Partial<IUser>, files?: any) => {
+// export const signUpService = async (data: Partial<IUser>, files?: any) => {
+//   try {
+//     if(data.role == 0) {
+//       const adminExist = await userModel.findOne({ role: 0, isDeleted: false });
+//       if (adminExist) {
+//         return { error: 'Admin already exists' };
+//       }
+//     }
+    
+//     if(data.email){
+//       const isEmailExist = await userModel.findOne({ 
+//         email: data.email, 
+//         isDeleted: false 
+//       });
+//       if (isEmailExist) {
+//         return { error: 'Email already exists' };
+//       }
+//     }
+
+//     if (data.phoneNumber) {
+//       const isPhoneExist = await userModel.findOne({ 
+//         phoneNumber: data.phoneNumber, 
+//         isDeleted: false 
+//       });
+      
+//       if (isPhoneExist) {
+//         return { error: 'Phone already exists' };
+//       }
+//     }
+
+//     let imagePath = '';
+//     if (files && files.profileImage) {
+//       imagePath = helper.imageUpload(files.profileImage, 'images');
+//     }
+
+//     // Hash password
+//     const saltRounds = parseInt(process.env.SALT_ROUNDS || '10', 10);
+//     const hashedPassword = await bcrypt.hash(data.password || '', saltRounds);
+
+//     const objToCreate = {
+//       ...data,
+//       password: hashedPassword,
+//       profileImage: imagePath,
+//       tempPassword: (data.role == 0) ? null : data.password,
+//     };
+
+//     const user = await userModel.create(objToCreate);
+
+//     const token = jwt.sign(
+//       { 
+//         id: user._id, 
+//         email: data.email,
+//         role: user.role,
+//       },
+//       process.env.JWT_SECRET || '123@321',
+//       { expiresIn: '7d' }
+//     );
+
+//     // Prepare response
+//     const userInfo = {
+//       ...user.toObject(),
+//       password: hashedPassword,
+//       authToken: token,
+//     };
+
+//     return userInfo;
+//   } catch (err: any) {
+//     console.error('Signup service error:', err);
+//     return { error: err.message || 'Something went wrong' };
+//   }
+// };
+
+
+export const addUserService = async (data: Partial<IUser>, files?: any) => {
   try {
     if(data.role == 0) {
       const adminExist = await userModel.findOne({ role: 0, isDeleted: false });
       if (adminExist) {
-        return { error: 'Admin already exists' };
+        return { error: 'Super admin already exists' };
       }
     }
     
-    const isEmailExist = await userModel.findOne({ 
-      email: data.email, 
-      isDeleted: false 
-    });
-    
-    if (isEmailExist) {
-      return { error: 'Email already exists' };
+    if(data.email){
+      const isEmailExist = await userModel.findOne({ 
+        email: data.email, 
+        isDeleted: false 
+      });
+      if (isEmailExist) {
+        return { error: 'Email already exists' };
+      }
     }
 
     if (data.phoneNumber) {
@@ -84,6 +158,7 @@ export const signUpService = async (data: Partial<IUser>, files?: any) => {
       ...data,
       password: hashedPassword,
       profileImage: imagePath,
+      tempPassword: (data.role == 0) ? null : data.password,
     };
 
     const user = await userModel.create(objToCreate);
@@ -107,10 +182,11 @@ export const signUpService = async (data: Partial<IUser>, files?: any) => {
 
     return userInfo;
   } catch (err: any) {
-    console.error('Signup service error:', err);
+    console.error('Add user service error:', err);
     return { error: err.message || 'Something went wrong' };
   }
 };
+
 export const deleteAccountService = async (user: UserToken) => {
   try {
     if (!user || !user.id) {

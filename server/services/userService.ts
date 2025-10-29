@@ -1,3 +1,6 @@
+import bcrypt from 'bcryptjs';
+
+import { IChangePassword, IUser } from '../interfaces/userInterfaces';
 import { imageUpload } from '../helpers/commonHelpers';
 import userModel from '../models/userModel';
 import { GENERAL_MESSAGES, USER_MESSAGES } from '../utils/constants/messages';
@@ -89,6 +92,34 @@ export const uploadFileService = async (files: any) => {
     return fileUrl;
   } catch (error) {
     console.error("File upload error:", error);
+    return { error: GENERAL_MESSAGES.SOMETHING_WENT_WRONG };
+  }
+};
+
+export const changePasswordService = async (data: IChangePassword) => {
+  try {
+    const user = await userModel.findOne({ _id: data.userId, isDeleted: false });
+    if (!user) {
+      return { error: USER_MESSAGES.USER_NOT_FOUND };
+    }
+
+    const isOldPasswordCorrect = await bcrypt.compare(data.oldPassword, user.password);
+    if (!isOldPasswordCorrect) {
+      return { error: USER_MESSAGES.OLD_PASSWORD_INCORRECT };
+    }
+    
+    if (data.newPassword === data.oldPassword) {
+      return { error: USER_MESSAGES.NEW_PASSWORD_SAME };
+    }
+
+    const saltRounds = parseInt(process.env.SALT_ROUNDS || '10', 10);
+    const hashedNewPassword = await bcrypt.hash(data.newPassword, saltRounds);
+
+    await userModel.updateOne({ _id: data.userId, isDeleted: false }, { password: hashedNewPassword });
+
+    return { message: 'Password changed successfully' };
+  } catch (error) {
+    console.error('Change password service error:', error);
     return { error: GENERAL_MESSAGES.SOMETHING_WENT_WRONG };
   }
 };

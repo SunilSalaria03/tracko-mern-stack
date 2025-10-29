@@ -25,7 +25,11 @@ export const AUTH_MESSAGES = {
 
 // User Messages
 export const USER_MESSAGES = {
-  // Success
+  USER_ADDED_SUCCESSFULLY: 'User added successfully',
+  OLD_PASSWORD_INCORRECT: 'Old password is incorrect',
+  NEW_PASSWORD_SAME: 'New password cannot be the same as the old password',
+  PASSWORD_CHANGED_SUCCESSFULLY: 'Password changed successfully',
+  PASSWORD_CHANGED_FAILED: 'Failed to change password',
   ACCOUNT_DELETED: 'Account deleted successfully',
   PROFILE_UPDATED_SUCCESSFULLY: 'Profile updated successfully',
   PROFILE_UPDATED_FAILED: 'Failed to update profile',
@@ -35,8 +39,6 @@ export const USER_MESSAGES = {
   FILE_UPLOAD_SUCCESS: 'File uploaded successfully',
   FILE_UPLOAD_FAILED: 'Failed to upload file',
   FILE_NOT_FOUND: 'File not found',
-  
-  // Errors
   USER_NOT_FOUND: 'User not found',
   FAILED_TO_DELETE: 'Failed to delete user',
   FAILED_TO_UPDATE: 'Failed to update login time',

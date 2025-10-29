@@ -5,8 +5,16 @@ const UserSchema = new Schema<IUser>(
   {
     role: {
       type: Number,
-      enum: [0, 1, 2], // 0: admin, 1: employee, 2: moderator
-      default: 1,
+      enum: [0, 1, 2], // 0: super admin, 1: admin, 2: manager, 3: employee
+      default: 2,
+      required: true,
+    },
+    Designation: {
+      type: String,
+      required: true,
+    },
+    Department: {
+      type: String,
       required: true,
     },
     email: {
@@ -27,7 +35,7 @@ const UserSchema = new Schema<IUser>(
     status: {
       type: Number,
       enum: [0, 1],
-      default: 1,
+      default: 0,
       description: "1 = active, 0 = inactive",
     },
     phoneNumber: {
@@ -46,14 +54,6 @@ const UserSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
-    deviceToken: {
-      type: String,
-      default: '',
-    },
-    deviceType: {
-      type: String,
-      default: '',
-    },
     resetPasswordToken: {
       type: String,
       default: null,
@@ -62,6 +62,15 @@ const UserSchema = new Schema<IUser>(
       type: Date,
       default: null,
     },
+    tempPassword: {
+      type: String,
+      default: null,
+    },
+    addedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    }
   },
   {
     timestamps: true,
