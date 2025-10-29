@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   AppBar,
   Toolbar,
@@ -11,6 +11,7 @@ import {
   MenuItem,
   Typography,
   Divider,
+  Button,
 } from '@mui/material';
 import { HiOutlineLogout, HiOutlineUser, HiOutlineCog } from 'react-icons/hi';
 import { selectAppState } from '../../../store/selectors';
@@ -84,7 +85,58 @@ const Navbar: React.FC = () => {
         }}
       >
         <Toolbar sx={{ justifyContent: 'space-between', minHeight: '64px !important' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Button
+              component={Link}
+              to="/time"
+              sx={{
+                color: '#1f2937',
+                textTransform: 'none',
+                fontSize: '0.95rem',
+                fontWeight: 500,
+                px: 2,
+                '&:hover': {
+                  backgroundColor: '#f3f4f6',
+                  color: '#3b82f6',
+                },
+              }}
+            >
+              Time
+            </Button>
+            <Button
+              component={Link}
+              to="/projects"
+              sx={{
+                color: '#1f2937',
+                textTransform: 'none',
+                fontSize: '0.95rem',
+                fontWeight: 500,
+                px: 2,
+                '&:hover': {
+                  backgroundColor: '#f3f4f6',
+                  color: '#3b82f6',
+                },
+              }}
+            >
+              Projects
+            </Button>
+            <Button
+              component={Link}
+              to="/reports"
+              sx={{
+                color: '#1f2937',
+                textTransform: 'none',
+                fontSize: '0.95rem',
+                fontWeight: 500,
+                px: 2,
+                '&:hover': {
+                  backgroundColor: '#f3f4f6',
+                  color: '#3b82f6',
+                },
+              }}
+            >
+              Reports
+            </Button>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

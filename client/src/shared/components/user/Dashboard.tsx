@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Button,
@@ -11,6 +12,7 @@ import {
 import {
   AccessTime as AccessTimeIcon,
   FilterList as FilterListIcon,
+  Timer as TimerIcon,
 } from "@mui/icons-material";
 import type {
   TimePeriod,
@@ -18,6 +20,7 @@ import type {
 } from "../../../utils/interfaces/dashboardInterface";
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("today");
 
    const productiveHoursData: ProductiveHoursSummary = {
@@ -176,6 +179,14 @@ const Dashboard: React.FC = () => {
             All Projects
           </Button>
         </Box>
+        <Button
+          variant="contained"
+          startIcon={<TimerIcon />}
+          onClick={() => navigate("/time")}
+          sx={{ textTransform: "none", fontWeight: 600 }}
+        >
+          Track Time
+        </Button>
       </Box>
 
       <Card sx={{ mb: 3, boxShadow: 1 }}>
