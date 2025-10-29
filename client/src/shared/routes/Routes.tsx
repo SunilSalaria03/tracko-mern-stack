@@ -6,6 +6,7 @@ const LoginPage = lazy(() => import('../../pages/auth/LoginPage'));
 const ForgotPasswordPage = lazy(() => import('../../pages/auth/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('../../pages/auth/ResetPasswordPage'));
 const DashboardPage = lazy(() => import('../../pages/user/DashboardPage'));
+const TimeTrackPage = lazy(() => import('../../pages/user/TimeTrackPage'));
 const ProfilePage = lazy(() => import('../../pages/common/ProfilePage'));
 const EmployeesPage = lazy(() => import('../../pages/common/EmployeesPage'));
 const ViewEmployeePage = lazy(() => import('../../pages/common/ViewEmployeePage'));
@@ -35,6 +36,7 @@ const AppRoutes: React.FC = () => (
           <Route element={<MainLayout />}>
             <Route path="/welcome" element={<WelcomePage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/time" element={<TimeTrackPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
         </Route>
