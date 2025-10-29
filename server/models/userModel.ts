@@ -9,11 +9,11 @@ const UserSchema = new Schema<IUser>(
       default: 2,
       required: true,
     },
-    Designation: {
+    designation: {
       type: String,
       required: true,
     },
-    Department: {
+    department: {
       type: String,
       required: true,
     },

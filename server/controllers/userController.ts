@@ -2,9 +2,10 @@ import { Response } from 'express';
 import * as helper from '../helpers/commonHelpers';
 import { AuthRequest } from '../interfaces/commonInterfaces';
 import MESSAGES, { USER_MESSAGES, GENERAL_MESSAGES, AUTH_MESSAGES } from '../utils/constants/messages';
-import { changePasswordService, getProfileService, updateProfileService, uploadFileService } from '../services/userService';
-import { addUserValidation, changePasswordValidation } from '../validations/authValidations';
+import { changePasswordService, editUserService, getProfileService, updateProfileService, uploadFileService } from '../services/userService';
+import { changePasswordValidation } from '../validations/authValidations';
 import { addUserService } from '../services/authService';
+import { addUserValidation } from '../validations/userValidations';
 
 export const getProfile = async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {
@@ -73,22 +74,12 @@ export const changePassword = async (req: any, res: Response): Promise<Response 
 
 export const addUser = async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {
-    const { error } = addUserValidation(req.body);
+    const { error, value: validatedData } = addUserValidation(req.body);
     if (error) {
       return helper.failed(res, error.details[0].message);
     }
 
-    const addUserData = {
-      email: req.body.email,
-      password: req.body.password,
-      role: req.body.role,
-      name: req.body.name,
-      phoneNumber: req.body.phoneNumber,
-      countryCode: req.body.countryCode,
-      addedBy: req.user?.id || null,
-    };
-
-    const result = await addUserService(addUserData, req.files);
+    const result = await addUserService(validatedData, req.files);
     if ('error' in result) {
       return helper.failed(res, result.error);
     }
@@ -99,7 +90,29 @@ export const addUser = async (req: AuthRequest, res: Response): Promise<Response
     return helper.error(res, GENERAL_MESSAGES.SOMETHING_WENT_WRONG);
   }
 };
-  
+
+export const updateUser = async (req: AuthRequest, res: Response): Promise<Response | void> => {
+  try {
+    const userId = req.params.userId;
+    if (!userId) {
+      return helper.failed(res, USER_MESSAGES.USER_ID_REQUIRED);
+    }
+
+    const result = await editUserService(userId as string, req.body, req.files);
+    if ('error' in result) {
+      return helper.failed(res, result.error);
+    }
+
+    return helper.success(
+      res,
+      USER_MESSAGES.USER_UPDATED,
+      result
+    );
+  } catch (err) {
+    return helper.error(res, GENERAL_MESSAGES.SOMETHING_WENT_WRONG);
+  }
+};
+
 export const uploadFile = async (
   req: any,
   res: Response

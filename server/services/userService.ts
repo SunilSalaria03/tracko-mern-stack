@@ -123,3 +123,49 @@ export const changePasswordService = async (data: IChangePassword) => {
     return { error: GENERAL_MESSAGES.SOMETHING_WENT_WRONG };
   }
 };
+
+export const editUserService = async (userId: string, data: Partial<IUser>, files?: any) => {
+  try {
+    const existingUser = await userModel.findOne({ _id: userId, isDeleted: false });
+    if (!existingUser) {
+      return { error: USER_MESSAGES.USER_NOT_FOUND };
+    }
+
+    if(existingUser.email !== data.email) {
+      const existingUserWithEmail = await userModel.findOne({ email: data.email, isDeleted: false });
+      if (existingUserWithEmail) {
+        return { error: USER_MESSAGES.USER_EMAIL_ALREADY_EXISTS };
+      }
+    }
+
+    if(existingUser.phoneNumber !== data.phoneNumber) {
+      const existingUserWithPhoneNumber = await userModel.findOne({ phoneNumber: data.phoneNumber, isDeleted: false });
+      if (existingUserWithPhoneNumber) {
+        return { error: USER_MESSAGES.USER_PHONE_NUMBER_ALREADY_EXISTS };
+      }
+    }
+    
+    if(files && files.profileImage) {
+      const imagePath = imageUpload(files.profileImage, 'images');
+      if (imagePath) {
+        data.profileImage = imagePath;
+      }
+    }
+
+    if(data.password) {
+      const saltRounds = parseInt(process.env.SALT_ROUNDS || '10', 10);
+      const hashedPassword = await bcrypt.hash(data.password, saltRounds);
+      data.password = hashedPassword;
+    }
+
+    const updatedUser = await userModel.findByIdAndUpdate(userId, data, { new: true });
+    if (!updatedUser) {
+      return { error: USER_MESSAGES.USER_NOT_FOUND };
+    }
+
+    return updatedUser;
+  } catch (err: any) {
+    console.error('Edit user service error:', err);
+    return { error: err.message || 'Something went wrong' };
+  }
+};

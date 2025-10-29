@@ -16,8 +16,8 @@ export interface IUser extends Document {
     createdAt?: Date;
     updatedAt?: Date;
     tempPassword?: string | null;
-    Designation?: string;
-    Department?: string;
+    designation?: string;
+    department?: string;
     Location?: string;
     addedBy?: string | null;
   }

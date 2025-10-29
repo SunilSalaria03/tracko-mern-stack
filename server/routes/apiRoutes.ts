@@ -26,5 +26,6 @@ router.get('/users/profile', userController.getProfile);
 router.put('/users/profile', userController.updateProfile);
 router.put('/users/changePassword', userController.changePassword);
 router.post('/users/add', userController.addUser);
+router.put('/users/:userId', userController.updateUser);
 
 export default router;

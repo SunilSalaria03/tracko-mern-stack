@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import * as helper from '../helpers/commonHelpers';
 import { mailSender } from '../config/sendGrid';
-import { SignInInput, SignUpInput, ForgotPasswordInput, ResetPasswordInput, ResetPasswordLinkInput, UserToken } from '../interfaces/commonInterfaces';
+import { SignInInput, UserToken } from '../interfaces/commonInterfaces';
 import userModel from '../models/userModel';
 import { IUser } from '../interfaces/userInterfaces';
 import { AUTH_MESSAGES, USER_MESSAGES, GENERAL_MESSAGES } from '../utils/constants/messages';

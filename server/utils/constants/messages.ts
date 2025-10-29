@@ -25,6 +25,11 @@ export const AUTH_MESSAGES = {
 
 // User Messages
 export const USER_MESSAGES = {
+  USER_EMAIL_ALREADY_EXISTS: 'User email already exists',
+  USER_PHONE_NUMBER_ALREADY_EXISTS: 'User phone number already exists',
+  USER_ID_REQUIRED: 'User ID is required',
+  USER_UPDATED_FAILED: 'Failed to update user',
+  USER_UPDATED_SUCCESSFULLY: 'User updated successfully',
   USER_ADDED_SUCCESSFULLY: 'User added successfully',
   OLD_PASSWORD_INCORRECT: 'Old password is incorrect',
   NEW_PASSWORD_SAME: 'New password cannot be the same as the old password',
