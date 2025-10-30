@@ -19,8 +19,6 @@ export const signInService = async (data: SignInInput) => {
       return { error: 'Password is incorrect' };
     }
 
-    await user.save();
-
     const token = jwt.sign(
       {
         id: user._id,
