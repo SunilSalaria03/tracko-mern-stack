@@ -18,9 +18,9 @@ export const addUserValidation = (data: Partial<IUser>) => {
           'string.pattern.base': 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
           'any.required': 'Password is required',
         }),
-      role: Joi.number().valid(0, 1, 2).required().messages({
+      role: Joi.number().valid(0, 1, 2, 3).required().messages({
         'any.required': 'Role is required',
-        'any.only': 'Role must be one of: 0, 1, 2',
+        'any.only': 'Role must be one of: 0, 1, 2, 3',
       }),
       name: Joi.string().required().messages({
         'any.required': 'Name is required',

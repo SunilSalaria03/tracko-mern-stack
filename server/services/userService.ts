@@ -1,9 +1,12 @@
 import bcrypt from 'bcryptjs';
 
-import { IChangePassword, IUser } from '../interfaces/userInterfaces';
+import { IChangePassword, IListParams, IUser } from '../interfaces/userInterfaces';
 import { imageUpload } from '../helpers/commonHelpers';
 import userModel from '../models/userModel';
-import { GENERAL_MESSAGES, USER_MESSAGES } from '../utils/constants/messages';
+import { AUTH_MESSAGES, GENERAL_MESSAGES, USER_MESSAGES } from '../utils/constants/messages';
+import tenantModel from '../models/tenantModel';
+import jwt from 'jsonwebtoken';
+import * as helper from '../helpers/commonHelpers';
 
 export const getProfileService = async (userId: string) => {
   try {
@@ -166,6 +169,203 @@ export const editUserService = async (userId: string, data: Partial<IUser>, file
     return updatedUser;
   } catch (err: any) {
     console.error('Edit user service error:', err);
+    return { error: err.message || 'Something went wrong' };
+  }
+};
+
+export const getUsersService = async (params: IListParams) => {
+  try {
+    const page = params.page || 1;
+    const limit = params.limit || 10;
+    const search = params.search || '';
+    const sortBy = params.sortBy || 'createdAt';
+    const sortOrder = params.sortOrder || 'desc';
+
+    // Build search query
+    const searchQuery: any = {
+      isDeleted: false,
+      role: { $ne: 0 }, // Exclude admins
+    };
+
+    if (search) {
+      searchQuery.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { phoneNumber: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    // Build sort object
+    const sortObj: any = {};
+    sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    // Calculate skip
+    const skip = (page - 1) * limit;
+
+    // Execute queries
+    const [users, total] = await Promise.all([
+      userModel
+        .find(searchQuery)
+        .select('-password -deviceToken -deviceType -resetPasswordToken -emailOtpExpiry')
+        .sort(sortObj)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      userModel.countDocuments(searchQuery),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      users,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  } catch (error) {
+    console.error('Get users service error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to fetch users';
+    return { error: message };
+  }
+};
+
+export const getUserByIdService = async (userId: string) => {
+  try {
+    const user = await userModel
+      .findOne({ _id: userId, isDeleted: false })
+      .select('-password -deviceToken -deviceType -resetPasswordToken -emailOtpExpiry');
+
+    if (!user) {
+      return { error: USER_MESSAGES.USER_NOT_FOUND };
+    }
+
+    return user;
+  } catch (error) {
+    console.error('Get user by ID service error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to fetch user';
+    return { error: message };
+  }
+};
+
+export const deleteUserService = async (userId: string) => {
+  try {
+    const user = await userModel.findById(userId);
+
+    if (!user) {
+      return { error: USER_MESSAGES.USER_NOT_FOUND };
+    }
+
+    // Check if trying to delete an admin
+    if (user.role === 0) {
+      return { error: 'Cannot delete admin user' };
+    }
+
+    // Soft delete
+    const deletedUser = await userModel.findByIdAndUpdate(
+      userId,
+      { isDeleted: true },
+      { new: true }
+    );
+
+    if (!deletedUser) {
+      return { error: USER_MESSAGES.USER_NOT_FOUND };
+    }
+
+    return { message: 'User deleted successfully' };
+  } catch (error) {
+    console.error('Delete user service error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to delete user';
+    return { error: message };
+  }
+};
+
+export const addUserService = async (data: Partial<IUser>, files?: any) => {
+  try {
+    if((data.role == 1 || data.role == 0) && data.addedByUserRole != 0) {
+        return { error: AUTH_MESSAGES.ADMIN_ACCESS_DENIED };
+    }
+
+    if(data.role == 0){
+      const adminExist = await userModel.findOne({ role: 0, isDeleted: false });
+      if (adminExist) {
+        return { error: AUTH_MESSAGES.SUPER_ADMIN_ALREADY_EXISTS };
+      }
+    }
+    
+    if(data.email){
+      const isEmailExist = await userModel.findOne({ 
+        email: data.email, 
+        isDeleted: false 
+      });
+      if (isEmailExist) {
+        return { error: AUTH_MESSAGES.EMAIL_ALREADY_EXISTS };
+      }
+    }
+
+    if (data.phoneNumber) {
+      const isPhoneExist = await userModel.findOne({ 
+        phoneNumber: data.phoneNumber, 
+        isDeleted: false 
+      });
+      
+      if (isPhoneExist) {
+        return { error: 'Phone already exists' };
+      }
+    }
+
+    let imagePath = '';
+    if (files && files.profileImage) {
+      imagePath = helper.imageUpload(files.profileImage, 'images');
+    }
+
+    // Hash password
+    const saltRounds = parseInt(process.env.SALT_ROUNDS || '10', 10);
+    const hashedPassword = await bcrypt.hash(data.password || '', saltRounds);
+
+    const objToCreate = {
+      ...data,
+      password: hashedPassword,
+      profileImage: imagePath,
+      tempPassword: (data.role == 0) ? null : data.password,
+    };
+
+    const user = await userModel.create(objToCreate);
+    if(data.role == 0 || data.role == 1) {
+      const tenant = await tenantModel.create({
+        adminUserId: user._id,
+      });
+      console.log('tenant111111', tenant);
+      user.tenantId = tenant._id as any;
+      await user.save({ validateBeforeSave: false });
+    } else {
+      console.log('data.addedByUserTenantId', data.addedByUserTenantId);
+      user.tenantId = data.addedByUserTenantId;
+      await user.save({ validateBeforeSave: false });
+    }
+
+    console.log('user', user);
+
+    const token = jwt.sign(
+      { 
+        id: user._id, 
+        email: data.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET || '123@321',
+      { expiresIn: '7d' }
+    );
+
+    // Prepare response
+    const userInfo = {
+      ...user.toObject(),
+      password: hashedPassword,
+      authToken: token,
+    };
+
+    return userInfo;
+  } catch (err: any) {
+    console.error('Add user service error:', err);
     return { error: err.message || 'Something went wrong' };
   }
 };

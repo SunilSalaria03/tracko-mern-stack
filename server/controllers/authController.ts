@@ -5,9 +5,10 @@ import {
   deleteAccountService, 
   logoutService,
   forgotPasswordService,
-  resetPasswordService 
+  resetPasswordService, 
+  signUpService
 } from '../services/authService';
-import { signInValidation } from '../validations/authValidations';
+import { signInValidation, signUpValidation } from '../validations/authValidations';
 import { forgotPasswordValidation, resetPasswordValidation } from '../validations/authValidations';
 import { AuthRequest } from '../interfaces/commonInterfaces';
 import { AUTH_MESSAGES, USER_MESSAGES, GENERAL_MESSAGES } from '../utils/constants/messages';
@@ -35,34 +36,30 @@ export const signIn = async (req: Request, res: Response): Promise<Response | vo
   }
 };
 
-// export const signUp = async (req: Request, res: Response): Promise<Response | void> => {
-//   try {
-//     const { error } = signUpValidation(req.body);
-//     if (error) {
-//       return helper.failed(res, error.details[0].message);
-//     }
+export const signUp = async (req: any, res: Response): Promise<Response | void> => {
+  try {
+    const { error, value: validatedData } = signUpValidation(req.body);
+    if (error) {
+      return helper.failed(res, error.details[0].message);
+    }
 
-//     const signUpData = {
-//       email: req.body.email,
-//       password: req.body.password,
-//       role: req.body.role,
-//       name: req.body.name,
-//       phoneNumber: req.body.phoneNumber,
-//       countryCode: req.body.countryCode,
-//     };
+    const objToSend = {
+      ...validatedData,
+      addedByUserRole: req.user?.role,
+      addedByUserTenantId: req.user?.tenantId,
+    }
+    const result = await signUpService(objToSend, req.files);
 
-//     const result = await signUpService(signUpData, req.files);
+    if ('error' in result) {
+      return helper.failed(res, result.error);
+    }
 
-//     if ('error' in result) {
-//       return helper.failed(res, result.error);
-//     }
-
-//     return helper.success(res, AUTH_MESSAGES.SIGNUP_SUCCESS, result);
-//   } catch (error) {
-//     console.error('Signup error:', error);
-//     return helper.error(res, GENERAL_MESSAGES.SOMETHING_WENT_WRONG);
-//   }
-// };
+    return helper.success(res, AUTH_MESSAGES.SIGNUP_SUCCESS, result);
+  } catch (error) {
+    console.error('Signup error:', error);
+    return helper.error(res, GENERAL_MESSAGES.SOMETHING_WENT_WRONG);
+  }
+};
 
 export const deleteAccount = async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {
