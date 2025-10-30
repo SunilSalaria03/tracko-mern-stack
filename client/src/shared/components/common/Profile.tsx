@@ -17,8 +17,7 @@ import { HiOutlineCamera, HiOutlineArrowLeft, HiOutlinePencil, HiOutlineX } from
 import { selectAppState } from '../../../store/selectors';
 import { updateUserProfile, fetchUserProfile } from '../../../store/actions/userActions';
 import type { AppDispatch } from '../../../store';
-import Navbar from './Navbar';
-
+ 
 const Profile: React.FC = () => {
   const { authUser: user } = useSelector(selectAppState);
   const dispatch = useDispatch<AppDispatch>();
@@ -226,13 +225,15 @@ const Profile: React.FC = () => {
   const getRoleLabel = (role: number) => {
     switch (role) {
       case 0:
-        return 'Admin';
+        return 'Super Admin';
       case 1:
-        return 'Employee';
+        return 'Admin';
       case 2:
-        return 'Moderator';
+        return 'Manager';
+      case 3:
+        return 'Employee';     
       default:
-        return 'User';
+        return 'Unknown';
     }
   };
 
@@ -253,11 +254,10 @@ const Profile: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#fafbfc]">
-      <Navbar />
+     
       
       <Box sx={{ maxWidth: 900, mx: 'auto', py: 4, px: 3, width: '100%' }}>
-        {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
           <IconButton
             onClick={() => navigate('/dashboard')}
             sx={{ 
@@ -272,8 +272,7 @@ const Profile: React.FC = () => {
           </Typography>
         </Box>
 
-        {/* Messages */}
-        {successMessage && (
+         {successMessage && (
           <Alert severity="success" sx={{ mb: 3 }}>
             {successMessage}
           </Alert>
@@ -284,8 +283,7 @@ const Profile: React.FC = () => {
           </Alert>
         )}
 
-        {/* Profile Card */}
-        <Paper 
+         <Paper 
           elevation={0}
           sx={{ 
             border: '1px solid #e5e7eb',
@@ -293,20 +291,17 @@ const Profile: React.FC = () => {
             overflow: 'hidden'
           }}
         >
-          {/* Cover Image */}
-          <Box
+           <Box
             sx={{
               height: 120,
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             }}
           />
 
-          {/* Profile Header */}
-          <Box sx={{ px: 4, pb: 3 }}>
+           <Box sx={{ px: 4, pb: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <Box sx={{ mt: -6, position: 'relative' }}>
-                {/* Hidden File Input */}
-                <input
+                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
@@ -314,8 +309,7 @@ const Profile: React.FC = () => {
                   style={{ display: 'none' }}
                 />
                 
-                {/* Show preview if image selected, otherwise show current or default */}
-                {profileImageUrl ? (
+                 {profileImageUrl ? (
                   <Avatar
                     src={profileImageUrl}
                     alt={imagePreview ? 'Preview' : user?.name}
@@ -409,8 +403,7 @@ const Profile: React.FC = () => {
 
           <Divider />
 
-          {/* Profile Form */}
-          <Box sx={{ p: 4 }}>
+           <Box sx={{ p: 4 }}>
             <form onSubmit={handleSubmit}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <Box>

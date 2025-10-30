@@ -10,8 +10,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const location = useLocation();
   const { isAuthenticated, user, isLoading } = useSelector((state: RootState) => state.auth);
-
-   if (isLoading) {
+    if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -29,7 +28,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       : user.role === requiredRole;
 
     if (!hasRequiredRole) {
-       return <Navigate to="/dashboard" replace />;
+       return <Navigate to="/welcome" replace />;
     }
   }
 

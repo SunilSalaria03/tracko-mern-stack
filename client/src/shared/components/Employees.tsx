@@ -1,86 +1,318 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  HiOutlineUserGroup, 
-  HiOutlinePlus, 
-  HiOutlineSearch,
-  HiChevronLeft,
-  HiChevronRight,
-  HiOutlineEye,
-  HiOutlinePencil
-} from 'react-icons/hi';
-import { Switch } from '@mui/material';
-import Navbar from './common/Navbar';
-import Sidebar from './common/Sidebar';
-import AddEmployeeModal from '../../models/addEmployeeModal';
+  Box,
+  Button,
+  Typography,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
+  IconButton,
+  TextField,
+  InputAdornment,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  MenuItem,
+  CircularProgress,
+  Alert,
+  Tooltip,
+  Switch,
+  Avatar,
+  Card,
+  CardContent,
+  alpha,
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Visibility as ViewIcon,
+  Search as SearchIcon,
+  Close as CloseIcon,
+  Person as PersonIcon,
+  Group as GroupIcon,
+  AdminPanelSettings as AdminIcon,
+} from '@mui/icons-material';
 import { useAppDispatch, useAppSelector } from '../../store';
-import { fetchEmployees, updateEmployee } from '../../store/actions/employeeActions';
+import { fetchEmployees, updateEmployee, createEmployee } from '../../store/actions/employeeActions';
 import type { Employee } from '../../utils/interfaces/employeeInterface';
+import { toast } from 'react-toastify';
 
-const Employees: React.FC = () => {
+interface EmployeeFormData {
+  name: string;
+  email: string;
+  password?: string;
+  phoneNumber?: string;
+  countryCode?: string;
+  role: 0 | 1 | 2;
+  status: number;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+}
+
+const Employees = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { employees, total, isLoading, totalPages } = useAppSelector(
+  const { employees, total, isLoading, error } = useAppSelector(
     (state) => state.employee
   );
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // State management
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [openFormModal, setOpenFormModal] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [isEdit, setIsEdit] = useState(false);
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [page, setPage] = useState(1);
-  const limit = 10;
 
+  // Form state
+  const [formData, setFormData] = useState<EmployeeFormData>({
+    name: '',
+    email: '',
+    password: '',
+    phoneNumber: '',
+    countryCode: '+1',
+    role: 1,
+    status: 1,
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+  });
+
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch employees when filters change
   const loadEmployees = useCallback(() => {
-    dispatch(fetchEmployees({ 
-      page, 
-      limit, 
-      search: searchTerm,
+    dispatch(
+      fetchEmployees({
+        page: page + 1,
+        limit: rowsPerPage,
+        search: debouncedSearch,
       sortBy,
-      sortOrder
-    }));
-  }, [dispatch, page, limit, searchTerm, sortBy, sortOrder]);
+        sortOrder,
+      })
+    );
+  }, [dispatch, page, rowsPerPage, debouncedSearch, sortBy, sortOrder]);
 
   useEffect(() => {
     loadEmployees();
   }, [loadEmployees]);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setPage(1);
-  };
-
-  const handleSort = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('asc');
+  // Show error toast
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
     }
-    setPage(1);
+  }, [error]);
+
+  // Handle page change
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    setPage(newPage);
   };
 
-  const handleModalSuccess = () => {
-    loadEmployees();
+  // Handle rows per page change
+  const handleChangeRowsPerPage = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Handle search
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    setPage(0);
+  };
+
+  // Validate form
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!formData.name.trim()) {
+      errors.name = 'Name is required';
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = 'Invalid email format';
+    }
+
+    if (!isEdit && !formData.password) {
+      errors.password = 'Password is required';
+    } else if (!isEdit && formData.password && formData.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    }
+
+    if (formData.phoneNumber && !/^\d{10}$/.test(formData.phoneNumber)) {
+      errors.phoneNumber = 'Phone number must be 10 digits';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Open add modal
+  const handleOpenAddModal = () => {
+    setIsEdit(false);
+    setSelectedEmployee(null);
+    setFormData({
+      name: '',
+      email: '',
+      password: '',
+      phoneNumber: '',
+      countryCode: '+1',
+      role: 1,
+      status: 1,
+      address: '',
+      city: '',
+      state: '',
+      zipCode: '',
+    });
+    setFormErrors({});
+    setOpenFormModal(true);
+  };
+
+  // Open edit modal
+  const handleOpenEditModal = (employee: Employee) => {
+    setIsEdit(true);
+    setSelectedEmployee(employee);
+    setFormData({
+      name: employee.name || '',
+      email: employee.email,
+      phoneNumber: employee.phoneNumber || '',
+      countryCode: employee.countryCode || '+1',
+      role: employee.role,
+      status: employee.status,
+      address: employee.address || '',
+      city: employee.city || '',
+      state: employee.state || '',
+      zipCode: employee.zipCode || '',
+    });
+    setFormErrors({});
+    setOpenFormModal(true);
+  };
+
+  // Close form modal
+  const handleCloseFormModal = () => {
+    setOpenFormModal(false);
+    setSelectedEmployee(null);
+    setFormData({
+      name: '',
+      email: '',
+      password: '',
+      phoneNumber: '',
+      countryCode: '+1',
+      role: 1,
+      status: 1,
+      address: '',
+      city: '',
+      state: '',
+      zipCode: '',
+    });
+    setFormErrors({});
+  };
+
+  // Handle form change
+  const handleFormChange = (
+    field: keyof EmployeeFormData,
+    value: string | number
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+    // Clear error for this field
+    if (formErrors[field]) {
+      setFormErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  // Handle form submit
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      if (isEdit && selectedEmployee) {
+        const updateData: any = {
+          name: formData.name,
+          phoneNumber: formData.phoneNumber,
+          countryCode: formData.countryCode,
+          role: formData.role,
+          status: formData.status,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+        };
+        
+        await dispatch(
+          updateEmployee({
+            id: selectedEmployee._id,
+            data: updateData,
+          })
+        ).unwrap();
+        toast.success('Employee updated successfully!');
+      } else {
+        const createData = {
+          ...formData,
+          password: formData.password!,
+        };
+        await dispatch(createEmployee(createData)).unwrap();
+        toast.success('Employee created successfully!');
+      }
+      handleCloseFormModal();
+    } catch (err) {
+      toast.error(
+        isEdit ? 'Failed to update employee' : 'Failed to create employee'
+      );
+    }
   };
 
   const handleViewClick = (employee: Employee) => {
     navigate(`/employees/view/${employee._id}`);
   };
 
-  const handleEditClick = (employee: Employee) => {
-    navigate(`/employees/edit/${employee._id}`);
-  };
-
   const handleStatusToggle = async (employee: Employee) => {
     try {
       const newStatus = employee.status === 1 ? 0 : 1;
-      await dispatch(updateEmployee({
+      await dispatch(
+        updateEmployee({
         id: employee._id,
-        data: { status: newStatus }
-      })).unwrap();
+          data: { status: newStatus },
+        })
+      ).unwrap();
+      toast.success('Status updated successfully!');
     } catch (error) {
-      console.error('Failed to update status:', error);
+      toast.error('Failed to update status');
     }
   };
 
@@ -97,21 +329,23 @@ const Employees: React.FC = () => {
     }
   };
 
-  const getRoleBadgeColor = (role: number) => {
+  const getRoleColor = (
+    role: number
+  ): 'primary' | 'secondary' | 'success' | 'error' | 'warning' => {
     switch (role) {
       case 0:
-        return 'bg-purple-100 text-purple-800';
+        return 'secondary';
       case 1:
-        return 'bg-blue-100 text-blue-800';
+        return 'primary';
       case 2:
-        return 'bg-green-100 text-green-800';
+        return 'success';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'warning';
     }
   };
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -119,328 +353,605 @@ const Employees: React.FC = () => {
     });
   };
 
-  return (
-    <div className="flex flex-col min-h-screen h-screen bg-[#fafbfc] overflow-hidden">
-      <Navbar />
-      <div className="flex flex-1 min-h-0 overflow-hidden">
-        <Sidebar />
-        <main className="flex-1 min-h-0 h-full p-8 overflow-auto">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">Employees</h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Manage your team members
-              </p>
-            </div>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-sm"
-            >
-              <HiOutlinePlus className="w-5 h-5" />
-              Add Employee
-            </button>
-          </div>
+  // Calculate statistics
+  const activeCount = employees.filter((e) => e.status === 1).length;
+  const adminCount = employees.filter((e) => e.role === 0).length;
 
-          {/* Search and Filter Section */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm mb-6">
-            <div className="flex items-center gap-4">
-              <div className="flex-1 relative">
-                <HiOutlineSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search by name, email..."
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="flex gap-2">
-                <select
-                  value={sortBy}
-                  onChange={(e) => {
-                    setSortBy(e.target.value);
-                    setPage(1);
-                  }}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+  return (
+    <Box sx={{ p: 3, bgcolor: '#fafafa', minHeight: '100vh' }}>
+      {/* Header */}
+      <Box
+        sx={{
+          mb: 3,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <Box>
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: 600, color: '#1f2937', mb: 1 }}
+          >
+            Employee Management
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#6b7280' }}>
+            Manage your team members and their access
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleOpenAddModal}
+          sx={{
+            bgcolor: '#10b981',
+            color: 'white',
+            textTransform: 'none',
+            px: 3,
+            py: 1.5,
+            fontSize: '1rem',
+            fontWeight: 600,
+            '&:hover': {
+              bgcolor: '#059669',
+            },
+          }}
+        >
+              Add Employee
+        </Button>
+      </Box>
+
+      {/* Statistics Cards */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3, mb: 3 }}>
+        <Card elevation={0} sx={{ border: '1px solid #e5e7eb' }}>
+          <CardContent>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box
+                sx={{
+                  p: 2,
+                  bgcolor: alpha('#3b82f6', 0.1),
+                  borderRadius: 2,
+                }}
+              >
+                <GroupIcon sx={{ color: '#3b82f6', fontSize: 32 }} />
+              </Box>
+              <Box>
+                <Typography variant="body2" sx={{ color: '#6b7280', mb: 0.5 }}>
+                  Total Employees
+                </Typography>
+                <Typography
+                  variant="h4"
+                  sx={{ fontWeight: 700, color: '#1f2937' }}
                 >
-                  <option value="createdAt">Date Added</option>
-                  <option value="name">Name</option>
-                  <option value="email">Email</option>
-                  <option value="role">Role</option>
-                </select>
-                <button
-                  onClick={() => {
-                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                  }}
-                  className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  {total || 0}
+                </Typography>
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+        <Card elevation={0} sx={{ border: '1px solid #e5e7eb' }}>
+          <CardContent>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box
+                sx={{
+                  p: 2,
+                  bgcolor: alpha('#10b981', 0.1),
+                  borderRadius: 2,
+                }}
+              >
+                <PersonIcon sx={{ color: '#10b981', fontSize: 32 }} />
+              </Box>
+              <Box>
+                <Typography variant="body2" sx={{ color: '#6b7280', mb: 0.5 }}>
+                  Active Employees
+                </Typography>
+                <Typography
+                  variant="h4"
+                  sx={{ fontWeight: 700, color: '#1f2937' }}
+                >
+                  {activeCount}
+                </Typography>
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+        <Card elevation={0} sx={{ border: '1px solid #e5e7eb' }}>
+          <CardContent>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box
+                sx={{
+                  p: 2,
+                  bgcolor: alpha('#8b5cf6', 0.1),
+                  borderRadius: 2,
+                }}
+              >
+                <AdminIcon sx={{ color: '#8b5cf6', fontSize: 32 }} />
+              </Box>
+              <Box>
+                <Typography variant="body2" sx={{ color: '#6b7280', mb: 0.5 }}>
+                  Administrators
+                </Typography>
+                <Typography
+                  variant="h4"
+                  sx={{ fontWeight: 700, color: '#1f2937' }}
+                >
+                  {adminCount}
+                </Typography>
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
+
+      {/* Search and Filters */}
+      <Paper elevation={0} sx={{ mb: 2, p: 2, border: '1px solid #e5e7eb' }}>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            fullWidth
+            placeholder="Search employees by name, email, or phone..."
+            value={searchTerm}
+            onChange={handleSearch}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: '#6b7280' }} />
+                </InputAdornment>
+              ),
+              endAdornment: searchTerm && (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    onClick={() => setSearchTerm('')}
+                    sx={{ color: '#6b7280' }}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                bgcolor: 'white',
+              },
+            }}
+          />
+          <TextField
+            select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            sx={{ minWidth: 150 }}
+          >
+            <MenuItem value="createdAt">Date Added</MenuItem>
+            <MenuItem value="name">Name</MenuItem>
+            <MenuItem value="email">Email</MenuItem>
+            <MenuItem value="role">Role</MenuItem>
+          </TextField>
+          <Button
+            variant="outlined"
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            sx={{
+              minWidth: 100,
+              borderColor: '#e5e7eb',
+              color: '#6b7280',
+            }}
                 >
                   {sortOrder === 'asc' ? '↑ Asc' : '↓ Desc'}
-                </button>
-              </div>
-            </div>
-          </div>
+          </Button>
+        </Box>
+      </Paper>
 
-          {/* Employee Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <HiOutlineUserGroup className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Total Employees</p>
-                  <p className="text-2xl font-bold text-gray-800">{total || 0}</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <HiOutlineUserGroup className="w-6 h-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Active</p>
-                  <p className="text-2xl font-bold text-gray-800">
-                    {employees.filter((e) => e.status === 1).length}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <HiOutlineUserGroup className="w-6 h-6 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Admins</p>
-                  <p className="text-2xl font-bold text-gray-800">
-                    {employees.filter((e) => e.role === 0).length}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* Table */}
+      <Paper elevation={0} sx={{ border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+        {isLoading && (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              py: 8,
+            }}
+          >
+            <CircularProgress />
+          </Box>
+        )}
 
-          {/* Employee Table */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-20">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                </div>
-              ) : employees.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20">
-                  <HiOutlineUserGroup className="w-16 h-16 text-gray-300 mb-4" />
-                  <p className="text-gray-500 text-lg">No employees found</p>
-                  <p className="text-gray-400 text-sm mt-2">
+        {!isLoading && error && (
+          <Box sx={{ p: 3 }}>
+            <Alert severity="error">{error}</Alert>
+          </Box>
+        )}
+
+        {!isLoading && !error && employees.length === 0 && (
+          <Box
+            sx={{
+              textAlign: 'center',
+              py: 8,
+              px: 3,
+            }}
+          >
+            <GroupIcon sx={{ fontSize: 64, color: '#d1d5db', mb: 2 }} />
+            <Typography variant="h6" sx={{ color: '#9ca3af', mb: 1 }}>
+              No employees found
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#d1d5db', mb: 3 }}>
                     {searchTerm
-                      ? 'Try adjusting your search criteria'
-                      : 'Add your first employee to get started'}
-                  </p>
-                </div>
-              ) : (
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th 
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => handleSort('name')}
-                      >
-                        Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
-                      <th 
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => handleSort('email')}
-                      >
-                        Email {sortBy === 'email' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Phone
-                      </th>
-                      <th 
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => handleSort('role')}
-                      >
-                        Role {sortBy === 'role' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
-                      <th 
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => handleSort('createdAt')}
-                      >
-                        Date Added {sortBy === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {employees.map((employee: Employee) => (
-                      <tr key={employee._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold">
+                ? 'Try adjusting your search terms'
+                : "Click 'Add Employee' to add your first team member"}
+            </Typography>
+            {!searchTerm && (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleOpenAddModal}
+                sx={{
+                  bgcolor: '#10b981',
+                  color: 'white',
+                  textTransform: 'none',
+                  px: 3,
+                  py: 1.5,
+                  '&:hover': {
+                    bgcolor: '#059669',
+                  },
+                }}
+              >
+                Add Employee
+              </Button>
+            )}
+          </Box>
+        )}
+
+        {!isLoading && !error && employees.length > 0 && (
+          <>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: '#f9fafb' }}>
+                    <TableCell sx={{ fontWeight: 600, color: '#374151' }}>
+                      Employee
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#374151' }}>
+                      Email
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#374151' }}>
+                      Phone
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#374151' }}>
+                      Role
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#374151' }}>
+                      Date Added
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#374151' }}>
+                      Status
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{ fontWeight: 600, color: '#374151' }}
+                    >
+                      Actions
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {employees.map((employee) => (
+                    <TableRow
+                      key={employee._id}
+                      sx={{
+                        '&:hover': {
+                          bgcolor: alpha('#3b82f6', 0.05),
+                        },
+                        transition: 'background-color 0.2s',
+                      }}
+                    >
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Avatar
+                            sx={{
+                              bgcolor: '#3b82f6',
+                              width: 40,
+                              height: 40,
+                              fontWeight: 600,
+                            }}
+                          >
                                 {employee.name?.charAt(0).toUpperCase() || 'E'}
-                              </div>
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">
+                          </Avatar>
+                          <Box>
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 600, color: '#1f2937' }}
+                            >
                                 {employee.name || 'N/A'}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{employee.email}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell sx={{ color: '#6b7280' }}>
+                        {employee.email}
+                      </TableCell>
+                      <TableCell sx={{ color: '#6b7280' }}>
                             {employee.phoneNumber
                               ? `${employee.countryCode || ''} ${employee.phoneNumber}`
-                              : 'N/A'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(
-                              employee.role
-                            )}`}
-                          >
-                            {getRoleName(employee.role)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={getRoleName(employee.role)}
+                          size="small"
+                          color={getRoleColor(employee.role)}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ color: '#6b7280' }}>
                           {formatDate(employee.createdAt)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Switch
                               checked={employee.status === 1}
                               onChange={() => handleStatusToggle(employee)}
                               size="small"
                               color="success"
                             />
-                            <span className="text-xs text-gray-600">
+                          <Typography variant="caption" sx={{ color: '#6b7280' }}>
                               {employee.status === 1 ? 'Active' : 'Inactive'}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center gap-2">
-                            <button
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                          <Tooltip title="View Employee">
+                            <IconButton
+                              size="small"
                               onClick={() => handleViewClick(employee)}
-                              className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded transition-colors"
-                              title="View Employee"
+                              sx={{
+                                color: '#6b7280',
+                                '&:hover': {
+                                  color: '#3b82f6',
+                                  bgcolor: alpha('#3b82f6', 0.1),
+                                },
+                              }}
                             >
-                              <HiOutlineEye className="w-5 h-5" />
-                            </button>
-                            <button
-                              onClick={() => handleEditClick(employee)}
-                              className="text-green-600 hover:text-green-900 p-1 hover:bg-green-50 rounded transition-colors"
-                              title="Edit Employee"
+                              <ViewIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Edit Employee">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleOpenEditModal(employee)}
+                              sx={{
+                                color: '#6b7280',
+                                '&:hover': {
+                                  color: '#10b981',
+                                  bgcolor: alpha('#10b981', 0.1),
+                                },
+                              }}
                             >
-                              <HiOutlinePencil className="w-5 h-5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
 
             {/* Pagination */}
-            {!isLoading && employees.length > 0 && (
-              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
-                <div className="flex-1 flex justify-between sm:hidden">
-                  <button
-                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={page === 1}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={page === totalPages}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
-                  </button>
-                </div>
-                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-gray-700">
-                      Showing <span className="font-medium">{(page - 1) * limit + 1}</span> to{' '}
-                      <span className="font-medium">
-                        {Math.min(page * limit, total)}
-                      </span>{' '}
-                      of <span className="font-medium">{total}</span> results
-                    </p>
-                  </div>
-                  <div>
-                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                      <button
-                        onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                        disabled={page === 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <HiChevronLeft className="h-5 w-5" />
-                      </button>
-                      {Array.from({ length: totalPages }, (_, i) => i + 1)
-                        .filter(
-                          (p) =>
-                            p === 1 ||
-                            p === totalPages ||
-                            (p >= page - 1 && p <= page + 1)
-                        )
-                        .map((p, i, arr) => (
-                          <React.Fragment key={p}>
-                            {i > 0 && arr[i - 1] !== p - 1 && (
-                              <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                                ...
-                              </span>
-                            )}
-                            <button
-                              onClick={() => setPage(p)}
-                              className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                                page === p
-                                  ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                                  : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                              }`}
-                            >
-                              {p}
-                            </button>
-                          </React.Fragment>
-                        ))}
-                      <button
-                        onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                        disabled={page === totalPages}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <HiChevronRight className="h-5 w-5" />
-                      </button>
-                    </nav>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </main>
-      </div>
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              component="div"
+              count={total}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              sx={{
+                borderTop: '1px solid #e5e7eb',
+              }}
+            />
+          </>
+        )}
+      </Paper>
 
-      {/* Add Employee Modal */}
-      <AddEmployeeModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={handleModalSuccess}
-      />
-    </div>
+      {/* Add/Edit Form Modal */}
+      <Dialog
+        open={openFormModal}
+        onClose={handleCloseFormModal}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            borderBottom: '1px solid #e5e7eb',
+            pb: 2,
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            {isEdit ? 'Edit Employee' : 'Add New Employee'}
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            {/* Name */}
+            <TextField
+              label="Full Name"
+              fullWidth
+              required
+              value={formData.name}
+              onChange={(e) => handleFormChange('name', e.target.value)}
+              error={!!formErrors.name}
+              helperText={formErrors.name}
+              placeholder="Enter employee name"
+            />
+
+            {/* Email */}
+            <TextField
+              label="Email Address"
+              type="email"
+              fullWidth
+              required
+              value={formData.email}
+              onChange={(e) => handleFormChange('email', e.target.value)}
+              error={!!formErrors.email}
+              helperText={formErrors.email}
+              placeholder="employee@example.com"
+              disabled={isEdit}
+            />
+
+            {/* Password (only for create) */}
+            {!isEdit && (
+              <TextField
+                label="Password"
+                type="password"
+                fullWidth
+                required
+                value={formData.password}
+                onChange={(e) => handleFormChange('password', e.target.value)}
+                error={!!formErrors.password}
+                helperText={formErrors.password}
+                placeholder="Enter password (min 6 characters)"
+              />
+            )}
+
+            {/* Phone */}
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                select
+                label="Country Code"
+                value={formData.countryCode}
+                onChange={(e) => handleFormChange('countryCode', e.target.value)}
+                sx={{ width: 120 }}
+              >
+                <MenuItem value="+1">+1 (US)</MenuItem>
+                <MenuItem value="+44">+44 (UK)</MenuItem>
+                <MenuItem value="+91">+91 (IN)</MenuItem>
+              </TextField>
+              <TextField
+                label="Phone Number"
+                fullWidth
+                value={formData.phoneNumber}
+                onChange={(e) => handleFormChange('phoneNumber', e.target.value)}
+                error={!!formErrors.phoneNumber}
+                helperText={formErrors.phoneNumber}
+                placeholder="1234567890"
+              />
+            </Box>
+
+            {/* Role and Status */}
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                select
+                label="Role"
+                fullWidth
+                required
+                value={formData.role}
+                onChange={(e) => handleFormChange('role', parseInt(e.target.value) as 0 | 1 | 2)}
+              >
+                <MenuItem value={0}>Admin</MenuItem>
+                <MenuItem value={1}>Employee</MenuItem>
+                <MenuItem value={2}>Moderator</MenuItem>
+              </TextField>
+
+              <TextField
+                select
+                label="Status"
+                fullWidth
+                required
+                value={formData.status}
+                onChange={(e) => handleFormChange('status', parseInt(e.target.value))}
+              >
+                <MenuItem value={1}>Active</MenuItem>
+                <MenuItem value={0}>Inactive</MenuItem>
+              </TextField>
+            </Box>
+
+            {/* Address */}
+            <TextField
+              label="Address"
+              fullWidth
+              value={formData.address}
+              onChange={(e) => handleFormChange('address', e.target.value)}
+              placeholder="Street address"
+            />
+
+            {/* City, State, Zip */}
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="City"
+                fullWidth
+                value={formData.city}
+                onChange={(e) => handleFormChange('city', e.target.value)}
+                placeholder="City"
+              />
+              <TextField
+                label="State"
+                fullWidth
+                value={formData.state}
+                onChange={(e) => handleFormChange('state', e.target.value)}
+                placeholder="State"
+              />
+              <TextField
+                label="Zip Code"
+                fullWidth
+                value={formData.zipCode}
+                onChange={(e) => handleFormChange('zipCode', e.target.value)}
+                placeholder="12345"
+              />
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            borderTop: '1px solid #e5e7eb',
+            px: 3,
+            py: 2,
+            gap: 1,
+          }}
+        >
+          <Button
+            onClick={handleCloseFormModal}
+            variant="outlined"
+            sx={{
+              textTransform: 'none',
+              borderColor: '#e5e7eb',
+              color: '#6b7280',
+              '&:hover': {
+                borderColor: '#9ca3af',
+                bgcolor: alpha('#6b7280', 0.05),
+              },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            disabled={isLoading}
+            sx={{
+              textTransform: 'none',
+              bgcolor: '#10b981',
+              '&:hover': { bgcolor: '#059669' },
+              '&:disabled': {
+                bgcolor: '#e5e7eb',
+                color: '#9ca3af',
+              },
+            }}
+          >
+            {isLoading ? (
+              <CircularProgress size={20} />
+            ) : isEdit ? (
+              'Update Employee'
+            ) : (
+              'Create Employee'
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 

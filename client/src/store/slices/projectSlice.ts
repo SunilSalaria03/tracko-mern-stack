@@ -1,9 +1,14 @@
 import { createSlice } from '@reduxjs/toolkit';
-import type { Employee } from '../../utils/interfaces/employeeInterface';
-import { fetchEmployees, createEmployee, updateEmployee, deleteEmployee } from '../actions/employeeActions';
+import type { Project } from '../../utils/interfaces/projectInterface';
+import { 
+  fetchProjects, 
+  createProject, 
+  updateProject, 
+  deleteProject 
+} from '../actions/projectActions';
 
-interface EmployeeState {
-  employees: Employee[];
+interface ProjectState {
+  projects: Project[];
   total: number;
   currentPage: number;
   totalPages: number;
@@ -11,8 +16,8 @@ interface EmployeeState {
   error: string | null;
 }
 
-const initialState: EmployeeState = {
-  employees: [],
+const initialState: ProjectState = {
+  projects: [],
   total: 0,
   currentPage: 1,
   totalPages: 1,
@@ -20,15 +25,15 @@ const initialState: EmployeeState = {
   error: null,
 };
 
-const employeeSlice = createSlice({
-  name: 'employee',
+const projectSlice = createSlice({
+  name: 'project',
   initialState,
   reducers: {
     clearError: (state) => {
       state.error = null;
     },
-    clearEmployees: (state) => {
-      state.employees = [];
+    clearProjects: (state) => {
+      state.projects = [];
       state.total = 0;
       state.currentPage = 1;
       state.totalPages = 1;
@@ -36,74 +41,74 @@ const employeeSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch employees
-      .addCase(fetchEmployees.pending, (state) => {
+      // Fetch projects
+      .addCase(fetchProjects.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchEmployees.fulfilled, (state, action) => {
+      .addCase(fetchProjects.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.employees = action.payload.employees;
+        state.projects = action.payload.projects;
         state.total = action.payload.total;
         state.currentPage = action.payload.page;
         state.totalPages = action.payload.totalPages;
         state.error = null;
       })
-      .addCase(fetchEmployees.rejected, (state, action) => {
+      .addCase(fetchProjects.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      // Create employee
-      .addCase(createEmployee.pending, (state) => {
+      // Create project
+      .addCase(createProject.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(createEmployee.fulfilled, (state, action) => {
+      .addCase(createProject.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.employees.unshift(action.payload);
+        state.projects.unshift(action.payload);
         state.total += 1;
         state.error = null;
       })
-      .addCase(createEmployee.rejected, (state, action) => {
+      .addCase(createProject.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      // Update employee
-      .addCase(updateEmployee.pending, (state) => {
+      // Update project
+      .addCase(updateProject.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(updateEmployee.fulfilled, (state, action) => {
+      .addCase(updateProject.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.employees.findIndex(emp => emp._id === action.payload._id);
+        const index = state.projects.findIndex(proj => proj._id === action.payload._id);
         if (index !== -1) {
-          state.employees[index] = action.payload;
+          state.projects[index] = action.payload;
         }
         state.error = null;
       })
-      .addCase(updateEmployee.rejected, (state, action) => {
+      .addCase(updateProject.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      // Delete employee
-      .addCase(deleteEmployee.pending, (state) => {
+      // Delete project
+      .addCase(deleteProject.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(deleteEmployee.fulfilled, (state, action) => {
+      .addCase(deleteProject.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.employees = state.employees.filter(emp => emp._id !== action.payload);
+        state.projects = state.projects.filter(proj => proj._id !== action.payload);
         state.total = state.total - 1;
         state.error = null;
       })
-      .addCase(deleteEmployee.rejected, (state, action) => {
+      .addCase(deleteProject.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });
   },
 });
 
-export const { clearError, clearEmployees } = employeeSlice.actions;
+export const { clearError, clearProjects } = projectSlice.actions;
 
-export default employeeSlice.reducer;
+export default projectSlice.reducer;
 

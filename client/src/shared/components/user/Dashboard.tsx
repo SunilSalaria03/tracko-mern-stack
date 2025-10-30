@@ -18,6 +18,34 @@ import type {
   TimePeriod,
   ProductiveHoursSummary,
 } from "../../../utils/interfaces/dashboardInterface";
+import { styled } from "@mui/material/styles";
+
+const GradientBackground = styled(Box)(({ theme }) => ({
+  minHeight: '100vh',
+   padding: theme.spacing(4),
+}));
+
+const StyledCard = styled(Card)(({ theme }) => ({
+  boxShadow: '0 4px 24px rgba(56, 112, 255, 0.12)',
+  borderRadius: 20,
+  border: '1px solid #F3F6FD',
+  background: '#fff',
+}));
+
+const SectionHeader = styled(Typography)(({ theme }) => ({
+  fontSize: '1.25rem',
+  fontWeight: 700,
+  color: '#202D40',
+  marginBottom: theme.spacing(2),
+  letterSpacing: 0.3,
+}));
+
+const SoftDivider = styled('div')(({ theme }) => ({
+  width: '100%',
+  height: 1,
+  background: '#E3EBFD',
+  margin: `${theme.spacing(2)} 0`,
+}));
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -153,167 +181,180 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <Box>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
-        <Box sx={{ display: "flex", gap: 1 }}>
+    <GradientBackground>
+      <Box maxWidth="880px" mx="auto">
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 4 }}>
+          <SectionHeader variant="h4">
+            <AccessTimeIcon sx={{ fontSize: 32, mb: -0.8, color: '#3569EF', mr: 1 }} />
+            My Project Dashboard
+          </SectionHeader>
           <Button
-            variant="outlined"
-            size="small"
-            startIcon={<FilterListIcon />}
-            sx={{ textTransform: "none" }}
-          >
-            Filter
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            sx={{ textTransform: "none" }}
-          >
-            All Time Activity
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            sx={{ textTransform: "none" }}
-          >
-            All Projects
-          </Button>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<TimerIcon />}
-          onClick={() => navigate("/time")}
-          sx={{ textTransform: "none", fontWeight: 600 }}
-        >
-          Track Time
-        </Button>
-      </Box>
-
-      <Card sx={{ mb: 3, boxShadow: 1 }}>
-        <CardContent sx={{ p: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <AccessTimeIcon sx={{ fontSize: 28, color: "primary.main" }} />
-              <Typography variant="h6" fontWeight={600}>
-                Projects Productive Hours
-              </Typography>
-            </Box>
-            <ButtonGroup variant="contained" size="small">
-              {(Object.keys(periodLabels) as TimePeriod[]).map((period) => (
-                <Button
-                  key={period}
-                  onClick={() => setSelectedPeriod(period)}
-                  variant={selectedPeriod === period ? "contained" : "outlined"}
-                  sx={{
-                    textTransform: "none",
-                    fontWeight: selectedPeriod === period ? 600 : 500,
-                  }}
-                >
-                  {periodLabels[period]}
-                </Button>
-              ))}
-            </ButtonGroup>
-          </Box>
-
-          <Box
+            variant="contained"
+            startIcon={<TimerIcon />}
+            onClick={() => navigate("/time")}
             sx={{
-              background: "linear-gradient(to right, #E3F2FD, #E8EAF6)",
-              borderRadius: 2,
-              p: 2,
-              mb: 3,
-              border: 1,
-              borderColor: "primary.light",
+              textTransform: "none",
+              fontWeight: 600,
+              borderRadius: 3,
+              boxShadow: '0 2px 8px rgba(43, 98, 255, 0.08)',
+              background: 'linear-gradient(90deg,#3569EF 0%,#7F56D9 100%)',
+              color: '#fff',
+              px: 3.5,
+              py: 1.2,
+              '&:hover': {
+                background: 'linear-gradient(90deg,#2442B1 50%,#7C4BEE 100%)',
+                boxShadow: '0 6px 18px rgba(67, 56, 202, 0.13)',
+              },
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            Track Time
+          </Button>
+        </Box>
+        <StyledCard sx={{ mb: 4 }}>
+          <CardContent sx={{ p: 4 }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
+                <AccessTimeIcon sx={{ fontSize: 28, color: '#3569EF', mb: -0.7 }} />
+                <Typography variant="h6" fontWeight={700} color="#202D40">
+                  Projects Productive Hours
+                </Typography>
+              </Box>
+              <ButtonGroup variant="contained" size="small" sx={{ boxShadow: '0 2px 6px rgba(43, 98, 255, 0.04)', borderRadius: 10 }}>
+                {(Object.keys(periodLabels) as TimePeriod[]).map((period) => (
+                  <Button
+                    key={period}
+                    onClick={() => setSelectedPeriod(period)}
+                    variant={selectedPeriod === period ? "contained" : "outlined"}
+                    sx={{
+                      textTransform: "none",
+                      borderRadius: 2,
+                      fontWeight: selectedPeriod === period ? 700 : 500,
+                      background: selectedPeriod === period
+                        ? 'linear-gradient(90deg,#3569EF 0%,#7F56D9 100%)'
+                        : '#fff',
+                      color: selectedPeriod === period ? '#fff' : '#3569EF',
+                      borderColor: '#D2DBF8',
+                      transition: "all .2s",
+                      '&:hover': {
+                        background: selectedPeriod === period
+                          ? 'linear-gradient(90deg,#2442B1 0%,#7C4BEE 100%)'
+                          : '#F5F7FB',
+                        color: '#3569EF',
+                      },
+                    }}
+                  >
+                    {periodLabels[period]}
+                  </Button>
+                ))}
+              </ButtonGroup>
+            </Box>
+            <SoftDivider />
+            <Box
+              sx={{
+                background: "linear-gradient(90deg, #EAF2FF 0%, #F6EEFF 100%)",
+                borderRadius: 3,
+                p: 3,
+                mb: 3,
+                border: 1,
+                borderColor: "#EFF4FC",
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
               <Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                <Typography variant="body2" color="#6D7685" sx={{ mb: 0.5 }}>
                   Total Productive Hours ({periodLabels[selectedPeriod]})
                 </Typography>
-                <Typography variant="h3" fontWeight={700} color="primary.main">
+                <Typography variant="h2" fontWeight={800} color="#3569EF" sx={{ fontSize: '2.4rem' }}>
                   {totalProductiveHours.toFixed(1)} hrs
                 </Typography>
               </Box>
               <Box sx={{ textAlign: "right" }}>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                <Typography variant="body2" color="#6D7685" sx={{ mb: 0.5 }}>
                   Active Projects
                 </Typography>
-                <Typography variant="h3" fontWeight={700} color="secondary.main">
+                <Typography variant="h2" fontWeight={800} color="#E94298" sx={{ fontSize: '2.4rem' }}>
                   {currentProjects.length}
                 </Typography>
               </Box>
             </Box>
-          </Box>
-
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {currentProjects.map((project) => {
-              const percentage =
-                (project.productiveHours / totalProductiveHours) * 100;
-              return (
-                <Card
-                  key={project.projectId}
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    transition: "box-shadow 0.3s",
-                    "&:hover": {
-                      boxShadow: 3,
-                    },
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                      <Box
-                        sx={{
-                          width: 16,
-                          height: 16,
-                          borderRadius: "50%",
-                          backgroundColor: project.color,
-                        }}
-                      />
-                      <Typography variant="subtitle1" fontWeight={600}>
-                        {project.projectName}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ textAlign: "right" }}>
-                      <Typography variant="h5" fontWeight={700}>
-                        {project.productiveHours.toFixed(1)} hrs
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {percentage.toFixed(1)}% of total
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <LinearProgress
-                    variant="determinate"
-                    value={percentage}
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {currentProjects.map((project) => {
+                const percentage =
+                  (project.productiveHours / totalProductiveHours) * 100;
+                return (
+                  <Card
+                    key={project.projectId}
+                    variant="outlined"
                     sx={{
-                      height: 10,
-                      borderRadius: 5,
-                      backgroundColor: "grey.200",
-                      "& .MuiLinearProgress-bar": {
-                        backgroundColor: project.color,
-                        borderRadius: 5,
-                        transition: "transform 0.5s ease",
+                      p: 2.2,
+                      borderRadius: 4,
+                      border: '1.5px solid #E3EBF8',
+                      transition: "box-shadow 0.3s, border 0.2s",
+                      boxShadow: '0 2px 8px rgba(43, 98, 255, 0.07)',
+                      background: '#FAFBFE',
+                      '&:hover': {
+                        border: '2px solid ' + project.color,
+                        boxShadow: '0 8px 24px rgba(56, 112, 255, 0.13)',
+                        background: '#F3F6FD',
                       },
                     }}
-                  />
-                </Card>
-              );
-            })}
-          </Box>
-
-          {currentProjects.length === 0 && (
-            <Box sx={{ textAlign: "center", py: 6 }}>
-              <AccessTimeIcon sx={{ fontSize: 64, color: "grey.300", mb: 2 }} />
-              <Typography variant="body1" color="text.secondary">
-                No productive hours recorded for this period
-              </Typography>
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <Box
+                          sx={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: "50%",
+                            backgroundColor: project.color,
+                            boxShadow: '0 0 0 3px #fff, 0 2px 10px ' + project.color + '33',
+                          }}
+                        />
+                        <Typography variant="subtitle1" fontWeight={700} color="#222E45">
+                          {project.projectName}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ textAlign: "right" }}>
+                        <Typography variant="h5" fontWeight={700} color="#3569EF">
+                          {project.productiveHours.toFixed(1)} hrs
+                        </Typography>
+                        <Typography variant="caption" color="#6D7685" fontWeight={600}>
+                          {percentage.toFixed(1)}% of total
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <LinearProgress
+                      variant="determinate"
+                      value={percentage}
+                      sx={{
+                        height: 11,
+                        borderRadius: 6,
+                        backgroundColor: "#EFF3FB",
+                        '& .MuiLinearProgress-bar': {
+                          background: project.color,
+                          borderRadius: 6,
+                          transition: "transform 0.5s ease",
+                        },
+                      }}
+                    />
+                  </Card>
+                );
+              })}
             </Box>
-          )}
-        </CardContent>
-      </Card>
-    </Box>
+            {currentProjects.length === 0 && (
+              <Box sx={{ textAlign: "center", py: 7 }}>
+                <AccessTimeIcon sx={{ fontSize: 72, color: "#D4DBED", mb: 2 }} />
+                <Typography variant="h6" color="#8DA4C7" sx={{ mt: 2 }}>
+                  No productive hours recorded for this period
+                </Typography>
+              </Box>
+            )}
+          </CardContent>
+        </StyledCard>
+      </Box>
+    </GradientBackground>
   );
 };
 

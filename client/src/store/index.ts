@@ -4,6 +4,9 @@ import type { TypedUseSelectorHook } from 'react-redux';
 import authSlice from './slices/authSlice';
 import userSlice from './slices/userSlice';
 import employeeSlice from './slices/employeeSlice';
+import projectSlice from './slices/projectSlice';
+import workstreamSlice from './slices/workstreamSlice';
+import adminSlice from './slices/adminSlice';
 import { errorMiddleware, tokenMiddleware } from './middleware';
 
 export const store = configureStore({
@@ -11,6 +14,9 @@ export const store = configureStore({
     auth: authSlice,
     user: userSlice,
     employee: employeeSlice,
+    project: projectSlice,
+    workstream: workstreamSlice,
+    adminManagement: adminSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

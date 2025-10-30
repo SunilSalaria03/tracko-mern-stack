@@ -7,7 +7,11 @@ export interface Employee {
   phoneNumber?: string;
   countryCode?: string;
   dateOfBirth?: string;
-  status?: number;
+  status: number;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
   isDeleted?: boolean;
   createdAt?: string;
   updatedAt?: string;

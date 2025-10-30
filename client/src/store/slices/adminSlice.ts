@@ -1,9 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
-import type { Employee } from '../../utils/interfaces/employeeInterface';
-import { fetchEmployees, createEmployee, updateEmployee, deleteEmployee } from '../actions/employeeActions';
+import type { Admin } from '../../utils/interfaces/adminInterface';
+import { fetchAdmins, createAdmin, updateAdmin, deleteAdmin } from '../actions/adminActions';
 
-interface EmployeeState {
-  employees: Employee[];
+interface AdminState {
+  admins: Admin[];
   total: number;
   currentPage: number;
   totalPages: number;
@@ -11,8 +11,8 @@ interface EmployeeState {
   error: string | null;
 }
 
-const initialState: EmployeeState = {
-  employees: [],
+const initialState: AdminState = {
+  admins: [],
   total: 0,
   currentPage: 1,
   totalPages: 1,
@@ -20,15 +20,15 @@ const initialState: EmployeeState = {
   error: null,
 };
 
-const employeeSlice = createSlice({
-  name: 'employee',
+const adminSlice = createSlice({
+  name: 'adminManagement',
   initialState,
   reducers: {
     clearError: (state) => {
       state.error = null;
     },
-    clearEmployees: (state) => {
-      state.employees = [];
+    clearAdmins: (state) => {
+      state.admins = [];
       state.total = 0;
       state.currentPage = 1;
       state.totalPages = 1;
@@ -36,74 +36,74 @@ const employeeSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch employees
-      .addCase(fetchEmployees.pending, (state) => {
+      // Fetch admins
+      .addCase(fetchAdmins.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchEmployees.fulfilled, (state, action) => {
+      .addCase(fetchAdmins.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.employees = action.payload.employees;
+        state.admins = action.payload.admins;
         state.total = action.payload.total;
         state.currentPage = action.payload.page;
         state.totalPages = action.payload.totalPages;
         state.error = null;
       })
-      .addCase(fetchEmployees.rejected, (state, action) => {
+      .addCase(fetchAdmins.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      // Create employee
-      .addCase(createEmployee.pending, (state) => {
+      // Create admin
+      .addCase(createAdmin.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(createEmployee.fulfilled, (state, action) => {
+      .addCase(createAdmin.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.employees.unshift(action.payload);
+        state.admins.unshift(action.payload);
         state.total += 1;
         state.error = null;
       })
-      .addCase(createEmployee.rejected, (state, action) => {
+      .addCase(createAdmin.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      // Update employee
-      .addCase(updateEmployee.pending, (state) => {
+      // Update admin
+      .addCase(updateAdmin.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(updateEmployee.fulfilled, (state, action) => {
+      .addCase(updateAdmin.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.employees.findIndex(emp => emp._id === action.payload._id);
+        const index = state.admins.findIndex(admin => admin._id === action.payload._id);
         if (index !== -1) {
-          state.employees[index] = action.payload;
+          state.admins[index] = action.payload;
         }
         state.error = null;
       })
-      .addCase(updateEmployee.rejected, (state, action) => {
+      .addCase(updateAdmin.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      // Delete employee
-      .addCase(deleteEmployee.pending, (state) => {
+      // Delete admin
+      .addCase(deleteAdmin.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(deleteEmployee.fulfilled, (state, action) => {
+      .addCase(deleteAdmin.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.employees = state.employees.filter(emp => emp._id !== action.payload);
+        state.admins = state.admins.filter(admin => admin._id !== action.payload);
         state.total = state.total - 1;
         state.error = null;
       })
-      .addCase(deleteEmployee.rejected, (state, action) => {
+      .addCase(deleteAdmin.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });
   },
 });
 
-export const { clearError, clearEmployees } = employeeSlice.actions;
+export const { clearError, clearAdmins } = adminSlice.actions;
 
-export default employeeSlice.reducer;
+export default adminSlice.reducer;
 

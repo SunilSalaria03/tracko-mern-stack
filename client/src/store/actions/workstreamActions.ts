@@ -2,14 +2,19 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { API_ENDPOINTS } from '../apiEndpoints';
 import { apiClient } from '../apiClient';
 import { handleApiError } from '../../utils/common/helpers';
-import type { EmployeeListParams, EmployeeListResponse, Employee } from '../../utils/interfaces/employeeInterface';
+import type { 
+  WorkstreamListParams, 
+  WorkstreamListResponse, 
+  Workstream,
+  WorkstreamFormData 
+} from '../../utils/interfaces/workstreamInterface';
 
-export const fetchEmployees = createAsyncThunk<
-  EmployeeListResponse,
-  EmployeeListParams,
+export const fetchWorkstreams = createAsyncThunk<
+  WorkstreamListResponse,
+  WorkstreamListParams,
   { rejectValue: string }
 >(
-  'employee/fetchEmployees',
+  'workstream/fetchWorkstreams',
   async (params, { rejectWithValue }) => {
     try {
       const queryParams = new URLSearchParams();
@@ -19,83 +24,84 @@ export const fetchEmployees = createAsyncThunk<
       if (params.search) queryParams.append('search', params.search);
       if (params.sortBy) queryParams.append('sortBy', params.sortBy);
       if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+      if (params.status) queryParams.append('status', params.status);
 
-      const url = `${API_ENDPOINTS.EMPLOYEES.LIST}?${queryParams.toString()}`;
-      const response = await apiClient.get<EmployeeListResponse>(url);
+      const url = `${API_ENDPOINTS.WORKSTREAMS.LIST}?${queryParams.toString()}`;
+      const response = await apiClient.get<WorkstreamListResponse>(url);
       
       if (!response.success) {
-        return rejectWithValue(response.error || 'Failed to fetch employees');
+        return rejectWithValue(response.error || 'Failed to fetch workstreams');
       }
       
-      return (response.body || response.data) as EmployeeListResponse;
+      return (response.body || response.data) as WorkstreamListResponse;
     } catch (error) {
       return rejectWithValue(handleApiError(error));
     }
   }
 );
 
-export const createEmployee = createAsyncThunk<
-  Employee,
-  Partial<Employee> & { password: string },
+export const createWorkstream = createAsyncThunk<
+  Workstream,
+  WorkstreamFormData,
   { rejectValue: string }
 >(
-  'employee/createEmployee',
+  'workstream/createWorkstream',
   async (data, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post<Employee, Partial<Employee> & { password: string }>(
-        API_ENDPOINTS.EMPLOYEES.CREATE,
+      const response = await apiClient.post<Workstream, WorkstreamFormData>(
+        API_ENDPOINTS.WORKSTREAMS.CREATE,
         data
       );
       
       if (!response.success) {
-        return rejectWithValue(response.error || 'Failed to create employee');
+        return rejectWithValue(response.error || 'Failed to create workstream');
       }
       
-      return (response.body || response.data) as Employee;
+      return (response.body || response.data) as Workstream;
     } catch (error) {
       return rejectWithValue(handleApiError(error));
     }
   }
 );
 
-export const updateEmployee = createAsyncThunk<
-  Employee,
-  { id: string; data: Partial<Employee> },
+export const updateWorkstream = createAsyncThunk<
+  Workstream,
+  { id: string; data: Partial<WorkstreamFormData> },
   { rejectValue: string }
 >(
-  'employee/updateEmployee',
+  'workstream/updateWorkstream',
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      const response = await apiClient.put<Employee, Partial<Employee>>(
-        API_ENDPOINTS.EMPLOYEES.UPDATE(id),
+      const response = await apiClient.put<Workstream, Partial<WorkstreamFormData>>(
+        API_ENDPOINTS.WORKSTREAMS.UPDATE(id),
         data
       );
       
       if (!response.success) {
-        return rejectWithValue(response.error || 'Failed to update employee');
+        return rejectWithValue(response.error || 'Failed to update workstream');
       }
       
-      return (response.body || response.data) as Employee;
+      return (response.body || response.data) as Workstream;
     } catch (error) {
       return rejectWithValue(handleApiError(error));
     }
   }
 );
 
-export const deleteEmployee = createAsyncThunk<
+export const deleteWorkstream = createAsyncThunk<
   string,
   string,
   { rejectValue: string }
 >(
-  'employee/deleteEmployee',
+  'workstream/deleteWorkstream',
   async (id, { rejectWithValue }) => {
     try {
       const response = await apiClient.delete<{ message: string }>(
-        API_ENDPOINTS.EMPLOYEES.DELETE(id)
+        API_ENDPOINTS.WORKSTREAMS.DELETE(id)
       );
       
       if (!response.success) {
-        return rejectWithValue(response.error || 'Failed to delete employee');
+        return rejectWithValue(response.error || 'Failed to delete workstream');
       }
       
       return id;

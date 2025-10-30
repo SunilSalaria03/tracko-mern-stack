@@ -5,13 +5,22 @@ import MainLayout from '../../layout/MainLayout';
 const LoginPage = lazy(() => import('../../pages/auth/LoginPage'));
 const ForgotPasswordPage = lazy(() => import('../../pages/auth/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('../../pages/auth/ResetPasswordPage'));
-const DashboardPage = lazy(() => import('../../pages/user/DashboardPage'));
-const TimeTrackPage = lazy(() => import('../../pages/user/TimeTrackPage'));
-const ProfilePage = lazy(() => import('../../pages/common/ProfilePage'));
+
+const ManagementDashboardPage = lazy(() => import('../../pages/common/DashboardPage'));
+const ManagementWelcomePage = lazy(() => import('../../pages/common/WelcomePage'));
 const EmployeesPage = lazy(() => import('../../pages/common/EmployeesPage'));
 const ViewEmployeePage = lazy(() => import('../../pages/common/ViewEmployeePage'));
 const EditEmployeePage = lazy(() => import('../../pages/common/EditEmployeePage'));
-const WelcomePage = lazy(() => import('../../pages/user/WelcomePage'));
+const ProjectsPage = lazy(() => import('../../pages/admin/ProjectsPage'));
+const WorkstreamsPage = lazy(() => import('../../pages/admin/WorkstreamsPage'));
+const AdminsPage = lazy(() => import('../../pages/superadmin/AdminsPage'));
+
+const EmployeeDashboardPage = lazy(() => import('../../pages/user/DashboardPage'));
+const EmployeeWelcomePage = lazy(() => import('../../pages/user/WelcomePage'));
+const TimeTrackPage = lazy(() => import('../../pages/user/TimeTrackPage'));
+
+const ProfilePage = lazy(() => import('../../pages/common/ProfilePage'));
+
 const ProtectedRoute = lazy(() => import('../components/common/ProtectedRoutes'));
 
 const AppRoutes: React.FC = () => (
@@ -25,38 +34,37 @@ const AppRoutes: React.FC = () => (
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
     </div>}>
       <Routes>
-        {/* Auth Routes - No Layout */}
         <Route path="/" element={<LoginPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         
-        {/* Protected Routes with Layout */}
-        <Route element={<ProtectedRoute requiredRole={1} />}>
+        <Route element={<ProtectedRoute requiredRole={[0]} />}>
           <Route element={<MainLayout />}>
-            <Route path="/welcome" element={<WelcomePage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/admins" element={<AdminsPage />} />
+          </Route>
+        </Route>
+
+        <Route element={<ProtectedRoute requiredRole={[0, 1, 2]} />}>
+          <Route element={<MainLayout />}>
+            <Route path="/home" element={<ManagementWelcomePage />} />
+            <Route path="/dashboard" element={<ManagementDashboardPage />} />
+            <Route path="/employees" element={<EmployeesPage />} />
+            <Route path="/employees/view/:id" element={<ViewEmployeePage />} />
+            <Route path="/employees/edit/:id" element={<EditEmployeePage />} />
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/workstreams" element={<WorkstreamsPage />} />
+           </Route>
+        </Route>
+
+        <Route element={<ProtectedRoute requiredRole={[3]} />}>
+          <Route element={<MainLayout />}>
+            <Route path="/welcome" element={<EmployeeWelcomePage />} />
+            <Route path="/employee-dashboard" element={<EmployeeDashboardPage />} />
             <Route path="/time" element={<TimeTrackPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
         </Route>
-
-        {/* Admin Routes with Layout (add requiredRole for admin) */}
-        <Route element={<ProtectedRoute requiredRole={0} />}>
-          <Route element={<MainLayout />}>
-            <Route path="/employees" element={<EmployeesPage />} />
-            <Route path="/employees/view/:id" element={<ViewEmployeePage />} />
-            <Route path="/employees/edit/:id" element={<EditEmployeePage />} />
-          </Route>
-        </Route>
-
-        {/* You can add more role-based routes here */}
-        {/* For routes accessible to multiple roles */}
-        {/* <Route element={<ProtectedRoute requiredRole={[0, 1, 2]} />}>
-          <Route element={<MainLayout />}>
-            <Route path="/common-page" element={<CommonPage />} />
-          </Route>
-        </Route> */}
       </Routes>
     </Suspense>
   </BrowserRouter>
