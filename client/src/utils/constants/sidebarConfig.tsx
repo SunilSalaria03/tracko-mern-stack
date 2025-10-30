@@ -51,7 +51,7 @@ export const SIDEBAR_MENU_ITEMS: SidebarMenuItem[] = [
     icon: <HiOutlineUsers className="w-5 h-5" />,
     label: 'Employees',
     path: '/employees',
-    roles: [1], // Only Admin can manage employees
+    roles: [1,2], // Only Admin can manage employees
   },
   {
     icon: <HiOutlineBriefcase className="w-5 h-5" />,

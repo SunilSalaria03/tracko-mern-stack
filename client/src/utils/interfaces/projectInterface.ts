@@ -1,28 +1,19 @@
+import type { User } from "./userInterface";
+
 export interface Project {
   _id: string;
   name: string;
-  code: string;
   description?: string;
-  startDate?: string;
-  endDate?: string;
-  status: 'active' | 'completed' | 'on-hold' | 'cancelled';
-  clientName?: string;
-  budget?: number;
-  teamMembers?: string[];
   createdAt?: string;
   updatedAt?: string;
+  addedBy?: User | null;
+  isDeleted?: boolean;
 }
 
 export interface ProjectFormData {
   name: string;
-  code: string;
   description?: string;
-  startDate?: string;
-  endDate?: string;
-  status: 'active' | 'completed' | 'on-hold' | 'cancelled';
-  clientName?: string;
-  budget?: number;
-}
+ }
 
 export interface ProjectListParams {
   page?: number;
@@ -30,7 +21,6 @@ export interface ProjectListParams {
   search?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
-  status?: string;
 }
 
 export interface ProjectListResponse {
