@@ -1,6 +1,6 @@
 // Authentication Messages
 export const AUTH_MESSAGES = {
-  // Success
+  ADMIN_ACCESS_DENIED: 'Admin access denied, you cannot add admin',
   LOGIN_SUCCESS: 'Sign-in successful',
   SIGNUP_SUCCESS: 'Signup successful and your free trial has been started',
   LOGOUT_SUCCESS: 'User Logged Out Successfully',
@@ -16,7 +16,7 @@ export const AUTH_MESSAGES = {
   INVALID_TOKEN: 'Invalid token',
   TOKEN_EXPIRED: 'Token expired or invalid',
   ACCESS_DENIED_NO_TOKEN: 'Access denied. No token provided.',
-  ADMIN_ALREADY_EXISTS: 'Admin already exists',
+  SUPER_ADMIN_ALREADY_EXISTS: 'Super admin already exists',
   EMAIL_ALREADY_EXISTS: 'Email already exists',
   PHONE_ALREADY_EXISTS: 'Phone already exists',
   FORGOT_PASSWORD_FAILED: 'Failed to send password reset link',
@@ -25,6 +25,8 @@ export const AUTH_MESSAGES = {
 
 // User Messages
 export const USER_MESSAGES = {
+  RESTRICTED_FIELDS_CANNOT_BE_UPDATED: 'Email, role, password and tenantId are restricted fields and cannot be updated',
+  TENANT_ID_RESTRICTED_FIELDS_CANNOT_BE_UPDATED: 'Tenant ID restricted field cannot be updated',
   USER_EMAIL_ALREADY_EXISTS: 'User email already exists',
   USER_PHONE_NUMBER_ALREADY_EXISTS: 'User phone number already exists',
   USER_ID_REQUIRED: 'User ID is required',
@@ -80,6 +82,15 @@ export const ADMIN_MESSAGES = {
   INSUFFICIENT_PERMISSIONS: 'You do not have sufficient permissions',
 };
 
+// Project Messages
+export const PROJECT_MESSAGES = {
+  PROJECT_NOT_FOUND: 'Project not found',
+  PROJECT_NAME_ALREADY_EXISTS: 'Project name already exists',
+  PROJECTS_FETCHED_SUCCESSFULLY: 'Projects fetched successfully',
+  PROJECT_CREATION_NOT_ALLOWED: 'Admin and Manager only can add project',
+  PROJECT_UPDATE_NOT_ALLOWED: 'Admin and Manager only can update project',
+};
+
 // Export all messages as a single object for convenience
 export const MESSAGES = {
   AUTH: AUTH_MESSAGES,
@@ -87,6 +98,7 @@ export const MESSAGES = {
   GENERAL: GENERAL_MESSAGES,
   VALIDATION: VALIDATION_MESSAGES,
   ADMIN: ADMIN_MESSAGES,
+  PROJECT: PROJECT_MESSAGES,
 };
 
 export default MESSAGES;

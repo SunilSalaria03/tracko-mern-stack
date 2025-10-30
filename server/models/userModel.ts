@@ -3,9 +3,14 @@ import { IUser } from "../interfaces/userInterfaces";
 
 const UserSchema = new Schema<IUser>(
   {
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Tenant',
+      default: null,
+    },
     role: {
       type: Number,
-      enum: [0, 1, 2], // 0: super admin, 1: admin, 2: manager, 3: employee
+      enum: [0, 1, 2, 3], // 0: super admin, 1: admin, 2: manager, 3: user
       default: 2,
       required: true,
     },
@@ -70,7 +75,7 @@ const UserSchema = new Schema<IUser>(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       default: null,
-    }
+    },
   },
   {
     timestamps: true,

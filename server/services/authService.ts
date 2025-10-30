@@ -6,6 +6,8 @@ import { SignInInput, UserToken } from '../interfaces/commonInterfaces';
 import userModel from '../models/userModel';
 import { IUser } from '../interfaces/userInterfaces';
 import { AUTH_MESSAGES, USER_MESSAGES, GENERAL_MESSAGES } from '../utils/constants/messages';
+import tenantModel from '../models/tenantModel';
+import mongoose from 'mongoose';
 
 export const signInService = async (data: SignInInput) => {
   try {
@@ -40,85 +42,12 @@ export const signInService = async (data: SignInInput) => {
   }
 };
 
-// export const signUpService = async (data: Partial<IUser>, files?: any) => {
-//   try {
-//     if(data.role == 0) {
-//       const adminExist = await userModel.findOne({ role: 0, isDeleted: false });
-//       if (adminExist) {
-//         return { error: 'Admin already exists' };
-//       }
-//     }
-    
-//     if(data.email){
-//       const isEmailExist = await userModel.findOne({ 
-//         email: data.email, 
-//         isDeleted: false 
-//       });
-//       if (isEmailExist) {
-//         return { error: 'Email already exists' };
-//       }
-//     }
-
-//     if (data.phoneNumber) {
-//       const isPhoneExist = await userModel.findOne({ 
-//         phoneNumber: data.phoneNumber, 
-//         isDeleted: false 
-//       });
-      
-//       if (isPhoneExist) {
-//         return { error: 'Phone already exists' };
-//       }
-//     }
-
-//     let imagePath = '';
-//     if (files && files.profileImage) {
-//       imagePath = helper.imageUpload(files.profileImage, 'images');
-//     }
-
-//     // Hash password
-//     const saltRounds = parseInt(process.env.SALT_ROUNDS || '10', 10);
-//     const hashedPassword = await bcrypt.hash(data.password || '', saltRounds);
-
-//     const objToCreate = {
-//       ...data,
-//       password: hashedPassword,
-//       profileImage: imagePath,
-//       tempPassword: (data.role == 0) ? null : data.password,
-//     };
-
-//     const user = await userModel.create(objToCreate);
-
-//     const token = jwt.sign(
-//       { 
-//         id: user._id, 
-//         email: data.email,
-//         role: user.role,
-//       },
-//       process.env.JWT_SECRET || '123@321',
-//       { expiresIn: '7d' }
-//     );
-
-//     // Prepare response
-//     const userInfo = {
-//       ...user.toObject(),
-//       password: hashedPassword,
-//       authToken: token,
-//     };
-
-//     return userInfo;
-//   } catch (err: any) {
-//     console.error('Signup service error:', err);
-//     return { error: err.message || 'Something went wrong' };
-//   }
-// };
-
-
-export const addUserService = async (data: Partial<IUser>, files?: any) => {
+export const signUpService = async (data: Partial<IUser>, files?: any) => {
   try {
     if(data.role == 0) {
       const adminExist = await userModel.findOne({ role: 0, isDeleted: false });
       if (adminExist) {
-        return { error: 'Super admin already exists' };
+        return { error: AUTH_MESSAGES.SUPER_ADMIN_ALREADY_EXISTS };
       }
     }
     
@@ -128,7 +57,7 @@ export const addUserService = async (data: Partial<IUser>, files?: any) => {
         isDeleted: false 
       });
       if (isEmailExist) {
-        return { error: 'Email already exists' };
+        return { error: AUTH_MESSAGES.EMAIL_ALREADY_EXISTS };
       }
     }
 
@@ -161,6 +90,18 @@ export const addUserService = async (data: Partial<IUser>, files?: any) => {
 
     const user = await userModel.create(objToCreate);
 
+    if(data.role == 0 || data.role == 1) {
+      const tenant = await tenantModel.create({
+        adminUserId: user._id,
+      });
+      user.tenantId = tenant._id as any;
+      await user.save({ validateBeforeSave: false });
+    } else if(data.role == 2 || data.role == 3) {
+      console.log('data.addedByUserTenantId', data.addedByUserTenantId);
+      user.tenantId = data.addedByUserTenantId;
+      await user.save({ validateBeforeSave: false });
+    }
+
     const token = jwt.sign(
       { 
         id: user._id, 
@@ -180,10 +121,11 @@ export const addUserService = async (data: Partial<IUser>, files?: any) => {
 
     return userInfo;
   } catch (err: any) {
-    console.error('Add user service error:', err);
+    console.error('Signup service error:', err);
     return { error: err.message || 'Something went wrong' };
   }
 };
+
 
 export const deleteAccountService = async (user: UserToken) => {
   try {

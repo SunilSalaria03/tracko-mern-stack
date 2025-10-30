@@ -23,7 +23,6 @@ const serverRoute = process.env.SERVER_API_VERSION || "/api/v1";
 
 connectDatabase()
 .then(() => {
-  console.log("Database connected successfully");
   const http = createServer(app);
   app.use(
     cors({

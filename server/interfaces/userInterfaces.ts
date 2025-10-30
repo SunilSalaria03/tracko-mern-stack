@@ -1,7 +1,8 @@
-import { Document } from "mongoose";
+import mongoose, { Document } from "mongoose";
 
 export interface IUser extends Document {
-    role: 0 | 1 | 2;
+    tenantId?: mongoose.Schema.Types.ObjectId | null;
+    role: 0 | 1 | 2 | 3;
     email: string;
     profileImage?: string;
     name?: string;
@@ -20,10 +21,20 @@ export interface IUser extends Document {
     department?: string;
     Location?: string;
     addedBy?: string | null;
+    addedByUserRole?: 0 | 1 | 2 | 3;
+    addedByUserTenantId?: mongoose.Schema.Types.ObjectId | null;
   }
 
 export interface IChangePassword {
   userId: string;
   oldPassword: string;
   newPassword: string;
+}
+
+export interface IListParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
