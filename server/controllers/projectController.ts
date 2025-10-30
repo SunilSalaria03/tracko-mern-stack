@@ -1,29 +1,22 @@
 import { Response } from 'express';
 import * as helper from '../helpers/commonHelpers';
 import { AuthRequest } from '../interfaces/commonInterfaces';
-import { GENERAL_MESSAGES } from '../utils/constants/messages';
+import { GENERAL_MESSAGES, PROJECT_MESSAGES } from '../utils/constants/messages';
 import {
   getProjectsService,
   getProjectByIdService,
-  createProjectService,
   updateProjectService,
   deleteProjectService,
+  addProjectService,
 } from '../services/projectService';
+import { addProjectValidation } from '../validations/projectValidations';
+import { IProject } from '@/interfaces/projectInterfaces';
 
 export const getProjects = async (
   req: AuthRequest,
   res: Response
 ): Promise<Response | void> => {
   try {
-    if (!req.user) {
-      return helper.failed(res, 'User not authenticated');
-    }
-
-    // Check if user is admin
-    if (req.user.role !== 0) {
-      return helper.failed(res, 'Access denied. Admin only.');
-    }
-
     const params = {
       page: req.query.page ? parseInt(req.query.page as string) : 1,
       limit: req.query.limit ? parseInt(req.query.limit as string) : 10,
@@ -38,7 +31,7 @@ export const getProjects = async (
       return helper.failed(res, result.error);
     }
 
-    return helper.success(res, 'Projects fetched successfully', result);
+    return helper.success(res, PROJECT_MESSAGES.PROJECTS_FETCHED_SUCCESSFULLY, result);
   } catch (error) {
     console.error('Get projects error:', error);
     return helper.error(res, GENERAL_MESSAGES.SOMETHING_WENT_WRONG);
@@ -50,17 +43,7 @@ export const getProjectById = async (
   res: Response
 ): Promise<Response | void> => {
   try {
-    if (!req.user) {
-      return helper.failed(res, 'User not authenticated');
-    }
-
-    // Check if user is admin
-    if (req.user.role !== 0) {
-      return helper.failed(res, 'Access denied. Admin only.');
-    }
-
     const { id } = req.params;
-
     const result = await getProjectByIdService(id);
 
     if ('error' in result) {
@@ -79,30 +62,22 @@ export const addProject = async (
   res: Response
 ): Promise<Response | void> => {
   try {
-    if (!req.user) {
-      return helper.failed(res, 'User not authenticated');
+    const { error, value: validatedData } = addProjectValidation(req.body);
+    if (error) {
+      return helper.failed(res, error.details[0].message);
     }
 
-    // Check if user is admin
-    if (req.user.role !== 0) {
-      return helper.failed(res, 'Access denied. Admin only.');
+    if (req.user?.role !== 1 && req.user?.role !== 2) {
+      return helper.failed(res, PROJECT_MESSAGES.PROJECT_CREATION_NOT_ALLOWED);
     }
 
-    const { name, description } = req.body;
-
-    // Validate required fields
-    if (!name || !description) {
-      return helper.failed(res, 'Name and description are required');
+    const objToSend: Partial<IProject> = {
+      name: validatedData.name as string,
+      description: validatedData.description as string,
+      addedBy: req.user?.id as string,
     }
 
-    const projectData = {
-      name,
-      description,
-      addedBy: req.user.id,
-    };
-
-    const result = await createProjectService(projectData);
-
+    const result = await addProjectService(objToSend);
     if ('error' in result) {
       return helper.failed(res, result.error);
     }
@@ -119,28 +94,17 @@ export const updateProject = async (
   res: Response
 ): Promise<Response | void> => {
   try {
-    if (!req.user) {
-      return helper.failed(res, 'User not authenticated');
+    if (req.user?.role !== 1 && req.user?.role !== 2) {
+      return helper.failed(res, PROJECT_MESSAGES.PROJECT_UPDATE_NOT_ALLOWED);
     }
 
-    // Check if user is admin
-    if (req.user.role !== 0) {
-      return helper.failed(res, 'Access denied. Admin only.');
+    const objToSend: Partial<IProject> = {
+      ...req.body,
+      addedBy: req.user?.id as string,
+      id: req.params.id as string,
     }
 
-    const { id } = req.params;
-    const { name, description } = req.body;
-
-    // Validate at least one field is provided
-    if (!name && !description) {
-      return helper.failed(res, 'At least one field (name or description) is required');
-    }
-
-    const updateData: any = {};
-    if (name) updateData.name = name;
-    if (description) updateData.description = description;
-
-    const result = await updateProjectService(id, updateData);
+    const result = await updateProjectService(objToSend);
 
     if ('error' in result) {
       return helper.failed(res, result.error);
@@ -158,15 +122,6 @@ export const deleteProject = async (
   res: Response
 ): Promise<Response | void> => {
   try {
-    if (!req.user) {
-      return helper.failed(res, 'User not authenticated');
-    }
-
-    // Check if user is admin
-    if (req.user.role !== 0) {
-      return helper.failed(res, 'Access denied. Admin only.');
-    }
-
     const { id } = req.params;
 
     const result = await deleteProjectService(id);

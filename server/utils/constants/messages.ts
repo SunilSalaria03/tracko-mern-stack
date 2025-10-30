@@ -82,6 +82,15 @@ export const ADMIN_MESSAGES = {
   INSUFFICIENT_PERMISSIONS: 'You do not have sufficient permissions',
 };
 
+// Project Messages
+export const PROJECT_MESSAGES = {
+  PROJECT_NOT_FOUND: 'Project not found',
+  PROJECT_NAME_ALREADY_EXISTS: 'Project name already exists',
+  PROJECTS_FETCHED_SUCCESSFULLY: 'Projects fetched successfully',
+  PROJECT_CREATION_NOT_ALLOWED: 'Admin and Manager only can add project',
+  PROJECT_UPDATE_NOT_ALLOWED: 'Admin and Manager only can update project',
+};
+
 // Export all messages as a single object for convenience
 export const MESSAGES = {
   AUTH: AUTH_MESSAGES,
@@ -89,6 +98,7 @@ export const MESSAGES = {
   GENERAL: GENERAL_MESSAGES,
   VALIDATION: VALIDATION_MESSAGES,
   ADMIN: ADMIN_MESSAGES,
+  PROJECT: PROJECT_MESSAGES,
 };
 
 export default MESSAGES;

@@ -15,7 +15,7 @@ router.get('/users', userController.getUsers);
 router.get('/user/:id', userController.getUserById);
 
 // Project routes
-router.post('/projects/add', projectController.addProject);
+router.post('/projects', projectController.addProject);
 router.put('/projects/:id', projectController.updateProject);
 router.get('/projects', projectController.getProjects);
 router.get('/projects/:id', projectController.getProjectById);
