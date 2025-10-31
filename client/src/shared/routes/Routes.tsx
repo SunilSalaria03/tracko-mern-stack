@@ -24,6 +24,7 @@ const EditEmployeePage = lazy(
   () => import("../../pages/common/EditEmployeePage")
 );
 const ProjectsPage = lazy(() => import("../../pages/admin/ProjectsPage"));
+const UsersPage = lazy(() => import("../../pages/admin/UsersPage"));
 const WorkstreamsPage = lazy(() => import("../../pages/admin/WorkstreamsPage"));
 const AdminsPage = lazy(() => import("../../pages/superadmin/AdminsPage"));
 
@@ -84,6 +85,7 @@ const AppRoutes: React.FC = () => (
             <Route path="/employees/view/:id" element={<ViewEmployeePage />} />
             <Route path="/employees/edit/:id" element={<EditEmployeePage />} />
             <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/users" element={<UsersPage />} />
             <Route path="/workstreams" element={<WorkstreamsPage />} />
           </Route>
         </Route>

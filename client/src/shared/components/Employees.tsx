@@ -65,6 +65,7 @@ const Employees = () => {
   const { employees, total, isLoading, error } = useAppSelector(
     (state) => state.employee
   );
+  console.log("employees", employees);
 
   // State management
   const [page, setPage] = useState(0);
@@ -352,10 +353,9 @@ const Employees = () => {
       day: 'numeric',
     });
   };
-
   // Calculate statistics
-  const activeCount = employees.filter((e) => e.status === 1).length;
-  const adminCount = employees.filter((e) => e.role === 0).length;
+  const activeCount = employees?.filter((e) => e.status === 1).length;
+  const adminCount = employees?.filter((e) => e.role === 0).length;
 
   return (
     <Box sx={{ p: 3, bgcolor: '#fafafa', minHeight: '100vh' }}>
