@@ -118,7 +118,7 @@ export const changePasswordService = async (data: IChangePassword) => {
     const saltRounds = parseInt(process.env.SALT_ROUNDS || '10', 10);
     const hashedNewPassword = await bcrypt.hash(data.newPassword, saltRounds);
 
-    await userModel.updateOne({ _id: data.userId, isDeleted: false }, { password: hashedNewPassword });
+    await userModel.updateOne({ _id: data.userId, isDeleted: false }, { password: hashedNewPassword, tempPassword: null });
 
     return { message: 'Password changed successfully' };
   } catch (error) {
