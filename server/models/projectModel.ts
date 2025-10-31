@@ -12,6 +12,20 @@ const ProjectSchema = new Schema<IProject>(
       type: String,
       required: true,
     },
+    startDate: {
+      type: Date,
+      required: true,
+    },
+    endDate: {
+      type: Date,
+      required: true,
+    },
+    status: {
+      type: Number,
+      enum: [0, 1],
+      default: 0,
+      description: "1 = active, 0 = inactive",
+    },
     isDeleted: {
       type: Boolean,
       default: false,

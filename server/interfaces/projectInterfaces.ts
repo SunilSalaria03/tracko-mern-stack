@@ -5,6 +5,9 @@ export interface IProject extends Document {
   description: string;
   isDeleted?: boolean;
   addedBy?: string;
+  startDate: Date;
+  endDate: Date;
+  status: 1 | 0;
 }
 
 export interface ProjectListParams {

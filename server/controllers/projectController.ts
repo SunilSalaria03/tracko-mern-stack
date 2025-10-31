@@ -72,8 +72,7 @@ export const addProject = async (
     }
 
     const objToSend: Partial<IProject> = {
-      name: validatedData.name as string,
-      description: validatedData.description as string,
+      ...validatedData,
       addedBy: req.user?.id as string,
     }
 
