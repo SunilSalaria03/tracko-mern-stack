@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Button,
@@ -14,12 +14,10 @@ import {
   IconButton,
   TextField,
   InputAdornment,
-  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  MenuItem,
   CircularProgress,
   Alert,
   Tooltip,
@@ -39,29 +37,16 @@ import {
   updateProject,
   deleteProject,
 } from "../../../../store/actions/projectActions";
-import type {
-  Project,
-  ProjectFormData,
-} from "../../../../utils/interfaces/projectInterface";
+import type { Project, ProjectFormData } from "../../../../utils/interfaces/projectInterface";
 import { toast } from "react-toastify";
 import { useFormik } from "formik";
 import { projectValidationSchema } from "../../../../utils/validations/ProjectValidations";
 
-const initialFormValues: ProjectFormData = {
-  name: "",
-  code: "",
-  description: "",
-  startDate: "",
-  endDate: "",
-  status: "active",
-  clientName: "",
-  budget: 0,
-};
+const initialFormValues: ProjectFormData = { name: "", description: "" };
 
 const ProjectManagement = () => {
   const dispatch = useAppDispatch();
-  const { projects, total, isLoading, error } =
-    useAppSelector((state) => state.project);
+  const { projects, total, isLoading, error } = useAppSelector((state) => state.project);
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -72,7 +57,38 @@ const ProjectManagement = () => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isEdit, setIsEdit] = useState(false);
 
-  // Formik
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 400);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchProjectsData = useCallback(
+    async (opts?: { page?: number; limit?: number; search?: string }) => {
+      const effectivePage = (opts?.page ?? page) + 1;
+      const effectiveLimit = opts?.limit ?? rowsPerPage;
+      const effectiveSearch = opts?.search ?? debouncedSearch;
+
+      try {
+        await dispatch(
+          fetchProjects({
+            page: effectivePage,
+            limit: effectiveLimit,
+            search: effectiveSearch,
+            sortBy: "createdAt",
+            sortOrder: "desc",
+          })
+        ).unwrap();
+      } catch {
+        toast.error("Failed to fetch projects");
+      }
+    },
+    [dispatch, page, rowsPerPage, debouncedSearch]
+  );
+
+  useEffect(() => {
+    fetchProjectsData();
+  }, [page, rowsPerPage, debouncedSearch]);
+
   const formik = useFormik<ProjectFormData>({
     initialValues: initialFormValues,
     validationSchema: projectValidationSchema,
@@ -81,22 +97,20 @@ const ProjectManagement = () => {
       try {
         if (isEdit && selectedProject) {
           await dispatch(
-            updateProject({
-              id: selectedProject._id,
-              data: values,
-            })
+            updateProject({ id: selectedProject._id, data: values })
           ).unwrap();
           toast.success("Project updated successfully!");
+          await fetchProjectsData();
         } else {
           await dispatch(createProject(values)).unwrap();
           toast.success("Project created successfully!");
+          setPage(0);
+          await fetchProjectsData({ page: 0 });
         }
         handleCloseFormModal();
         resetForm();
-      } catch (err) {
-        toast.error(
-          isEdit ? "Failed to update project" : "Failed to create project"
-        );
+      } catch {
+        toast.error(isEdit ? "Failed to update project" : "Failed to create project");
       } finally {
         setSubmitting(false);
       }
@@ -107,56 +121,16 @@ const ProjectManagement = () => {
     if (isEdit && selectedProject) {
       formik.setValues({
         name: selectedProject.name,
-        code: selectedProject.code,
         description: selectedProject.description || "",
-        startDate: selectedProject.startDate
-          ? new Date(selectedProject.startDate).toISOString().split("T")[0]
-          : "",
-        endDate: selectedProject.endDate
-          ? new Date(selectedProject.endDate).toISOString().split("T")[0]
-          : "",
-        status: selectedProject.status,
-        clientName: selectedProject.clientName || "",
-        budget: selectedProject.budget || 0,
       });
     } else {
       formik.setValues(initialFormValues);
     }
-    // eslint-disable-next-line
   }, [openFormModal, isEdit, selectedProject]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
+  const handleChangePage = (_: unknown, newPage: number) => setPage(newPage);
 
-  useEffect(() => {
-    dispatch(
-      fetchProjects({
-        page: page + 1,
-        limit: rowsPerPage,
-        search: debouncedSearch,
-        sortBy: "createdAt",
-        sortOrder: "desc",
-      })
-    );
-  }, [dispatch, page, rowsPerPage, debouncedSearch]);
-
-  useEffect(() => {
-    if (error) {
-      toast.error(error);
-    }
-  }, [error]);
-
-  const handleChangePage = (_event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
@@ -166,7 +140,6 @@ const ProjectManagement = () => {
     setPage(0);
   };
 
-  // Modal handlers
   const handleOpenAddModal = () => {
     setIsEdit(false);
     setSelectedProject(null);
@@ -200,61 +173,31 @@ const ProjectManagement = () => {
     try {
       await dispatch(deleteProject(selectedProject._id)).unwrap();
       toast.success("Project deleted successfully!");
+
+      const isLastRowOnPage = projects.length === 1 && page > 0;
+      const nextPage = isLastRowOnPage ? page - 1 : page;
+      if (isLastRowOnPage) setPage(nextPage);
+      await fetchProjectsData({ page: nextPage });
       handleCloseDeleteModal();
-    } catch (err) {
+    } catch {
       toast.error("Failed to delete project");
     }
   };
 
-  const getStatusColor = (
-    status: string
-  ): "success" | "warning" | "error" | "default" => {
-    switch (status) {
-      case "active":
-        return "success";
-      case "on-hold":
-        return "warning";
-      case "cancelled":
-        return "error";
-      case "completed":
-        return "default";
-      default:
-        return "default";
-    }
-  };
-
-  const formatCurrency = (amount: number | undefined): string => {
-    if (!amount) return "-";
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string | undefined): string => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
+  const formatDate = (dateString?: string): string =>
+    dateString
+      ? new Date(dateString).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })
+      : "-";
 
   return (
     <Box sx={{ p: 3, bgcolor: "#fafafa", minHeight: "100vh" }}>
-      <Box
-        sx={{
-          mb: 3,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
-          <Typography
-            variant="h4"
-            sx={{ fontWeight: 600, color: "#1f2937", mb: 1 }}
-          >
+          <Typography variant="h4" sx={{ fontWeight: 600, color: "#1f2937", mb: 1 }}>
             Project Management
           </Typography>
           <Typography variant="body2" sx={{ color: "#6b7280" }}>
@@ -273,9 +216,7 @@ const ProjectManagement = () => {
             py: 1.5,
             fontSize: "1rem",
             fontWeight: 600,
-            "&:hover": {
-              bgcolor: "#059669",
-            },
+            "&:hover": { bgcolor: "#059669" },
           }}
         >
           Add Project
@@ -294,36 +235,21 @@ const ProjectManagement = () => {
                 <SearchIcon sx={{ color: "#6b7280" }} />
               </InputAdornment>
             ),
-            endAdornment: searchTerm && (
+            endAdornment: !!searchTerm && (
               <InputAdornment position="end">
-                <IconButton
-                  size="small"
-                  onClick={() => setSearchTerm("")}
-                  sx={{ color: "#6b7280" }}
-                >
+                <IconButton size="small" onClick={() => setSearchTerm("")} sx={{ color: "#6b7280" }}>
                   <CloseIcon fontSize="small" />
                 </IconButton>
               </InputAdornment>
             ),
           }}
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              bgcolor: "white",
-            },
-          }}
+          sx={{ "& .MuiOutlinedInput-root": { bgcolor: "white" } }}
         />
       </Paper>
 
       <Paper elevation={0} sx={{ border: "1px solid #e5e7eb", overflow: "hidden" }}>
         {isLoading && (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              py: 4,
-            }}
-          >
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 4 }}>
             <CircularProgress />
           </Box>
         )}
@@ -335,20 +261,12 @@ const ProjectManagement = () => {
         )}
 
         {!isLoading && !error && projects.length === 0 && (
-          <Box
-            sx={{
-              textAlign: "center",
-              py: 8,
-              px: 3,
-            }}
-          >
+          <Box sx={{ textAlign: "center", py: 8, px: 3 }}>
             <Typography variant="h6" sx={{ color: "#9ca3af", mb: 2 }}>
               No projects found
             </Typography>
             <Typography variant="body2" sx={{ color: "#d1d5db", mb: 3 }}>
-              {searchTerm
-                ? "Try adjusting your search terms"
-                : "Click 'Add Project' to create your first project"}
+              {searchTerm ? "Try adjusting your search terms" : "Click 'Add Project' to create your first project"}
             </Typography>
             {!searchTerm && (
               <Button
@@ -361,9 +279,7 @@ const ProjectManagement = () => {
                   textTransform: "none",
                   px: 3,
                   py: 1.5,
-                  "&:hover": {
-                    bgcolor: "#059669",
-                  },
+                  "&:hover": { bgcolor: "#059669" },
                 }}
               >
                 Add Project
@@ -378,63 +294,34 @@ const ProjectManagement = () => {
               <Table>
                 <TableHead>
                   <TableRow sx={{ bgcolor: "#f9fafb" }}>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
-                      Project Name
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
-                      Code
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
-                      Client
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
-                      Status
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
-                      Start Date
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
-                      End Date
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
-                      Budget
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{ fontWeight: 600, color: "#374151" }}
-                    >
+                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>S.No</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Project Name</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Added By</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Created Date</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Updated Date</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 600, color: "#374151" }}>
                       Actions
                     </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {projects.map((project) => (
+                  {projects.map((project, index) => (
                     <TableRow
                       key={project._id}
                       sx={{
-                        "&:hover": {
-                          bgcolor: alpha("#3b82f6", 0.05),
-                        },
+                        "&:hover": { bgcolor: alpha("#3b82f6", 0.05) },
                         transition: "background-color 0.2s",
                       }}
                     >
+                      <TableCell>{page * rowsPerPage + index + 1}</TableCell>
                       <TableCell>
                         <Box>
-                          <Typography
-                            variant="body2"
-                            sx={{ fontWeight: 600, color: "#1f2937" }}
-                          >
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: "#1f2937" }}>
                             {project.name}
                           </Typography>
                           {project.description && (
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: "#6b7280",
-                                display: "block",
-                                mt: 0.5,
-                              }}
-                            >
+                            <Typography variant="caption" sx={{ color: "#6b7280", display: "block", mt: 0.5 }}>
                               {project.description.length > 50
                                 ? `${project.description.substring(0, 50)}...`
                                 : project.description}
@@ -442,37 +329,10 @@ const ProjectManagement = () => {
                           )}
                         </Box>
                       </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={project.code}
-                          size="small"
-                          sx={{
-                            bgcolor: alpha("#3b82f6", 0.1),
-                            color: "#3b82f6",
-                            fontWeight: 600,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ color: "#6b7280" }}>
-                        {project.clientName || "-"}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={project.status}
-                          size="small"
-                          color={getStatusColor(project.status)}
-                          sx={{ textTransform: "capitalize" }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ color: "#6b7280" }}>
-                        {formatDate(project.startDate)}
-                      </TableCell>
-                      <TableCell sx={{ color: "#6b7280" }}>
-                        {formatDate(project.endDate)}
-                      </TableCell>
-                      <TableCell sx={{ color: "#6b7280", fontWeight: 600 }}>
-                        {formatCurrency(project.budget)}
-                      </TableCell>
+                      <TableCell>{project.addedBy?.name || "-"}</TableCell>
+                      <TableCell sx={{ color: "#6b7280" }}>{project.isDeleted ? "Deleted" : "Active"}</TableCell>
+                      <TableCell sx={{ color: "#6b7280" }}>{formatDate(project.createdAt)}</TableCell>
+                      <TableCell sx={{ color: "#6b7280" }}>{formatDate(project.updatedAt)}</TableCell>
                       <TableCell align="center">
                         <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
                           <Tooltip title="Edit Project">
@@ -481,10 +341,7 @@ const ProjectManagement = () => {
                               onClick={() => handleOpenEditModal(project)}
                               sx={{
                                 color: "#6b7280",
-                                "&:hover": {
-                                  color: "#3b82f6",
-                                  bgcolor: alpha("#3b82f6", 0.1),
-                                },
+                                "&:hover": { color: "#3b82f6", bgcolor: alpha("#3b82f6", 0.1) },
                               }}
                             >
                               <EditIcon fontSize="small" />
@@ -496,10 +353,7 @@ const ProjectManagement = () => {
                               onClick={() => handleOpenDeleteModal(project)}
                               sx={{
                                 color: "#6b7280",
-                                "&:hover": {
-                                  color: "#ef4444",
-                                  bgcolor: alpha("#ef4444", 0.1),
-                                },
+                                "&:hover": { color: "#ef4444", bgcolor: alpha("#ef4444", 0.1) },
                               }}
                             >
                               <DeleteIcon fontSize="small" />
@@ -521,9 +375,7 @@ const ProjectManagement = () => {
               page={page}
               onPageChange={handleChangePage}
               onRowsPerPageChange={handleChangeRowsPerPage}
-              sx={{
-                borderTop: "1px solid #e5e7eb",
-              }}
+              sx={{ borderTop: "1px solid #e5e7eb" }}
             />
           </>
         )}
@@ -534,18 +386,9 @@ const ProjectManagement = () => {
         onClose={handleCloseFormModal}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-          },
-        }}
+        PaperProps={{ sx: { borderRadius: 2 } }}
       >
-        <DialogTitle
-          sx={{
-            borderBottom: "1px solid #e5e7eb",
-            pb: 2,
-          }}
-        >
+        <DialogTitle sx={{ borderBottom: "1px solid #e5e7eb", pb: 2 }}>
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             {isEdit ? "Edit Project" : "Add New Project"}
           </Typography>
@@ -566,29 +409,6 @@ const ProjectManagement = () => {
               placeholder="Enter project name"
             />
             <TextField
-              label="Project Code"
-              fullWidth
-              required
-              id="code"
-              name="code"
-              value={formik.values.code}
-              onChange={(e) => formik.setFieldValue("code", e.target.value.toUpperCase())}
-              onBlur={formik.handleBlur}
-              error={formik.touched.code && Boolean(formik.errors.code)}
-              helperText={formik.touched.code && formik.errors.code ? formik.errors.code : "E.g., PROJ-2024-001"}
-              placeholder="Enter project code"
-            />
-            <TextField
-              label="Client Name"
-              fullWidth
-              id="clientName"
-              name="clientName"
-              value={formik.values.clientName}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              placeholder="Enter client name"
-            />
-            <TextField
               label="Description"
               fullWidth
               multiline
@@ -600,81 +420,9 @@ const ProjectManagement = () => {
               onBlur={formik.handleBlur}
               placeholder="Enter project description"
             />
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <TextField
-                label="Start Date"
-                type="date"
-                fullWidth
-                id="startDate"
-                name="startDate"
-                value={formik.values.startDate}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-              />
-              <TextField
-                label="End Date"
-                type="date"
-                fullWidth
-                id="endDate"
-                name="endDate"
-                value={formik.values.endDate}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={formik.touched.endDate && Boolean(formik.errors.endDate)}
-                helperText={formik.touched.endDate && formik.errors.endDate}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-              />
-            </Box>
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <TextField
-                select
-                label="Status"
-                fullWidth
-                id="status"
-                name="status"
-                value={formik.values.status}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-              >
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="on-hold">On Hold</MenuItem>
-                <MenuItem value="completed">Completed</MenuItem>
-                <MenuItem value="cancelled">Cancelled</MenuItem>
-              </TextField>
-              <TextField
-                label="Budget"
-                type="number"
-                fullWidth
-                id="budget"
-                name="budget"
-                value={formik.values.budget}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={formik.touched.budget && Boolean(formik.errors.budget)}
-                helperText={formik.touched.budget && formik.errors.budget}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">$</InputAdornment>
-                  ),
-                }}
-                inputProps={{ min: 0, step: 100 }}
-              />
-            </Box>
           </Box>
         </DialogContent>
-        <DialogActions
-          sx={{
-            borderTop: "1px solid #e5e7eb",
-            px: 3,
-            py: 2,
-            gap: 1,
-          }}
-        >
+        <DialogActions sx={{ borderTop: "1px solid #e5e7eb", px: 3, py: 2, gap: 1 }}>
           <Button
             onClick={handleCloseFormModal}
             variant="outlined"
@@ -682,10 +430,7 @@ const ProjectManagement = () => {
               textTransform: "none",
               borderColor: "#e5e7eb",
               color: "#6b7280",
-              "&:hover": {
-                borderColor: "#9ca3af",
-                bgcolor: alpha("#6b7280", 0.05),
-              },
+              "&:hover": { borderColor: "#9ca3af", bgcolor: alpha("#6b7280", 0.05) },
             }}
           >
             Cancel
@@ -693,25 +438,15 @@ const ProjectManagement = () => {
           <Button
             onClick={formik.submitForm}
             variant="contained"
-            type="submit"
-            disabled={isLoading || formik.isSubmitting}
+            disabled={isLoading || formik.isSubmitting || !formik.isValid}
             sx={{
               textTransform: "none",
               bgcolor: "#10b981",
               "&:hover": { bgcolor: "#059669" },
-              "&:disabled": {
-                bgcolor: "#e5e7eb",
-                color: "#9ca3af",
-              },
+              "&:disabled": { bgcolor: "#e5e7eb", color: "#9ca3af" },
             }}
           >
-            {isLoading || formik.isSubmitting ? (
-              <CircularProgress size={20} />
-            ) : isEdit ? (
-              "Update Project"
-            ) : (
-              "Create Project"
-            )}
+            {isLoading || formik.isSubmitting ? <CircularProgress size={20} /> : isEdit ? "Update Project" : "Create Project"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -721,11 +456,7 @@ const ProjectManagement = () => {
         onClose={handleCloseDeleteModal}
         maxWidth="sm"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-          },
-        }}
+        PaperProps={{ sx: { borderRadius: 2 } }}
       >
         <DialogTitle>
           <Typography variant="h6" sx={{ fontWeight: 600, color: "#ef4444" }}>
@@ -745,21 +476,12 @@ const ProjectManagement = () => {
                 border: `1px solid ${alpha("#ef4444", 0.2)}`,
               }}
             >
-              <Typography
-                variant="body2"
-                sx={{ fontWeight: 600, color: "#1f2937", mb: 0.5 }}
-              >
+              <Typography variant="body2" sx={{ fontWeight: 600, color: "#1f2937", mb: 0.5 }}>
                 {selectedProject.name}
-              </Typography>
-              <Typography variant="caption" sx={{ color: "#6b7280" }}>
-                Code: {selectedProject.code}
               </Typography>
             </Box>
           )}
-          <Typography
-            variant="body2"
-            sx={{ color: "#ef4444", mt: 2, fontWeight: 500 }}
-          >
+          <Typography variant="body2" sx={{ color: "#ef4444", mt: 2, fontWeight: 500 }}>
             This action cannot be undone.
           </Typography>
         </DialogContent>
@@ -771,10 +493,7 @@ const ProjectManagement = () => {
               textTransform: "none",
               borderColor: "#e5e7eb",
               color: "#6b7280",
-              "&:hover": {
-                borderColor: "#9ca3af",
-                bgcolor: alpha("#6b7280", 0.05),
-              },
+              "&:hover": { borderColor: "#9ca3af", bgcolor: alpha("#6b7280", 0.05) },
             }}
           >
             Cancel
@@ -787,10 +506,7 @@ const ProjectManagement = () => {
               textTransform: "none",
               bgcolor: "#ef4444",
               "&:hover": { bgcolor: "#dc2626" },
-              "&:disabled": {
-                bgcolor: "#e5e7eb",
-                color: "#9ca3af",
-              },
+              "&:disabled": { bgcolor: "#e5e7eb", color: "#9ca3af" },
             }}
           >
             {isLoading ? <CircularProgress size={20} /> : "Delete Project"}
@@ -802,4 +518,3 @@ const ProjectManagement = () => {
 };
 
 export default ProjectManagement;
-

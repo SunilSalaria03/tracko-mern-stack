@@ -65,7 +65,7 @@ const projectSlice = createSlice({
       })
       .addCase(createProject.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.projects.unshift(action.payload);
+        // state.projects.unshift(action.payload);
         state.total += 1;
         state.error = null;
       })
