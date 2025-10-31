@@ -2,7 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { UserState } from '../../utils/interfaces/storeInterface';
 import type { User } from '../../utils/interfaces/userInterface';
-import { deleteUser, fetchUserById, fetchUsers, updateUserProfile } from '../actions/userActions';
+import { deleteUser, fetchUserById, fetchUsers, updateUserProfile, changePassword } from '../actions/userActions';
 
 const initialState: UserState = {
   users: [],
@@ -82,6 +82,21 @@ const userSlice = createSlice({
         state.error = null;
       })
       .addCase(updateUserProfile.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    // Change password
+    builder
+      .addCase(changePassword.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(changePassword.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(changePassword.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });

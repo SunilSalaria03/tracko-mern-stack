@@ -12,6 +12,7 @@ export const API_ENDPOINTS = {
       BY_ID: (id: string) => `/users/${id}`,
       PROFILE: '/users/profile',
       UPDATE_PROFILE: '/users/profile',
+      CHANGE_PASSWORD: '/users/changePassword',
     },
     EMPLOYEES: {
       LIST: '/admin/employees',

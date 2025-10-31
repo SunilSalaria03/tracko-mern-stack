@@ -21,6 +21,11 @@ export const fetchUsers = createGetThunk<User[]>(
     'user/updateProfile',
     () => API_ENDPOINTS.USERS.UPDATE_PROFILE
   );
+
+  export const changePassword = createPutThunk<unknown, { oldPassword: string; newPassword: string }>(
+    'user/changePassword',
+    () => API_ENDPOINTS.USERS.CHANGE_PASSWORD
+  );
   
   export const deleteUser = createDeleteThunk<string>(
     'user/deleteUser',
