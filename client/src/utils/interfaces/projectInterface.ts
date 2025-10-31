@@ -4,6 +4,9 @@ export interface Project {
   _id: string;
   name: string;
   description?: string;
+  startDate?: string; // ISO string from API
+  endDate?: string;   // ISO string from API
+  status?: 0 | 1 | 2 | 3;
   createdAt?: string;
   updatedAt?: string;
   addedBy?: User | null;
@@ -13,6 +16,9 @@ export interface Project {
 export interface ProjectFormData {
   name: string;
   description?: string;
+  startDate: string; // yyyy-MM-dd (from input type="date")
+  endDate: string;   // yyyy-MM-dd
+  status: 0 | 1 | 2 | 3;
  }
 
 export interface ProjectListParams {
@@ -21,6 +27,7 @@ export interface ProjectListParams {
   search?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  status?: string; // optional filter
 }
 
 export interface ProjectListResponse {

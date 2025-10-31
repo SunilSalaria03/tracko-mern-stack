@@ -157,7 +157,7 @@ export const getUsers = async (
 
     console.log('req.user', req.user);
     const user = req.user;
-    if (user.role !== 0) {
+    if (user.role !== 0 && user.role !== 1) {
       return helper.failed(res, 'Access denied. Admin only.');
     }
 
@@ -192,7 +192,7 @@ export const getUserById = async (
     }
 
     // Check if user is admin
-    if (req.user.role !== 0) {
+    if (req.user.role !== 0 && req.user.role !== 1) {
       return helper.failed(res, 'Access denied. Admin only.');
     }
 
@@ -221,7 +221,7 @@ export const deleteUser = async (
     }
 
     // Check if user is admin
-    if (req.user.role !== 0) {
+    if (req.user.role !== 0 && req.user.role !== 1) {
       return helper.failed(res, 'Access denied. Admin only.');
     }
 

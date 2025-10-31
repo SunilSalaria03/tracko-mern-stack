@@ -13,7 +13,7 @@ import {
   Divider,
   Button,
 } from "@mui/material";
-import { HiOutlineLogout, HiOutlineUser, HiOutlineCog } from "react-icons/hi";
+import { HiOutlineLogout,   HiOutlineCog } from "react-icons/hi";
 import { selectAppState } from "../../../store/selectors";
 import { logoutUser } from "../../../store/actions/authActions";
 import type { AppDispatch } from "../../../store";
@@ -233,16 +233,13 @@ const Navbar: React.FC = () => {
               <MenuItem
                 onClick={() => {
                   handleMenuClose();
-                  navigate("/profile");
+                  navigate("/settings");
                 }}
               >
-                <HiOutlineUser className="w-5 h-5 text-gray-600" />
-                <Typography variant="body2">Profile</Typography>
-              </MenuItem>
-              <MenuItem onClick={handleMenuClose}>
                 <HiOutlineCog className="w-5 h-5 text-gray-600" />
                 <Typography variant="body2">Settings</Typography>
               </MenuItem>
+             
               <Divider />
               <MenuItem onClick={handleLogoutClick} sx={{ color: "#dc2626" }}>
                 <HiOutlineLogout className="w-5 h-5" />
