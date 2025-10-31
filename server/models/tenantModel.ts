@@ -1,4 +1,4 @@
-import { ITenant } from "@/interfaces/tenantInterface";
+import { ITenant } from "../interfaces/tenantInterface";
 import mongoose, { Schema } from "mongoose";
 
 const TenantSchema = new Schema<ITenant>(

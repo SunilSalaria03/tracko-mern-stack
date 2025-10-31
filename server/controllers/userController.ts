@@ -7,7 +7,7 @@ import { changePasswordValidation } from '../validations/authValidations';
 import { addUserService } from '../services/userService';
 import { addUserValidation } from '../validations/userValidations';
 import { deleteUserService, getUserByIdService, getUsersService } from '../services/userService';
-import { IUser } from '@/interfaces/userInterfaces';
+import { IUser } from '../interfaces/userInterfaces';
 
 export const getProfile = async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {

@@ -1,4 +1,4 @@
-import { IProject } from "@/interfaces/projectInterfaces";
+import { IProject } from "../interfaces/projectInterfaces";
 import Joi from "joi";
 
 export const addProjectValidation = (data: Partial<IProject>) => {

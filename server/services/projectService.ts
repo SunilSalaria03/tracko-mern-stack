@@ -1,8 +1,9 @@
-import { IProject, ProjectListParams } from "../interfaces/projectInterfaces";
+import { IProject } from "../interfaces/projectInterfaces";
+import { IListParams } from "../interfaces/userInterfaces";
 import projectModel from "../models/projectModel";
 import { GENERAL_MESSAGES, PROJECT_MESSAGES } from "../utils/constants/messages";
 
-export const getProjectsService = async (params: ProjectListParams) => {
+export const getProjectsService = async (params: IListParams) => {
   try {
     const page = params.page || 1;
     const limit = params.limit || 10;

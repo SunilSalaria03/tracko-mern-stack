@@ -1,4 +1,4 @@
-import { IUser } from "@/interfaces/userInterfaces";
+import { IUser } from "../interfaces/userInterfaces";
 import Joi from "joi";
 
 export const addUserValidation = (data: Partial<IUser>) => {
