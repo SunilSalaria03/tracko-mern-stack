@@ -14,10 +14,6 @@ import {
   IconButton,
   TextField,
   InputAdornment,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   CircularProgress,
   Alert,
   Tooltip,
@@ -29,6 +25,7 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
   Close as CloseIcon,
+  Visibility as VisibilityIcon,
 } from "@mui/icons-material";
 import { useAppDispatch, useAppSelector } from "../../../../store";
 import {
@@ -39,10 +36,9 @@ import {
 } from "../../../../store/actions/projectActions";
 import type { Project, ProjectFormData } from "../../../../utils/interfaces/projectInterface";
 import { toast } from "react-toastify";
-import { useFormik } from "formik";
-import { projectValidationSchema } from "../../../../utils/validations/ProjectValidations";
+import { ProjectFormModal, ProjectDeleteModal, ProjectViewModal } from "./ProjectManagementModals.tsx";
 
-const initialFormValues: ProjectFormData = { name: "", description: "" };
+const initialFormValues: ProjectFormData = { name: "", description: "", startDate: "", endDate: "", status: 1 };
 
 const ProjectManagement = () => {
   const dispatch = useAppDispatch();
@@ -54,6 +50,7 @@ const ProjectManagement = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [openFormModal, setOpenFormModal] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [openViewModal, setOpenViewModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isEdit, setIsEdit] = useState(false);
 
@@ -89,44 +86,21 @@ const ProjectManagement = () => {
     fetchProjectsData();
   }, [page, rowsPerPage, debouncedSearch]);
 
-  const formik = useFormik<ProjectFormData>({
-    initialValues: initialFormValues,
-    validationSchema: projectValidationSchema,
-    enableReinitialize: true,
-    onSubmit: async (values, { resetForm, setSubmitting }) => {
-      try {
-        if (isEdit && selectedProject) {
-          await dispatch(
-            updateProject({ id: selectedProject._id, data: values })
-          ).unwrap();
-          toast.success("Project updated successfully!");
-          await fetchProjectsData();
-        } else {
-          await dispatch(createProject(values)).unwrap();
-          toast.success("Project created successfully!");
-          setPage(0);
-          await fetchProjectsData({ page: 0 });
-        }
-        handleCloseFormModal();
-        resetForm();
-      } catch {
-        toast.error(isEdit ? "Failed to update project" : "Failed to create project");
-      } finally {
-        setSubmitting(false);
-      }
-    },
-  });
-
-  useEffect(() => {
+  const getProjectInitialValues = (): ProjectFormData => {
     if (isEdit && selectedProject) {
-      formik.setValues({
+      const start = selectedProject.startDate ? new Date(selectedProject.startDate) : undefined;
+      const end = selectedProject.endDate ? new Date(selectedProject.endDate) : undefined;
+      const toInputDate = (d?: Date) => (d ? d.toISOString().slice(0, 10) : "");
+      return {
         name: selectedProject.name,
         description: selectedProject.description || "",
-      });
-    } else {
-      formik.setValues(initialFormValues);
+        startDate: toInputDate(start),
+        endDate: toInputDate(end),
+        status: (selectedProject.status ?? 1) as 0 | 1 | 2 | 3,
+      };
     }
-  }, [openFormModal, isEdit, selectedProject]);
+    return initialFormValues;
+  };
 
   const handleChangePage = (_: unknown, newPage: number) => setPage(newPage);
 
@@ -155,7 +129,6 @@ const ProjectManagement = () => {
   const handleCloseFormModal = () => {
     setOpenFormModal(false);
     setSelectedProject(null);
-    formik.resetForm();
   };
 
   const handleOpenDeleteModal = (project: Project) => {
@@ -165,6 +138,16 @@ const ProjectManagement = () => {
 
   const handleCloseDeleteModal = () => {
     setOpenDeleteModal(false);
+    setSelectedProject(null);
+  };
+
+  const handleOpenViewModal = (project: Project) => {
+    setSelectedProject(project);
+    setOpenViewModal(true);
+  };
+
+  const handleCloseViewModal = () => {
+    setOpenViewModal(false);
     setSelectedProject(null);
   };
 
@@ -330,11 +313,28 @@ const ProjectManagement = () => {
                         </Box>
                       </TableCell>
                       <TableCell>{project.addedBy?.name || "-"}</TableCell>
-                      <TableCell sx={{ color: "#6b7280" }}>{project.isDeleted ? "Deleted" : "Active"}</TableCell>
+                      <TableCell sx={{ color: "#6b7280" }}>
+                        {(() => {
+                          const s = project.status ?? 1;
+                          return s === 0 ? "Inactive" : s === 1 ? "Active" : s === 2 ? "Completed" : s === 3 ? "Cancelled" : "-";
+                        })()}
+                      </TableCell>
                       <TableCell sx={{ color: "#6b7280" }}>{formatDate(project.createdAt)}</TableCell>
                       <TableCell sx={{ color: "#6b7280" }}>{formatDate(project.updatedAt)}</TableCell>
                       <TableCell align="center">
                         <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+                          <Tooltip title="View Project">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleOpenViewModal(project)}
+                              sx={{
+                                color: "#6b7280",
+                                "&:hover": { color: "#3b82f6", bgcolor: alpha("#3b82f6", 0.1) },
+                              }}
+                            >
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                           <Tooltip title="Edit Project">
                             <IconButton
                               size="small"
@@ -381,138 +381,44 @@ const ProjectManagement = () => {
         )}
       </Paper>
 
-      <Dialog
-        open={openFormModal}
+      <ProjectFormModal
+        isOpen={openFormModal}
+        isEdit={isEdit}
+        initialValues={getProjectInitialValues()}
+        isLoading={isLoading}
         onClose={handleCloseFormModal}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 2 } }}
-      >
-        <DialogTitle sx={{ borderBottom: "1px solid #e5e7eb", pb: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            {isEdit ? "Edit Project" : "Add New Project"}
-          </Typography>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 3 }}>
-          <Box component="form" onSubmit={formik.handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-            <TextField
-              label="Project Name"
-              fullWidth
-              required
-              id="name"
-              name="name"
-              value={formik.values.name}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              error={formik.touched.name && Boolean(formik.errors.name)}
-              helperText={formik.touched.name && formik.errors.name}
-              placeholder="Enter project name"
-            />
-            <TextField
-              label="Description"
-              fullWidth
-              multiline
-              rows={3}
-              id="description"
-              name="description"
-              value={formik.values.description}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              placeholder="Enter project description"
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ borderTop: "1px solid #e5e7eb", px: 3, py: 2, gap: 1 }}>
-          <Button
-            onClick={handleCloseFormModal}
-            variant="outlined"
-            sx={{
-              textTransform: "none",
-              borderColor: "#e5e7eb",
-              color: "#6b7280",
-              "&:hover": { borderColor: "#9ca3af", bgcolor: alpha("#6b7280", 0.05) },
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={formik.submitForm}
-            variant="contained"
-            disabled={isLoading || formik.isSubmitting || !formik.isValid}
-            sx={{
-              textTransform: "none",
-              bgcolor: "#10b981",
-              "&:hover": { bgcolor: "#059669" },
-              "&:disabled": { bgcolor: "#e5e7eb", color: "#9ca3af" },
-            }}
-          >
-            {isLoading || formik.isSubmitting ? <CircularProgress size={20} /> : isEdit ? "Update Project" : "Create Project"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onSubmit={async (values: ProjectFormData) => {
+          try {
+            if (isEdit && selectedProject) {
+              await dispatch(updateProject({ id: selectedProject._id, data: values })).unwrap();
+              toast.success("Project updated successfully!");
+              await fetchProjectsData();
+            } else {
+              await dispatch(createProject(values)).unwrap();
+              toast.success("Project created successfully!");
+              setPage(0);
+              await fetchProjectsData({ page: 0 });
+            }
+            handleCloseFormModal();
+          } catch {
+            toast.error(isEdit ? "Failed to update project" : "Failed to create project");
+          }
+        }}
+      />
 
-      <Dialog
-        open={openDeleteModal}
-        onClose={handleCloseDeleteModal}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 2 } }}
-      >
-        <DialogTitle>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: "#ef4444" }}>
-            Delete Project
-          </Typography>
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body1" sx={{ color: "#6b7280", mb: 2 }}>
-            Are you sure you want to delete this project?
-          </Typography>
-          {selectedProject && (
-            <Box
-              sx={{
-                p: 2,
-                bgcolor: alpha("#ef4444", 0.05),
-                borderRadius: 1,
-                border: `1px solid ${alpha("#ef4444", 0.2)}`,
-              }}
-            >
-              <Typography variant="body2" sx={{ fontWeight: 600, color: "#1f2937", mb: 0.5 }}>
-                {selectedProject.name}
-              </Typography>
-            </Box>
-          )}
-          <Typography variant="body2" sx={{ color: "#ef4444", mt: 2, fontWeight: 500 }}>
-            This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
-          <Button
-            onClick={handleCloseDeleteModal}
-            variant="outlined"
-            sx={{
-              textTransform: "none",
-              borderColor: "#e5e7eb",
-              color: "#6b7280",
-              "&:hover": { borderColor: "#9ca3af", bgcolor: alpha("#6b7280", 0.05) },
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleDelete}
-            variant="contained"
-            disabled={isLoading}
-            sx={{
-              textTransform: "none",
-              bgcolor: "#ef4444",
-              "&:hover": { bgcolor: "#dc2626" },
-              "&:disabled": { bgcolor: "#e5e7eb", color: "#9ca3af" },
-            }}
-          >
-            {isLoading ? <CircularProgress size={20} /> : "Delete Project"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ProjectDeleteModal
+        isOpen={openDeleteModal}
+        projectName={selectedProject?.name || ""}
+        isLoading={isLoading}
+        onCancel={handleCloseDeleteModal}
+        onConfirm={handleDelete}
+      />
+
+      <ProjectViewModal
+        isOpen={openViewModal}
+        project={selectedProject}
+        onClose={handleCloseViewModal}
+      />
     </Box>
   );
 };

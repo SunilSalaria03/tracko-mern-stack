@@ -7,7 +7,7 @@ export interface IProject extends Document {
   addedBy?: string;
   startDate: Date;
   endDate: Date;
-  status: 1 | 0;
+  status: 0 | 1 | 2 | 3;
 }
 
 export interface ProjectListParams {

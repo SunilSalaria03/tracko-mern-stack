@@ -22,9 +22,9 @@ const ProjectSchema = new Schema<IProject>(
     },
     status: {
       type: Number,
-      enum: [0, 1],
-      default: 0,
-      description: "1 = active, 0 = inactive",
+      enum: [0, 1, 2, 3],
+      default: 1,
+      description: "0 = inactive, 1 = active, 2 = completed, 3 = cancelled",
     },
     isDeleted: {
       type: Boolean,
@@ -32,9 +32,9 @@ const ProjectSchema = new Schema<IProject>(
     },
     addedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       default: null,
-    }
+    },
   },
   {
     timestamps: true,
@@ -42,4 +42,3 @@ const ProjectSchema = new Schema<IProject>(
 );
 
 export default mongoose.model<IProject>("Project", ProjectSchema);
-
