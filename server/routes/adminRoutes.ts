@@ -5,6 +5,7 @@ import * as projectController from '../controllers/projectController';
 import * as departmentController from '../controllers/departmentController';
 import * as designationController from '../controllers/designationController';
 import * as workstreamController from '../controllers/workstreamController';
+import * as permissionController from '../controllers/permissionsController';
 
 const router = Router();
 
@@ -44,5 +45,12 @@ router.put('/workstreams/:id', workstreamController.updateWorkstream);
 router.get('/workstreams', workstreamController.getWorkstreams);
 router.get('/workstreams/:id', workstreamController.getWorkstreamById);
 router.delete('/workstreams/:id', workstreamController.deleteWorkstream);
+
+// Permission routes
+router.post('/permissions', permissionController.addPermission);
+router.put('/permissions/:id', permissionController.updatePermission);
+router.get('/permissions', permissionController.getPermissions);
+router.get('/permissions/:id', permissionController.getPermissionById);
+router.delete('/permissions/:id', permissionController.deletePermission);
 
 export default router;

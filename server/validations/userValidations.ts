@@ -37,10 +37,10 @@ export const addUserValidation = (data: Partial<IUser>) => {
       profileImage: Joi.string().optional().messages({
         'any.required': 'Profile image is required',
       }),
-      designation: Joi.string().required().messages({
+      designationId: Joi.string().required().messages({
         'any.required': 'Designation is required',
       }),
-      department: Joi.string().required().messages({
+      departmentId: Joi.string().required().messages({
         'any.required': 'Department is required',
       }),
     });

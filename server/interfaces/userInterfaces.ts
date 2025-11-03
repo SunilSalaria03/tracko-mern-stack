@@ -17,8 +17,8 @@ export interface IUser extends Document {
     createdAt?: Date;
     updatedAt?: Date;
     tempPassword?: string | null;
-    designation?: string;
-    department?: string;
+    designationId?: mongoose.Schema.Types.ObjectId | null;
+    departmentId?: mongoose.Schema.Types.ObjectId | null;
     Location?: string;
     addedBy?: string | null;
     addedByUserRole?: 0 | 1 | 2 | 3;
@@ -37,4 +37,6 @@ export interface IListParams {
   search?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  startDate?: string;
+  endDate?: string;
 }

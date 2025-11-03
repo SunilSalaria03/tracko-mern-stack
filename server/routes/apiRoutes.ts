@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as authController from '../controllers/authController';
 import * as userController from '../controllers/userController';
 import { authMiddleware } from '../middlewares/auth';
+import * as userTaskController from '../controllers/userTaskController';
 
 const router = Router();
 
@@ -25,5 +26,13 @@ router.delete('/delete-account', authController.deleteAccount);
 router.get('/users/profile', userController.getProfile);
 router.put('/users/profile', userController.updateProfile);
 router.put('/users/changePassword', userController.changePassword);
+
+// User task routes
+router.post('/userTasks', userTaskController.addUserTask);
+router.get('/userTasks', userTaskController.getUserTasks);
+router.get('/userTasks/:id', userTaskController.getUserTaskById);
+router.delete('/userTasks/:id', userTaskController.deleteUserTask);
+router.put('/userTasks/finalSubmit', userTaskController.finalSubmitUserTask);
+router.put('/userTasks/:id', userTaskController.updateUserTask);
 
 export default router;
