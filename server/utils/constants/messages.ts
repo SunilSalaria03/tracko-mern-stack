@@ -87,6 +87,7 @@ export const DEPARTMENT_MESSAGES = {
 };
 
 export const DESIGNATION_MESSAGES = {
+  INVALID_DESIGNATION_ID: 'Invalid designation ID',
   DESIGNATION_NOT_FOUND: 'Designation not found',
   DESIGNATION_NAME_ALREADY_EXISTS: 'Designation name already exists',
   DESIGNATION_CREATION_NOT_ALLOWED: 'Admin and Manager only can add designation',
@@ -102,6 +103,18 @@ export const WORKSTREAM_MESSAGES = {
   WORKSTREAM_UPDATE_NOT_ALLOWED: 'Admin and Manager only can update workstream',
 };
 
+export const USER_TASK_MESSAGES = {
+  USER_TASK_ID_REQUIRED: 'User task ID is required',
+  USER_TASK_NOT_FOUND: 'User task not found',
+  USER_TASK_DESCRIPTION_ALREADY_EXISTS: 'User task description already exists',
+  USER_TASKS_FETCHED_SUCCESSFULLY: 'User tasks fetched successfully',
+  USER_TASK_CREATION_NOT_ALLOWED: 'Admin and Manager only can add user task',
+  USER_TASK_UPDATE_NOT_ALLOWED: 'Admin and Manager only can update user task',
+  INVALID_USER_TASK_ID: 'Invalid user task ID',
+  CANNOT_UPDATE_AFTER_FINAL_SUBMIT_TASK: 'Cannot update after final submission of the task',
+  CANNOT_DELETE_AFTER_FINAL_SUBMIT_TASK: 'Cannot delete after final submission of the task',
+};
+
 export const MESSAGES = {
   AUTH: AUTH_MESSAGES,
   USER: USER_MESSAGES,
@@ -112,6 +125,7 @@ export const MESSAGES = {
   DEPARTMENT: DEPARTMENT_MESSAGES,
   DESIGNATION: DESIGNATION_MESSAGES,
   WORKSTREAM: WORKSTREAM_MESSAGES,
+  USER_TASK: USER_TASK_MESSAGES,
 };
 
 export default MESSAGES;

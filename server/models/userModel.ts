@@ -14,12 +14,14 @@ const UserSchema = new Schema<IUser>(
       default: 2,
       required: true,
     },
-    designation: {
-      type: String,
+    designationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Designation',
       required: true,
     },
-    department: {
-      type: String,
+    departmentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Department',
       required: true,
     },
     email: {

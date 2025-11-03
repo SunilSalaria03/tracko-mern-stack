@@ -3,10 +3,13 @@ import bcrypt from 'bcryptjs';
 import { IChangePassword, IListParams, IUser } from '../interfaces/userInterfaces';
 import { imageUpload } from '../helpers/commonHelpers';
 import userModel from '../models/userModel';
-import { AUTH_MESSAGES, GENERAL_MESSAGES, USER_MESSAGES } from '../utils/constants/messages';
+import { AUTH_MESSAGES, DEPARTMENT_MESSAGES, DESIGNATION_MESSAGES, GENERAL_MESSAGES, USER_MESSAGES } from '../utils/constants/messages';
 import tenantModel from '../models/tenantModel';
 import jwt from 'jsonwebtoken';
 import * as helper from '../helpers/commonHelpers';
+import designationModel from '../models/designationModel';
+import departmentModel from '../models/departmentModel';
+import mongoose from 'mongoose';
 
 export const getProfileService = async (userId: string) => {
   try {
@@ -290,6 +293,30 @@ export const addUserService = async (data: Partial<IUser>, files?: any) => {
       const adminExist = await userModel.findOne({ role: 0, isDeleted: false });
       if (adminExist) {
         return { error: AUTH_MESSAGES.SUPER_ADMIN_ALREADY_EXISTS };
+      }
+    }
+
+    if(data.designationId){
+      const designationIdStr = typeof data.designationId === "string" ? data.designationId : data.designationId.toString();
+      if(!mongoose.Types.ObjectId.isValid(designationIdStr)) {
+        return { error: DESIGNATION_MESSAGES.INVALID_DESIGNATION_ID };
+      }
+
+      const designation = await designationModel.findOne({ _id: data.designationId, isDeleted: false });
+      if(!designation){
+        return { error: DESIGNATION_MESSAGES.DESIGNATION_NOT_FOUND };
+      }
+    }
+
+    if(data.departmentId){
+      const departmentIdStr = typeof data.departmentId === "string" ? data.departmentId : data.departmentId.toString();
+      if(!mongoose.Types.ObjectId.isValid(departmentIdStr)) {
+        return { error: DEPARTMENT_MESSAGES.INVALID_DEPARTMENT_ID };
+      }
+
+      const department = await departmentModel.findOne({ _id: data.departmentId, isDeleted: false });
+      if(!department){
+        return { error: DEPARTMENT_MESSAGES.DEPARTMENT_NOT_FOUND };
       }
     }
     
