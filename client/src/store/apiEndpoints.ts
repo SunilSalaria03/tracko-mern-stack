@@ -45,5 +45,19 @@ export const API_ENDPOINTS = {
       UPDATE: (id: string) => `/admin/admins/${id}`,
       DELETE: (id: string) => `/admin/admins/${id}`,
     },
+    DEPARTMENTS: {
+      LIST: '/admin/departments',
+      BY_ID: (id: string) => `/admin/departments/${id}`,
+      CREATE: '/admin/departments',
+      UPDATE: (id: string) => `/admin/departments/${id}`,
+      DELETE: (id: string) => `/admin/departments/${id}`,
+    },
+    DESIGNATIONS: {
+      LIST: '/admin/designations',
+      BY_ID: (id: string) => `/admin/designations/${id}`,
+      CREATE: '/admin/designations',
+      UPDATE: (id: string) => `/admin/designations/${id}`,
+      DELETE: (id: string) => `/admin/designations/${id}`,
+    },
   };
   

@@ -14,7 +14,6 @@ import {
   IconButton,
   TextField,
   InputAdornment,
-  Chip,
   CircularProgress,
   Alert,
   Tooltip,
@@ -30,23 +29,24 @@ import {
 } from "@mui/icons-material";
 import { useAppDispatch, useAppSelector } from "../../../../store";
 import {
-  fetchWorkstreams,
-  createWorkstream,
-  updateWorkstream,
-  deleteWorkstream,
-} from "../../../../store/actions/workstreamActions";
+  fetchDesignations,
+  createDesignation,
+  updateDesignation,
+  deleteDesignation,
+} from "../../../../store/actions/designationActions";
+import { fetchDepartments } from "../../../../store/actions/departmentActions";
 import type {
-  Workstream,
-  WorkstreamFormData,
-} from "../../../../utils/interfaces/workstreamInterface";
+  Designation,
+  DesignationFormData,
+} from "../../../../utils/interfaces/designationInterface";
+import type { Department } from "../../../../utils/interfaces/departmentInterface";
 import { toast } from "react-toastify";
 import {
-  WorkstreamFormModal,
-  WorkstreamViewModal,
-  WorkstreamDeleteModal,
-} from "./WorkstreamManagementModals";
+  DesignationFormModal,
+  DesignationViewModal,
+  DesignationDeleteModal,
+} from "./DesignationManagementModals";
 
-/* ---------- tiny debounce ---------- */
 function useDebounced<T>(value: T, delay = 500) {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
@@ -56,42 +56,40 @@ function useDebounced<T>(value: T, delay = 500) {
   return debounced;
 }
 
-/* ---------- local initial form values (numeric status: 1=Active) ---------- */
-const INITIAL_FORM: WorkstreamFormData = {
+const INITIAL_FORM: DesignationFormData = {
+  departmentId: "",
   name: "",
   description: "",
-  status: 1,
 };
 
-const WorkstreamManagement = () => {
+export default function DesignationManagement() {
   const dispatch = useAppDispatch();
-  const { workstreams, total, isLoading, error } = useAppSelector(
-    (s) => s.workstream
+
+  const { designations, total, isLoading, error } = useAppSelector(
+    (s) => s.designationManagement
+  );
+  const { departments } = useAppSelector(
+    (s) => s.departmentManagement || { departments: [] }
   );
 
-  // pagination + search
-  const [page, setPage] = useState(0);
+   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounced(searchTerm, 500);
 
-  // modals
-  const [formOpen, setFormOpen] = useState(false);
+   const [formOpen, setFormOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  // editing/viewing targets
-  const [editing, setEditing] = useState<Workstream | null>(null);
-  const [viewing, setViewing] = useState<Workstream | null>(null);
-  const [deleting, setDeleting] = useState<Workstream | null>(null);
+   const [editing, setEditing] = useState<Designation | null>(null);
+  const [viewing, setViewing] = useState<Designation | null>(null);
+  const [deleting, setDeleting] = useState<Designation | null>(null);
 
-  // form values (for Formik modal)
-  const [formValues, setFormValues] = useState<WorkstreamFormData>(INITIAL_FORM);
-
-  // fetch list
-  useEffect(() => {
+  const [formValues, setFormValues] =
+    useState<DesignationFormData>(INITIAL_FORM);
+   useEffect(() => {
     dispatch(
-      fetchWorkstreams({
+      fetchDesignations({
         page: page + 1,
         limit: rowsPerPage,
         search: debouncedSearch.trim(),
@@ -101,8 +99,20 @@ const WorkstreamManagement = () => {
     );
   }, [dispatch, page, rowsPerPage, debouncedSearch]);
 
-  // toast error
   useEffect(() => {
+    if (!departments || departments.length === 0) {
+      dispatch(
+        fetchDepartments({
+          page: 1,
+          limit: 100,
+          sortBy: "name",
+          sortOrder: "asc",
+        }) as any
+      );
+    }
+  }, [dispatch]);
+
+   useEffect(() => {
     if (error) toast.error(error);
   }, [error]);
 
@@ -116,8 +126,6 @@ const WorkstreamManagement = () => {
     setPage(0);
   };
 
-  const getStatusColor = (status: number) => (status === 1 ? "success" : "warning");
-
   const formatDate = (d?: string) =>
     d
       ? new Date(d).toLocaleDateString("en-US", {
@@ -127,27 +135,25 @@ const WorkstreamManagement = () => {
         })
       : "-";
 
-  /* ------------ open/close handlers ------------ */
+  /* open/close handlers */
   const openAdd = () => {
     setEditing(null);
     setFormValues(INITIAL_FORM);
     setFormOpen(true);
   };
-
-  const openEdit = (ws: Workstream) => {
-    setEditing(ws);
+  const openEdit = (item: Designation) => {
+    setEditing(item);
     setFormValues({
-      name: ws.name,
-      description: ws.description || "",
-      status: ws.status ?? 1,
+      departmentId: item.departmentId || "",
+      name: item.name,
+      description: item.description || "",
     });
     setFormOpen(true);
   };
-
   const closeForm = () => setFormOpen(false);
 
-  const openView = (ws: Workstream) => {
-    setViewing(ws);
+  const openView = (item: Designation) => {
+    setViewing(item);
     setViewOpen(true);
   };
   const closeView = () => {
@@ -155,8 +161,8 @@ const WorkstreamManagement = () => {
     setViewOpen(false);
   };
 
-  const openDelete = (ws: Workstream) => {
-    setDeleting(ws);
+  const openDelete = (item: Designation) => {
+    setDeleting(item);
     setDeleteOpen(true);
   };
   const closeDelete = () => {
@@ -164,10 +170,10 @@ const WorkstreamManagement = () => {
     setDeleteOpen(false);
   };
 
-  /* ------------ submit handlers ------------ */
+  /* submit handlers */
   const refresh = () =>
     dispatch(
-      fetchWorkstreams({
+      fetchDesignations({
         page: page + 1,
         limit: rowsPerPage,
         search: debouncedSearch.trim(),
@@ -176,47 +182,66 @@ const WorkstreamManagement = () => {
       })
     );
 
-  const handleFormSubmit = async (vals: WorkstreamFormData) => {
+  const handleFormSubmit = async (vals: DesignationFormData) => {
     try {
       if (editing) {
-        await dispatch(updateWorkstream({ id: editing._id, data: vals })).unwrap();
-        toast.success("Workstream updated successfully!");
+        await dispatch(
+          updateDesignation({ id: editing._id, data: vals }) as any
+        ).unwrap();
+        toast.success("Designation updated successfully!");
       } else {
-        await dispatch(createWorkstream(vals)).unwrap();
-        toast.success("Workstream created successfully!");
+        await dispatch(createDesignation(vals) as any).unwrap();
+        toast.success("Designation created successfully!");
       }
       closeForm();
       refresh();
     } catch {
-      toast.error(editing ? "Failed to update workstream" : "Failed to create workstream");
+      toast.error(
+        editing
+          ? "Failed to update designation"
+          : "Failed to create designation"
+      );
     }
   };
 
   const handleConfirmDelete = async () => {
     if (!deleting) return;
     try {
-      await dispatch(deleteWorkstream(deleting._id)).unwrap();
-      toast.success("Workstream deleted successfully!");
+      await dispatch(deleteDesignation(deleting._id) as any).unwrap();
+      toast.success("Designation deleted successfully!");
       closeDelete();
       refresh();
     } catch {
-      toast.error("Failed to delete workstream");
+      toast.error("Failed to delete designation");
     }
   };
 
-  /* ------------ memo list ----------- */
-  const list = useMemo(() => workstreams, [workstreams]);
+  const list = useMemo(() => designations, [designations]);
+
+  const getDeptName = (deptId?: string) => {
+    return deptId?.name || "-";
+  };
 
   return (
     <Box sx={{ p: 3, bgcolor: "#fafafa", minHeight: "100vh" }}>
       {/* Header */}
-      <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Box
+        sx={{
+          mb: 3,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 600, color: "#1f2937", mb: 1 }}>
-            Workstream Management
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: 600, color: "#1f2937", mb: 1 }}
+          >
+            Designation Management
           </Typography>
           <Typography variant="body2" sx={{ color: "#6b7280" }}>
-            Manage and track all your workstreams
+            Map designations to departments and manage role titles
           </Typography>
         </Box>
         <Button
@@ -234,7 +259,7 @@ const WorkstreamManagement = () => {
             "&:hover": { bgcolor: "#059669" },
           }}
         >
-          Add Workstream
+          Add Designation
         </Button>
       </Box>
 
@@ -242,7 +267,7 @@ const WorkstreamManagement = () => {
       <Paper elevation={0} sx={{ mb: 2, p: 2, border: "1px solid #e5e7eb" }}>
         <TextField
           fullWidth
-          placeholder="Search workstreams by name or description..."
+          placeholder="Search designations by name or department..."
           value={searchTerm}
           onChange={handleSearch}
           InputProps={{
@@ -251,9 +276,13 @@ const WorkstreamManagement = () => {
                 <SearchIcon sx={{ color: "#6b7280" }} />
               </InputAdornment>
             ),
-            endAdornment: searchTerm && (
+            endAdornment: !!searchTerm && (
               <InputAdornment position="end">
-                <IconButton size="small" onClick={() => setSearchTerm("")} sx={{ color: "#6b7280" }}>
+                <IconButton
+                  size="small"
+                  onClick={() => setSearchTerm("")}
+                  sx={{ color: "#6b7280" }}
+                >
                   <CloseIcon fontSize="small" />
                 </IconButton>
               </InputAdornment>
@@ -264,9 +293,19 @@ const WorkstreamManagement = () => {
       </Paper>
 
       {/* Table */}
-      <Paper elevation={0} sx={{ border: "1px solid #e5e7eb", overflow: "hidden" }}>
+      <Paper
+        elevation={0}
+        sx={{ border: "1px solid #e5e7eb", overflow: "hidden" }}
+      >
         {isLoading && (
-          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 4 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              py: 4,
+            }}
+          >
             <CircularProgress />
           </Box>
         )}
@@ -280,12 +319,12 @@ const WorkstreamManagement = () => {
         {!isLoading && !error && list.length === 0 && (
           <Box sx={{ textAlign: "center", py: 8, px: 3 }}>
             <Typography variant="h6" sx={{ color: "#9ca3af", mb: 2 }}>
-              No workstreams found
+              No designations found
             </Typography>
             <Typography variant="body2" sx={{ color: "#d1d5db", mb: 3 }}>
               {debouncedSearch
                 ? "Try adjusting your search terms"
-                : "Click 'Add Workstream' to create your first workstream"}
+                : "Click 'Add Designation' to create your first designation"}
             </Typography>
             {!debouncedSearch && (
               <Button
@@ -301,7 +340,7 @@ const WorkstreamManagement = () => {
                   "&:hover": { bgcolor: "#059669" },
                 }}
               >
-                Add Workstream
+                Add Designation
               </Button>
             )}
           </Box>
@@ -313,19 +352,30 @@ const WorkstreamManagement = () => {
               <Table>
                 <TableHead>
                   <TableRow sx={{ bgcolor: "#f9fafb" }}>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Workstream Name</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Status</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Created</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Updated</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 600, color: "#374151" }}>
+                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
+                      Designation
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
+                      Department
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
+                      Created
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
+                      Updated
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{ fontWeight: 600, color: "#374151" }}
+                    >
                       Actions
                     </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {list.map((ws) => (
+                  {list.map((item) => (
                     <TableRow
-                      key={ws._id}
+                      key={item._id}
                       sx={{
                         "&:hover": { bgcolor: alpha("#3b82f6", 0.05) },
                         transition: "background-color 0.2s",
@@ -333,40 +383,55 @@ const WorkstreamManagement = () => {
                     >
                       <TableCell>
                         <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: "#1f2937" }}>
-                            {ws.name}
+                          <Typography
+                            variant="body2"
+                            sx={{ fontWeight: 600, color: "#1f2937" }}
+                          >
+                            {item.name}
                           </Typography>
-                          {ws.description && (
-                            <Typography variant="caption" sx={{ color: "#6b7280", display: "block", mt: 0.5 }}>
-                              {ws.description.length > 50
-                                ? `${ws.description.substring(0, 50)}...`
-                                : ws.description}
+                          {item.description && (
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: "#6b7280",
+                                display: "block",
+                                mt: 0.5,
+                              }}
+                            >
+                              {item.description.length > 60
+                                ? `${item.description.substring(0, 60)}...`
+                                : item.description}
                             </Typography>
                           )}
                         </Box>
                       </TableCell>
-
-                      <TableCell>
-                        <Chip
-                          label={Number(ws.status) === 1 ? "Active" : "Inactive"}
-                          size="small"
-                          color={getStatusColor(Number(ws.status))}
-                          sx={{ textTransform: "capitalize" }}
-                        />
+                      <TableCell sx={{ color: "#374151" }}>
+                        {getDeptName(item.departmentId)}
                       </TableCell>
-
-                      <TableCell sx={{ color: "#6b7280" }}>{formatDate(ws.createdAt)}</TableCell>
-                      <TableCell sx={{ color: "#6b7280" }}>{formatDate(ws.updatedAt)}</TableCell>
-
+                      <TableCell sx={{ color: "#6b7280" }}>
+                        {formatDate(item.createdAt)}
+                      </TableCell>
+                      <TableCell sx={{ color: "#6b7280" }}>
+                        {formatDate(item.updatedAt)}
+                      </TableCell>
                       <TableCell align="center">
-                        <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            gap: 1,
+                            justifyContent: "center",
+                          }}
+                        >
                           <Tooltip title="View">
                             <IconButton
                               size="small"
-                              onClick={() => openView(ws)}
+                              onClick={() => openView(item)}
                               sx={{
                                 color: "#6b7280",
-                                "&:hover": { color: "#111827", bgcolor: alpha("#111827", 0.06) },
+                                "&:hover": {
+                                  color: "#111827",
+                                  bgcolor: alpha("#111827", 0.06),
+                                },
                               }}
                             >
                               <VisibilityIcon fontSize="small" />
@@ -375,10 +440,13 @@ const WorkstreamManagement = () => {
                           <Tooltip title="Edit">
                             <IconButton
                               size="small"
-                              onClick={() => openEdit(ws)}
+                              onClick={() => openEdit(item)}
                               sx={{
                                 color: "#6b7280",
-                                "&:hover": { color: "#3b82f6", bgcolor: alpha("#3b82f6", 0.1) },
+                                "&:hover": {
+                                  color: "#3b82f6",
+                                  bgcolor: alpha("#3b82f6", 0.1),
+                                },
                               }}
                             >
                               <EditIcon fontSize="small" />
@@ -387,10 +455,13 @@ const WorkstreamManagement = () => {
                           <Tooltip title="Delete">
                             <IconButton
                               size="small"
-                              onClick={() => openDelete(ws)}
+                              onClick={() => openDelete(item)}
                               sx={{
                                 color: "#6b7280",
-                                "&:hover": { color: "#ef4444", bgcolor: alpha("#ef4444", 0.1) },
+                                "&:hover": {
+                                  color: "#ef4444",
+                                  bgcolor: alpha("#ef4444", 0.1),
+                                },
                               }}
                             >
                               <DeleteIcon fontSize="small" />
@@ -418,27 +489,30 @@ const WorkstreamManagement = () => {
         )}
       </Paper>
 
-      <WorkstreamFormModal
+      <DesignationFormModal
         open={formOpen}
         isEdit={!!editing}
         initialValues={formValues}
         isSubmitting={isLoading}
         onClose={closeForm}
         onSubmit={handleFormSubmit}
-        showStatusSelect
+        departments={departments as Department[]}
       />
 
-      <WorkstreamViewModal open={viewOpen} workstream={viewing} onClose={closeView} />
+      <DesignationViewModal
+        open={viewOpen}
+        designation={viewing}
+        departments={departments as Department[]}
+        onClose={closeView}
+      />
 
-      <WorkstreamDeleteModal
+      <DesignationDeleteModal
         open={deleteOpen}
-        workstreamName={deleting?.name}
+        itemName={deleting?.name}
         isLoading={isLoading}
         onCancel={closeDelete}
         onConfirm={handleConfirmDelete}
       />
     </Box>
   );
-};
-
-export default WorkstreamManagement;
+}

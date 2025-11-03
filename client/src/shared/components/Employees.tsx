@@ -41,17 +41,18 @@ import {
   AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
 import { useAppDispatch, useAppSelector } from '../../store';
-import { fetchEmployees, updateEmployee, createEmployee } from '../../store/actions/employeeActions';
-import type { Employee } from '../../utils/interfaces/employeeInterface';
+import { fetchUsers, updateUser, createUser } from '../../store/actions/userActions';
 import { toast } from 'react-toastify';
+import type { User } from '../../utils/interfaces/userInterface';
+import type { UserRole } from '../../utils/interfaces/userInterface';
 
-interface EmployeeFormData {
+interface UserFormData {
   name: string;
   email: string;
   password?: string;
   phoneNumber?: string;
   countryCode?: string;
-  role: 0 | 1 | 2;
+  role: UserRole;
   status: number;
   address?: string;
   city?: string;
@@ -62,11 +63,10 @@ interface EmployeeFormData {
 const Employees = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { employees, total, isLoading, error } = useAppSelector(
-    (state) => state.employee
+  const { users, isLoading, error } = useAppSelector(
+    (state) => state.user
   );
-  console.log("employees", employees);
-
+ 
   // State management
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -79,13 +79,13 @@ const Employees = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Form state
-  const [formData, setFormData] = useState<EmployeeFormData>({
+  const [formData, setFormData] = useState<UserFormData>({
     name: '',
     email: '',
     password: '',
     phoneNumber: '',
     countryCode: '+1',
-    role: 1,
+    role: UserRole.EMPLOYEE,
     status: 1,
     address: '',
     city: '',
@@ -105,9 +105,9 @@ const Employees = () => {
   }, [searchTerm]);
 
   // Fetch employees when filters change
-  const loadEmployees = useCallback(() => {
+  const loadUsers = useCallback(() => {
     dispatch(
-      fetchEmployees({
+      fetchUsers({
         page: page + 1,
         limit: rowsPerPage,
         search: debouncedSearch,
@@ -118,8 +118,8 @@ const Employees = () => {
   }, [dispatch, page, rowsPerPage, debouncedSearch, sortBy, sortOrder]);
 
   useEffect(() => {
-    loadEmployees();
-  }, [loadEmployees]);
+    loadUsers();
+  }, [loadUsers]);
 
   // Show error toast
   useEffect(() => {
@@ -197,7 +197,7 @@ const Employees = () => {
   };
 
   // Open edit modal
-  const handleOpenEditModal = (employee: Employee) => {
+  const handleOpenEditModal = (user: User) => {
     setIsEdit(true);
     setSelectedEmployee(employee);
     setFormData({
@@ -298,16 +298,16 @@ const Employees = () => {
     }
   };
 
-  const handleViewClick = (employee: Employee) => {
-    navigate(`/employees/view/${employee._id}`);
+  const handleViewClick = (user: User) => {
+    navigate(`/employees/view/${user._id}`);
   };
 
-  const handleStatusToggle = async (employee: Employee) => {
+  const handleStatusToggle = async (user: User) => {
     try {
-      const newStatus = employee.status === 1 ? 0 : 1;
+      const newStatus = user.status === 1 ? 0 : 1;
       await dispatch(
-        updateEmployee({
-        id: employee._id,
+        updateUser({
+        id: user._id,
           data: { status: newStatus },
         })
       ).unwrap();
@@ -354,8 +354,8 @@ const Employees = () => {
     });
   };
   // Calculate statistics
-  const activeCount = employees?.filter((e) => e.status === 1).length;
-  const adminCount = employees?.filter((e) => e.role === 0).length;
+  const activeCount = users?.filter((user) => user.status === 1).length;
+  const adminCount = users?.filter((user) => user.role === 0).length;
 
   return (
     <Box sx={{ p: 3, bgcolor: '#fafafa', minHeight: '100vh' }}>
@@ -422,7 +422,7 @@ const Employees = () => {
                   variant="h4"
                   sx={{ fontWeight: 700, color: '#1f2937' }}
                 >
-                  {total || 0}
+                  {users.length || 0}
                 </Typography>
               </Box>
             </Box>
@@ -560,7 +560,7 @@ const Employees = () => {
           </Box>
         )}
 
-        {!isLoading && !error && employees.length === 0 && (
+        {!isLoading && !error && users.length === 0 && (
           <Box
             sx={{
               textAlign: 'center',
@@ -599,7 +599,7 @@ const Employees = () => {
           </Box>
         )}
 
-        {!isLoading && !error && employees.length > 0 && (
+        {!isLoading && !error && users.length > 0 && (
           <>
             <TableContainer>
               <Table>
@@ -632,9 +632,9 @@ const Employees = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {employees.map((employee) => (
+                  {users.map((user) => (
                     <TableRow
-                      key={employee._id}
+                      key={user._id}
                       sx={{
                         '&:hover': {
                           bgcolor: alpha('#3b82f6', 0.05),
@@ -652,46 +652,46 @@ const Employees = () => {
                               fontWeight: 600,
                             }}
                           >
-                                {employee.name?.charAt(0).toUpperCase() || 'E'}
+                                {user.name?.charAt(0).toUpperCase() || 'E'}
                           </Avatar>
                           <Box>
                             <Typography
                               variant="body2"
                               sx={{ fontWeight: 600, color: '#1f2937' }}
                             >
-                                {employee.name || 'N/A'}
+                                {user.name || 'N/A'}
                             </Typography>
                           </Box>
                         </Box>
                       </TableCell>
                       <TableCell sx={{ color: '#6b7280' }}>
-                        {employee.email}
+                        {user.email}
                       </TableCell>
                       <TableCell sx={{ color: '#6b7280' }}>
-                            {employee.phoneNumber
-                              ? `${employee.countryCode || ''} ${employee.phoneNumber}`
+                            {user.phoneNumber
+                              ? `${user.countryCode || ''} ${user.phoneNumber}`
                           : '-'}
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={getRoleName(employee.role)}
+                          label={getRoleName(user.role)}
                           size="small"
-                          color={getRoleColor(employee.role)}
+                          color={getRoleColor(user.role)}
                         />
                       </TableCell>
                       <TableCell sx={{ color: '#6b7280' }}>
-                          {formatDate(employee.createdAt)}
+                          {formatDate(user.createdAt)}
                       </TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Switch
-                              checked={employee.status === 1}
-                              onChange={() => handleStatusToggle(employee)}
+                              checked={user.status === 1}
+                              onChange={() => handleStatusToggle(user)}
                               size="small"
                               color="success"
                             />
                           <Typography variant="caption" sx={{ color: '#6b7280' }}>
-                              {employee.status === 1 ? 'Active' : 'Inactive'}
+                              {user.status === 1 ? 'Active' : 'Inactive'}
                           </Typography>
                         </Box>
                       </TableCell>
@@ -700,7 +700,7 @@ const Employees = () => {
                           <Tooltip title="View Employee">
                             <IconButton
                               size="small"
-                              onClick={() => handleViewClick(employee)}
+                              onClick={() => handleViewClick(user)}
                               sx={{
                                 color: '#6b7280',
                                 '&:hover': {
@@ -715,7 +715,7 @@ const Employees = () => {
                           <Tooltip title="Edit Employee">
                             <IconButton
                               size="small"
-                              onClick={() => handleOpenEditModal(employee)}
+                                onClick={() => handleOpenEditModal(user)}
                               sx={{
                                 color: '#6b7280',
                                 '&:hover': {
@@ -739,7 +739,7 @@ const Employees = () => {
             <TablePagination
               rowsPerPageOptions={[5, 10, 25, 50]}
               component="div"
-              count={total}
+              count={users.length}
               rowsPerPage={rowsPerPage}
               page={page}
               onPageChange={handleChangePage}
