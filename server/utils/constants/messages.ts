@@ -116,6 +116,15 @@ export const USER_TASK_MESSAGES = {
   CANNOT_DELETE_AFTER_FINAL_SUBMIT_TASK: 'Cannot delete after final submission of the task',
 };
 
+export const PERMISSION_MESSAGES = {
+  PERMISSION_NOT_FOUND: 'Permission not found',
+  PERMISSION_NAME_ALREADY_EXISTS: 'Permission name already exists',
+  PERMISSIONS_FETCHED_SUCCESSFULLY: 'Permissions fetched successfully',
+  PERMISSION_CREATION_NOT_ALLOWED: 'Admin and Manager only can add permission',
+  PERMISSION_UPDATE_NOT_ALLOWED: 'Admin and Manager only can update permission',
+  INVALID_PERMISSION_ID: 'Invalid permission ID',
+};
+
 export const MESSAGES = {
   AUTH: AUTH_MESSAGES,
   USER: USER_MESSAGES,
@@ -127,6 +136,7 @@ export const MESSAGES = {
   DESIGNATION: DESIGNATION_MESSAGES,
   WORKSTREAM: WORKSTREAM_MESSAGES,
   USER_TASK: USER_TASK_MESSAGES,
+  PERMISSION: PERMISSION_MESSAGES,
 };
 
 export default MESSAGES;
