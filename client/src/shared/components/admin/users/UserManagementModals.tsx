@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent,  } from "react";
+import { useEffect, useState, type ChangeEvent,  } from "react";
 import {
   Box,
   Button,
@@ -17,31 +17,12 @@ import {
 import type { FormikProps } from "formik";
 import type { User, UserRole } from "../../../../utils/interfaces/userInterface";
 import { getRoleName } from "../../../../utils/interfaces/userInterface";
+import { fetchDepartments } from "../../../../store/actions/departmentActions";
+import { fetchDesignations } from "../../../../store/actions/designationActions";
+import { useDispatch } from "react-redux";
+import { useAppSelector } from "../../../../store";
 
-const DEPARTMENTS = [
-  "Engineering",
-  "Product",
-  "Design",
-  "QA",
-  "Human Resources",
-  "Finance",
-  "Sales",
-  "Marketing",
-  "Operations",
-];
-
-const DESIGNATIONS = [
-  "Intern",
-  "Junior Developer",
-  "Software Engineer",
-  "Senior Software Engineer",
-  "Tech Lead",
-  "Project Manager",
-  "Product Manager",
-  "Designer",
-  "QA Engineer",
-];
-
+ 
 type UserFormDialogProps = {
   open: boolean;
   onClose: () => void;
@@ -60,6 +41,25 @@ export const UserFormDialog = ({
   editingId,
 }: UserFormDialogProps) => {
   const [showPassword, setShowPassword] = useState(false);
+  const { departments } = useAppSelector((state) => state.departmentManagement);
+  const { designations } = useAppSelector(
+    (state) => state.designationManagement
+  );
+const dispatch = useDispatch()
+
+  const fetchOptions = async () => {
+    try {
+      await dispatch(fetchDepartments({}));
+      await dispatch(fetchDesignations({}));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchOptions();
+  }, [dispatch]);
+
   return (
     <Dialog
       open={open}
@@ -127,9 +127,9 @@ export const UserFormDialog = ({
                 : "Select designation"
             }
           >
-            {DESIGNATIONS.map((d) => (
-              <MenuItem key={d} value={d}>
-                {d}
+            {designations.map((d) => (
+              <MenuItem key={d._id} value={d._id}>
+                {d.name}
               </MenuItem>
             ))}
           </TextField>
@@ -151,9 +151,9 @@ export const UserFormDialog = ({
                 : "Select department"
             }
           >
-            {DEPARTMENTS.map((d) => (
-              <MenuItem key={d} value={d}>
-                {d}
+            {departments.map((d) => (
+              <MenuItem key={d._id} value={d._id}>
+                {d.name}
               </MenuItem>
             ))}
           </TextField>
@@ -265,7 +265,7 @@ export const UserFormDialog = ({
           </TextField>
 
           <TextField
-            label="Phone (with country code)"
+            label="Phone"
             fullWidth
             value={combinedPhoneValue}
             onChange={handleCombinedPhoneChange}
@@ -283,22 +283,7 @@ export const UserFormDialog = ({
               Boolean(formik.touched.phoneNumber && (formik.errors as any).phoneNumber)
             }
           />
-
-          <TextField
-            name="profileImage"
-            label="Profile Image URL"
-            fullWidth
-            value={formik.values.profileImage || ""}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.profileImage && Boolean((formik.errors as any).profileImage)}
-            helperText={
-              formik.touched.profileImage && (formik.errors as any).profileImage
-                ? String((formik.errors as any).profileImage)
-                : "Must be a valid URL"
-            }
-            placeholder="https://example.com/image.jpg"
-          />
+ 
 
           <TextField
             name="dateOfBirth"

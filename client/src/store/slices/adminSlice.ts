@@ -1,6 +1,7 @@
-import { createSlice } from '@reduxjs/toolkit';
-import type { Admin } from '../../utils/interfaces/adminInterface';
-import { fetchAdmins, createAdmin, updateAdmin, deleteAdmin } from '../actions/adminActions';
+// src/store/slices/adminSlice.ts
+import { createSlice } from "@reduxjs/toolkit";
+import type { Admin } from "../../utils/interfaces/adminInterface";
+import { fetchAdmins, createAdmin, updateAdmin, deleteAdmin } from "../actions/adminActions";
 
 interface AdminState {
   admins: Admin[];
@@ -21,10 +22,10 @@ const initialState: AdminState = {
 };
 
 const adminSlice = createSlice({
-  name: 'adminManagement',
+  name: "adminManagement",
   initialState,
   reducers: {
-    clearError: (state) => {
+    clearAdminError: (state) => {
       state.error = null;
     },
     clearAdmins: (state) => {
@@ -36,74 +37,65 @@ const adminSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch admins
       .addCase(fetchAdmins.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchAdmins.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.admins = action.payload.admins;
+        state.admins = action.payload.users;
         state.total = action.payload.total;
         state.currentPage = action.payload.page;
         state.totalPages = action.payload.totalPages;
-        state.error = null;
       })
       .addCase(fetchAdmins.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.payload || "Failed to fetch admins";
       })
-      // Create admin
+
       .addCase(createAdmin.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(createAdmin.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.admins.unshift(action.payload);
+        // optional: state.admins.unshift(action.payload);
         state.total += 1;
-        state.error = null;
       })
       .addCase(createAdmin.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.payload || "Failed to create admin";
       })
-      // Update admin
+
       .addCase(updateAdmin.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(updateAdmin.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.admins.findIndex(admin => admin._id === action.payload._id);
-        if (index !== -1) {
-          state.admins[index] = action.payload;
-        }
-        state.error = null;
+        const i = state.admins.findIndex((a) => a._id === action.payload._id);
+        if (i !== -1) state.admins[i] = action.payload;
       })
       .addCase(updateAdmin.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.payload || "Failed to update admin";
       })
-      // Delete admin
+
       .addCase(deleteAdmin.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(deleteAdmin.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.admins = state.admins.filter(admin => admin._id !== action.payload);
-        state.total = state.total - 1;
-        state.error = null;
+        state.admins = state.admins.filter((a) => a._id !== action.payload);
+        state.total = Math.max(0, state.total - 1);
       })
       .addCase(deleteAdmin.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.payload || "Failed to delete admin";
       });
   },
 });
 
-export const { clearError, clearAdmins } = adminSlice.actions;
-
+export const { clearAdminError, clearAdmins } = adminSlice.actions;
 export default adminSlice.reducer;
-

@@ -39,11 +39,11 @@ export const API_ENDPOINTS = {
       DELETE: (id: string) => `/admin/workstreams/${id}`,
     },
     ADMINS: {
-      LIST: '/admin/admins',
-      BY_ID: (id: string) => `/admin/admins/${id}`,
-      CREATE: '/admin/admins',
-      UPDATE: (id: string) => `/admin/admins/${id}`,
-      DELETE: (id: string) => `/admin/admins/${id}`,
+      LIST: '/admin/users',
+      BY_ID: (id: string) => `/admin/users/${id}`,
+      CREATE: '/admin/users/add',
+      UPDATE: (id: string) => `/admin/users/${id}`,
+      DELETE: (id: string) => `/admin/users/${id}`,
     },
     DEPARTMENTS: {
       LIST: '/admin/departments',

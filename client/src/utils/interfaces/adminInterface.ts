@@ -24,8 +24,7 @@ export interface AdminFormData {
   countryCode: string;
   designation: string;
   department: string;
-  status: 0 | 1;
-  password?: string;
+   password?: string;
   dateOfBirth?: string;
 }
 
@@ -40,7 +39,7 @@ export interface AdminListParams {
 }
 
 export interface AdminListResponse {
-  admins: Admin[];
+  users: Admin[];
   total: number;
   page: number;
   totalPages: number;

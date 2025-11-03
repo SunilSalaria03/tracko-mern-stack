@@ -29,11 +29,20 @@ import {
 } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import { useAppDispatch, useAppSelector } from "../../../../store";
-import { fetchUsers, createUser, updateUser } from "../../../../store/actions/userActions";
+import {
+  fetchUsers,
+  createUser,
+  updateUser,
+} from "../../../../store/actions/userActions";
 import type { User } from "../../../../utils/interfaces/userInterface";
 import type { UserRole } from "../../../../utils/interfaces/userInterface";
 import { useFormik } from "formik";
-import { useDebounced, combinedFromParts, splitCombinedPhone, sanitizePhone } from "../../../../utils/common/helpers";
+import {
+  useDebounced,
+  combinedFromParts,
+  splitCombinedPhone,
+  sanitizePhone,
+} from "../../../../utils/common/helpers";
 import { getUserValidationSchema } from "../../../../utils/validations/UserValidations";
 import { UserFormDialog, UserViewDialog } from "./UserManagementModals";
 
@@ -59,15 +68,13 @@ const initialForm: EditableUser = {
   name: "",
   designation: "",
   department: "",
-  profileImage: "",
+  profileImage: "https://example.com/image.jpg",
   status: 1,
   role: 3,
   phoneNumber: "",
   countryCode: "+91",
-  dateOfBirth: "", // YYYY-MM-DD
+  dateOfBirth: "", 
 };
-
-/* ---------- Validation ---------- */
 
  
 const UserManagement = () => {
@@ -107,8 +114,8 @@ const UserManagement = () => {
           name: values.name?.trim() || "",
           designation: values.designation?.trim() || "",
           department: values.department?.trim() || "",
-          profileImage: values.profileImage?.trim() || "", 
-          role: (values.role ?? 3) as UserRole ,
+          profileImage: values.profileImage?.trim() || "",
+          role: (values.role ?? 3) as UserRole,
           phoneNumber: values.phoneNumber?.trim() || "",
           countryCode: values.countryCode?.trim() || "",
           dateOfBirth: values.dateOfBirth?.trim() || "",
@@ -134,7 +141,7 @@ const UserManagement = () => {
       }
     },
   });
-   const combinedPhoneValue = useMemo(
+  const combinedPhoneValue = useMemo(
     () =>
       combinedFromParts(formik.values.countryCode, formik.values.phoneNumber),
     [formik.values.countryCode, formik.values.phoneNumber]
@@ -151,8 +158,6 @@ const UserManagement = () => {
       const sanitized = sanitizePhone(rest);
       formik.setFieldValue("phoneNumber", sanitized);
       formik.setFieldTouched("phoneNumber", true, false);
-
-      
     },
     [formik]
   );
@@ -162,12 +167,12 @@ const UserManagement = () => {
     if (!q) return users;
     return users.filter((u) =>
       [u.name, u.email, u.phoneNumber, u.countryCode, String(u.status)]
+
         .map((v) => (v || "").toString().toLowerCase())
         .some((v) => v.includes(q))
     );
   }, [users, debouncedSearch]);
 
-  /* ---------- Pagination ---------- */
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const paginated = useMemo(() => {
@@ -181,7 +186,6 @@ const UserManagement = () => {
     setPage(0);
   };
 
-  /* ---------- Handlers ---------- */
   const handleOpenAdd = useCallback(() => {
     setEditingId(null);
     formik.resetForm({ values: initialForm });
@@ -498,8 +502,7 @@ const UserManagement = () => {
         </Paper>
       )}
 
-      {/* Create/Edit */}
-      <UserFormDialog
+       <UserFormDialog
         open={openFormModal}
         onClose={handleCloseForm}
         formik={formik}
@@ -508,8 +511,7 @@ const UserManagement = () => {
         editingId={editingId}
       />
 
-      {/* View */}
-      <UserViewDialog
+       <UserViewDialog
         open={openViewModal}
         onClose={handleCloseView}
         user={viewingUser}

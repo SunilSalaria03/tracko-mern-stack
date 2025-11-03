@@ -28,8 +28,7 @@ export const SIDEBAR_MENU_ITEMS: SidebarMenuItem[] = [
     path: '/dashboard',
     roles: [0, 1, 2, 3],
   },
-  // Employee specific items
-  {
+   {
     icon: <HiOutlineHome className="w-5 h-5" />,
     label: 'Welcome',
     path: '/welcome',
@@ -41,45 +40,42 @@ export const SIDEBAR_MENU_ITEMS: SidebarMenuItem[] = [
     path: '/time',
     roles: [3],
   },
-  // Divider for management roles
-  {
+   {
     divider: true,
     label: '',
     roles: [0, 1, 2],
   },
-  // Admin and Manager management items
-  {
+   {
     icon: <HiOutlineUsers className="w-5 h-5" />,
     label: 'Employees',
-    path: '/employees',
-    roles: [1,2], // Only Admin can manage employees
+    path: '/users',
+    roles: [1,2], 
   },
   {
     icon: <HiOutlineBriefcase className="w-5 h-5" />,
     label: 'Projects',
     path: '/projects',
-    roles: [1, 2], // Admin and Manager
+    roles: [1, 2], 
   },
   {
     icon: <HiOutlineCollection className="w-5 h-5" />,
     label: 'Workstreams',
     path: '/workstreams',
-    roles: [1, 2], // Admin and Manager
+    roles: [1, 2], 
   },
   {
     icon: <HiOutlineUserGroup className="w-5 h-5" />,
     label: 'Departments',
     path: '/departments',
-    roles: [0, 1,], // Admin and Manager
+    roles: [0, 1,], 
   },
   {
     icon: <HiOutlineIdentification className="w-5 h-5" />,
     label: 'Designations',
     path: '/designations',
-    roles: [0, 1, ], // Admin and Manager
+    roles: [0, 1, ], 
   },
-  // Superadmin specific items
-  {
+   {
     divider: true,
     label: '',
     roles: [0],
@@ -88,13 +84,13 @@ export const SIDEBAR_MENU_ITEMS: SidebarMenuItem[] = [
     icon: <HiOutlineUserGroup className="w-5 h-5" />,
     label: 'Admin Management',
     path: '/admins',
-    roles: [0], // Only Superadmin
+    roles: [0],  
   },
   {
     icon: <HiOutlineShieldCheck className="w-5 h-5" />,
     label: 'Roles & Permissions',
     path: '/roles-permissions',
-    roles: [0], // Only Superadmin
+    roles: [0],  
   },
 ];
 
