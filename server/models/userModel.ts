@@ -78,6 +78,11 @@ const UserSchema = new Schema<IUser>(
       ref: 'User',
       default: null,
     },
+    grantedPermissionIds: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: 'Permission',
+      default: [],
+    }
   },
   {
     timestamps: true,

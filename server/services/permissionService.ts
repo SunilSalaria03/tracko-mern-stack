@@ -1,12 +1,13 @@
-import { IWorkstream } from "../interfaces/workstreamInterfaces";
 import { IListParams } from "../interfaces/userInterfaces";
 import permissionModel from "../models/permissionsModel";
 import {
   GENERAL_MESSAGES,
   PERMISSION_MESSAGES,
-  WORKSTREAM_MESSAGES,
+  USER_MESSAGES,
 } from "../utils/constants/messages";
-import { IPermission } from "@/interfaces/permissionInterfaces";
+import { IPermission } from "../interfaces/permissionInterfaces";
+import userModel from "../models/userModel";
+import mongoose from "mongoose";
 
 export const getPermissionsService = async (params: IListParams) => {
   try {
@@ -66,7 +67,7 @@ export const getPermissionByIdService = async (permissionId: string) => {
       .populate("addedBy", "name email");
 
     if (!permission) {
-      return { error: PERMISSION_MESSAGES.PERMISSION_NOT_FOUND };
+      return { error: PERMISSION_MESSAGES.INVALID_PERMISSION_ID };
     }
 
     return permission;
@@ -176,6 +177,93 @@ export const deletePermissionService = async (permissionId: string) => {
       error instanceof Error
         ? error.message
         : GENERAL_MESSAGES.SOMETHING_WENT_WRONG;
+    return { error: message };
+  }
+};
+
+export const grantPermissionsToUserService = async (data: Partial<IPermission>) => {
+  try {
+    if(data.userId){
+      const userIdStr = typeof data.userId === "string" ? data.userId : data.userId.toString();
+      if(!mongoose.Types.ObjectId.isValid(userIdStr)) {
+        return { error: USER_MESSAGES.INVALID_USER_ID };
+      }
+      data.userId = userIdStr;
+    }
+
+    if(!data.permissions || data.permissions.length === 0){
+      return { error: PERMISSION_MESSAGES.PERMISSIONS_REQUIRED };
+    }
+
+    const user = await userModel.findOne({
+      _id: data.userId,
+      isDeleted: false,
+    });
+    if (!user) {
+      return { error: USER_MESSAGES.INVALID_USER_ID };
+    }
+
+    const permissionsToAdd = data.permissions
+      .filter(p => p.allowAccess === true)
+      .map(p => p.permissionId);
+    
+    const permissionsToRemove = data.permissions
+      .filter(p => p.allowAccess === false)
+      .map(p => p.permissionId);
+
+    const allPermissionIds = [...permissionsToAdd, ...permissionsToRemove];
+    if(allPermissionIds.length > 0) {
+      const existingPermissions = await permissionModel.find({
+        _id: { $in: allPermissionIds },
+        isDeleted: false,
+      });
+      
+      if (existingPermissions.length !== allPermissionIds.length) {
+        return { error: PERMISSION_MESSAGES.PERMISSIONS_NOT_FOUND };
+      }
+    }
+
+    if (permissionsToRemove.length > 0) {
+      await userModel.findOneAndUpdate(
+        {
+          _id: data.userId,
+          isDeleted: false,
+        },
+        {
+          $pull: {
+            grantedPermissionIds: { $in: permissionsToRemove },
+          },
+        }
+      );
+    }
+
+    if (permissionsToAdd.length > 0) {
+      await userModel.findOneAndUpdate(
+        {
+          _id: data.userId,
+          isDeleted: false,
+        },
+        {
+          $addToSet: {
+            grantedPermissionIds: { $each: permissionsToAdd },
+          },
+        }
+      );
+    }
+
+    const updateUser = await userModel.findOne({
+      _id: data.userId,
+      isDeleted: false,
+    });
+    
+    if (!updateUser) {
+      return { error: USER_MESSAGES.INVALID_USER_ID };
+    }
+    
+    return { message: PERMISSION_MESSAGES.PERMISSION_GRANTED_TO_USER_SUCCESSFULLY };
+  } catch (error) {
+    console.error("Give permission to user service error:", error);
+    const message = error instanceof Error ? error.message : GENERAL_MESSAGES.SOMETHING_WENT_WRONG;
     return { error: message };
   }
 };
