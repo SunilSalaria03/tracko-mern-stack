@@ -52,5 +52,6 @@ router.put('/permissions/:id', permissionController.updatePermission);
 router.get('/permissions', permissionController.getPermissions);
 router.get('/permissions/:id', permissionController.getPermissionById);
 router.delete('/permissions/:id', permissionController.deletePermission);
+router.post('/permissions/grantPermissionsToUser', permissionController.grantPermissionsToUser);
 
 export default router;

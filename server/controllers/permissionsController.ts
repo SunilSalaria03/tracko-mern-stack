@@ -8,9 +8,10 @@ import {
   updatePermissionService,
   deletePermissionService,
   addPermissionService,
+  grantPermissionsToUserService,
 } from '../services/permissionService';
 import { IPermission } from '../interfaces/permissionInterfaces';
-import { addPermissionValidation } from '../validations/permissionValidations';
+import { addPermissionValidation, grantPermissionsToUserValidation } from '../validations/permissionValidations';
 
 export const getPermissions = async (
   req: AuthRequest,
@@ -132,6 +133,33 @@ export const deletePermission = async (
     return helper.success(res, 'Permission deleted successfully', result);
   } catch (error) {
     console.error('Delete permission error:', error);
+    return helper.error(res, GENERAL_MESSAGES.SOMETHING_WENT_WRONG);
+  }
+};
+
+export const grantPermissionsToUser = async (
+  req: AuthRequest,
+  res: Response
+): Promise<Response | void> => {
+  try {
+    const { error, value: validatedData } = grantPermissionsToUserValidation(req.body);
+    if (error) {
+      return helper.failed(res, error.details[0].message);
+    }
+
+    const objToSend: Partial<IPermission> = {
+      ...validatedData,
+      addedBy: req.user?.id as string,
+    }
+
+    const result = await grantPermissionsToUserService(objToSend);
+    if ('error' in result) {
+      return helper.failed(res, result.error);
+    }
+
+    return helper.success(res, 'Permission given to user successfully', result);
+  } catch (error) {
+    console.error('Give permission to user error:', error);
     return helper.error(res, GENERAL_MESSAGES.SOMETHING_WENT_WRONG);
   }
 };

@@ -23,6 +23,7 @@ export interface IUser extends Document {
     addedBy?: string | null;
     addedByUserRole?: 0 | 1 | 2 | 3;
     addedByUserTenantId?: mongoose.Schema.Types.ObjectId | null;
+    grantedPermissionIds?: mongoose.Schema.Types.ObjectId[] | null;
   }
 
 export interface IChangePassword {

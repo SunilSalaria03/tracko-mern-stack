@@ -27,7 +27,7 @@ const PermissionSchema = new Schema<IPermission>(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       default: null,
-    }
+    },
   },
   {
     timestamps: true,

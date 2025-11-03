@@ -117,12 +117,14 @@ export const USER_TASK_MESSAGES = {
 };
 
 export const PERMISSION_MESSAGES = {
-  PERMISSION_NOT_FOUND: 'Permission not found',
+  PERMISSIONS_NOT_FOUND: 'Permissions not found',
+  PERMISSIONS_REQUIRED: 'Permissions are required',
   PERMISSION_NAME_ALREADY_EXISTS: 'Permission name already exists',
   PERMISSIONS_FETCHED_SUCCESSFULLY: 'Permissions fetched successfully',
   PERMISSION_CREATION_NOT_ALLOWED: 'Admin and Manager only can add permission',
   PERMISSION_UPDATE_NOT_ALLOWED: 'Admin and Manager only can update permission',
   INVALID_PERMISSION_ID: 'Invalid permission ID',
+  PERMISSION_GRANTED_TO_USER_SUCCESSFULLY: 'Permission granted to user successfully',
 };
 
 export const MESSAGES = {
