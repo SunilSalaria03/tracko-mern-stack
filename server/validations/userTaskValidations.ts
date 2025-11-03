@@ -22,3 +22,15 @@ export const addUserTaskValidation = (data: Partial<IUserTask>) => {
   
     return schema.validate(data, { abortEarly: false });
   };
+
+  export const finalSubmitUserTaskValidation = (data: Partial<IUserTask>) => {
+    const schema = Joi.object({
+      startDate: Joi.date().required().messages({
+        'any.required': 'Start date is required',
+      }),
+      endDate: Joi.date().required().messages({
+        'any.required': 'End date is required',
+      }),
+    });
+    return schema.validate(data, { abortEarly: false });
+  };

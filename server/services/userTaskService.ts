@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import { IUserTask } from "../interfaces/userTaskInterface";
 import { IListParams } from "../interfaces/userInterfaces";
 import userTaskModel from "../models/userTaskModel";
-import { GENERAL_MESSAGES, PROJECT_MESSAGES, USER_TASK_MESSAGES, WORKSTREAM_MESSAGES } from "../utils/constants/messages";
+import { GENERAL_MESSAGES, PROJECT_MESSAGES, USER_MESSAGES, USER_TASK_MESSAGES, WORKSTREAM_MESSAGES } from "../utils/constants/messages";
 import projectModel from "../models/projectModel";
 import workstreamModel from "../models/workstreamModel";
 
@@ -256,6 +256,62 @@ export const deleteUserTaskService = async (userTaskId: string) => {
     return deletedUserTask;
   } catch (error) {
     console.error("Delete project service error:", error);
+    const message = error instanceof Error ? error.message : GENERAL_MESSAGES.SOMETHING_WENT_WRONG;
+    return { error: message };
+  }
+};
+
+export const finalSubmitUserTaskService = async (data: Partial<IUserTask>) => {
+  try {
+    const userIdStr = typeof data.userId === "string" ? data.userId : data.userId?.toString();
+    if(!userIdStr || !mongoose.Types.ObjectId.isValid(userIdStr)) {
+      return { error: USER_MESSAGES.INVALID_USER_ID };
+    }
+
+    const query: any = {
+      userId: userIdStr,
+      isDeleted: false,
+      finalSubmit: false,
+    };
+
+    if (data.startDate && data.endDate) {
+      const startDate = new Date(data.startDate);
+      const endDate = new Date(data.endDate);
+      query.date = { $gte: startDate, $lte: endDate };
+    }
+
+    const bulkUpdateResult = await userTaskModel.updateMany(
+      query,
+      { finalSubmit: true },
+      { runValidators: true }
+    );
+
+    if (bulkUpdateResult.modifiedCount === 0) {
+      return { error: "No tasks found to submit" };
+    }
+
+    const updatedTasks = await userTaskModel.find({
+      userId: userIdStr,
+      isDeleted: false,
+      finalSubmit: true,
+      ...(data.startDate && data.endDate && {
+        date: {
+          $gte: new Date(data.startDate),
+          $lte: new Date(data.endDate)
+        }
+      })
+    })
+    .populate("userId", "name email")
+    .populate("projectId", "name")
+    .populate("workstreamId", "name");
+
+    return {
+      message: `Successfully submitted ${bulkUpdateResult.modifiedCount} tasks`,
+      count: bulkUpdateResult.modifiedCount,
+      tasks: updatedTasks
+    };
+  } catch (error) {
+    console.error("Final submit user task service error:", error);
     const message = error instanceof Error ? error.message : GENERAL_MESSAGES.SOMETHING_WENT_WRONG;
     return { error: message };
   }

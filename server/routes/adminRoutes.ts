@@ -5,7 +5,6 @@ import * as projectController from '../controllers/projectController';
 import * as departmentController from '../controllers/departmentController';
 import * as designationController from '../controllers/designationController';
 import * as workstreamController from '../controllers/workstreamController';
-import * as userTaskController from '../controllers/userTaskController';
 
 const router = Router();
 
@@ -45,12 +44,5 @@ router.put('/workstreams/:id', workstreamController.updateWorkstream);
 router.get('/workstreams', workstreamController.getWorkstreams);
 router.get('/workstreams/:id', workstreamController.getWorkstreamById);
 router.delete('/workstreams/:id', workstreamController.deleteWorkstream);
-
-// User task routes
-router.post('/userTasks', userTaskController.addUserTask);
-router.put('/userTasks/:id', userTaskController.updateUserTask);
-router.get('/userTasks', userTaskController.getUserTasks);
-router.get('/userTasks/:id', userTaskController.getUserTaskById);
-router.delete('/userTasks/:id', userTaskController.deleteUserTask);
 
 export default router;

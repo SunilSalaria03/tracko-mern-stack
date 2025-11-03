@@ -8,9 +8,10 @@ import {
   updateUserTaskService,
   deleteUserTaskService,
   addUserTaskService,
+  finalSubmitUserTaskService,
 } from '../services/userTaskService';
 import { IUserTask } from '../interfaces/userTaskInterface';
-import { addUserTaskValidation } from '../validations/userTaskValidations';
+import { addUserTaskValidation, finalSubmitUserTaskValidation } from '../validations/userTaskValidations';
 import mongoose from 'mongoose';
 
 export const getUserTasks = async (
@@ -136,6 +137,34 @@ export const deleteUserTask = async (
     return helper.success(res, 'User task deleted successfully', result);
   } catch (error) {
     console.error('Delete user task error:', error);
+    return helper.error(res, GENERAL_MESSAGES.SOMETHING_WENT_WRONG);
+  }
+};
+
+export const finalSubmitUserTask = async (
+  req: AuthRequest,
+  res: Response
+): Promise<Response | void> => {
+  try {
+    console.log(req.body);
+    const { error, value: validatedData } = finalSubmitUserTaskValidation(req.body);
+    if (error) {
+      return helper.failed(res, error.details[0].message);
+    }
+
+    const objToSend: Partial<IUserTask> = {
+      userId: req.user?.id as string,
+      finalSubmit: true,
+      ...validatedData,
+    }
+    const result = await finalSubmitUserTaskService(objToSend);
+    if ('error' in result) {
+      return helper.failed(res, result.error);
+    }
+
+    return helper.success(res, 'User task final submitted successfully', result);
+  } catch (error) {
+    console.error('Final submit user task error:', error);
     return helper.error(res, GENERAL_MESSAGES.SOMETHING_WENT_WRONG);
   }
 };

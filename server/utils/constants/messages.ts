@@ -21,6 +21,7 @@ export const AUTH_MESSAGES = {
 };
 
 export const USER_MESSAGES = {
+  INVALID_USER_ID: 'Invalid user ID',
   RESTRICTED_FIELDS_CANNOT_BE_UPDATED: 'Email, role, password and tenantId are restricted fields and cannot be updated',
   TENANT_ID_RESTRICTED_FIELDS_CANNOT_BE_UPDATED: 'Tenant ID restricted field cannot be updated',
   USER_EMAIL_ALREADY_EXISTS: 'User email already exists',
