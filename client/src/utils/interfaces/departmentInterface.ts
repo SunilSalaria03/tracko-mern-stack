@@ -1,44 +1,43 @@
 import type { User } from "./userInterface";
 
-export interface Workstream {
+export interface Department {
   _id: string;
   name: string;
   description?: string;
-  status: 0 | 1;
+  status?: 0 | 1;          // 0=Inactive, 1=Active (extend if needed)
   createdAt?: string;
   updatedAt?: string;
   addedBy?: User | null;
   isDeleted?: boolean;
 }
 
-export interface WorkstreamFormData {
-  name: string; 
-  description?: string; 
+export interface DepartmentFormData {
+  name: string;
+  description?: string;
   status: 0 | 1;
 }
 
-export interface WorkstreamListParams {
+export interface DepartmentListParams {
   page?: number;
   limit?: number;
   search?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
-  status?: 0 | 1;
+  status?: string;
 }
 
-export interface WorkstreamListResponse {
-  workstreams: Workstream[];
+export interface DepartmentListResponse {
+  departments: Department[];
   total: number;
   page: number;
   limit: number;
   totalPages: number;
 }
 
-export interface WorkstreamModalProps {
+export interface DepartmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  workstream?: Workstream | null;
+  department?: Department | null;
 }
 
- 

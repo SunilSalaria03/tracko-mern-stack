@@ -9,7 +9,8 @@ import {
   HiOutlineUserGroup,
   HiOutlineShieldCheck,
   HiOutlineCollection,
-} from 'react-icons/hi';
+  HiOutlineIdentification,
+ } from 'react-icons/hi';
 import type { UserRole } from '../interfaces/userInterface';
 
 export interface SidebarMenuItem {
@@ -64,6 +65,18 @@ export const SIDEBAR_MENU_ITEMS: SidebarMenuItem[] = [
     label: 'Workstreams',
     path: '/workstreams',
     roles: [1, 2], // Admin and Manager
+  },
+  {
+    icon: <HiOutlineUserGroup className="w-5 h-5" />,
+    label: 'Departments',
+    path: '/departments',
+    roles: [0, 1,], // Admin and Manager
+  },
+  {
+    icon: <HiOutlineIdentification className="w-5 h-5" />,
+    label: 'Designations',
+    path: '/designations',
+    roles: [0, 1, ], // Admin and Manager
   },
   // Superadmin specific items
   {

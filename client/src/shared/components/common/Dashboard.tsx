@@ -15,7 +15,7 @@ import {
 
 const Dashboard: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { employees, total: totalEmployees } = useSelector((state: RootState) => state.employee);
+  const { users,  } = useSelector((state: RootState) => state.user);
   const { projects, total: totalProjects } = useSelector((state: RootState) => state.project);
   const { user } = useSelector((state: RootState) => state.auth);
 
@@ -28,18 +28,18 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const distribution = { admin: 0, hr: 0, pm: 0, employee: 0 };
-    employees.forEach(emp => {
+    users.forEach(emp => {
       if (emp.role === 0) distribution.admin++;
       else if (emp.role === 1) distribution.hr++;
       else if (emp.role === 2) distribution.pm++;
-      else if (emp.role === 4) distribution.employee++;
+      // else if (emp.role === 4) distribution.employee++;
     });
     setRoleDistribution(distribution);
-  }, [employees]);
+  }, [users]);
 
-  const activeProjects = projects.filter(p => p.status === 'active').length;
-  const completedProjects = projects.filter(p => p.status === 'completed').length;
-  const onHoldProjects = projects.filter(p => p.status === 'on-hold').length;
+  const activeProjects = projects.filter(p => p.status === 1).length;
+  const completedProjects = projects.filter(p => p.status === 2).length;
+  const onHoldProjects = projects.filter(p => p.status === 0).length;
   const completionRate = totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 100) : 0;
 
   return (
@@ -70,7 +70,7 @@ const Dashboard: React.FC = () => {
             </span>
           </div>
           <h3 className="text-sm font-medium text-gray-600 mb-1">Total Employees</h3>
-          <p className="text-3xl font-bold text-gray-900">{totalEmployees}</p>
+          <p className="text-3xl font-bold text-gray-900">{users.length}</p>
           <p className="text-xs text-gray-500 mt-2">
             Active workforce members
           </p>
@@ -231,7 +231,7 @@ const Dashboard: React.FC = () => {
             <div className="grid grid-cols-2 gap-4 text-center">
               <div>
                 <p className="text-xs text-gray-500 mb-1">Total Workforce</p>
-                <p className="text-xl font-bold text-gray-900">{totalEmployees}</p>
+                <p className="text-xl font-bold text-gray-900">{users.length}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 mb-1">Management</p>
@@ -248,7 +248,7 @@ const Dashboard: React.FC = () => {
           <div className="text-center p-4 bg-gray-50 rounded-lg">
             <p className="text-sm text-gray-600 mb-1">Avg. Team Size</p>
             <p className="text-2xl font-bold text-gray-900">
-              {totalProjects > 0 ? Math.round(totalEmployees / totalProjects) : 0}
+              {totalProjects > 0 ? Math.round(users.length / totalProjects) : 0}
             </p>
           </div>
           <div className="text-center p-4 bg-gray-50 rounded-lg">
@@ -263,7 +263,7 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="text-center p-4 bg-gray-50 rounded-lg">
             <p className="text-sm text-gray-600 mb-1">Active Resources</p>
-            <p className="text-2xl font-bold text-gray-900">{totalEmployees}</p>
+            <p className="text-2xl font-bold text-gray-900">{users.length}</p>
           </div>
         </div>
       </div>
