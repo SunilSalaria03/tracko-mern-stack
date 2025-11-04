@@ -1,6 +1,11 @@
-import { Document } from "mongoose";
+import mongoose, { Document } from "mongoose";
 
 export interface IProject extends Document {
+  projects?: Array<{
+    projectId: string;
+    allowAccess: boolean;
+  }>;
+  userId?: string |mongoose.Schema.Types.ObjectId | null;
   name: string;
   description: string;
   isDeleted?: boolean;
