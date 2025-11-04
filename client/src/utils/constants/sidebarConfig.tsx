@@ -26,7 +26,7 @@ export const SIDEBAR_MENU_ITEMS: SidebarMenuItem[] = [
     icon: <HiOutlineViewGrid className="w-5 h-5" />,
     label: 'Dashboard',
     path: '/dashboard',
-    roles: [0, 1, 2, 3],
+    roles: [0, 1, 2,],
   },
    {
     icon: <HiOutlineHome className="w-5 h-5" />,
@@ -49,7 +49,7 @@ export const SIDEBAR_MENU_ITEMS: SidebarMenuItem[] = [
     icon: <HiOutlineUsers className="w-5 h-5" />,
     label: 'Employees',
     path: '/users',
-    roles: [1,2], 
+    roles: [0,1,], 
   },
   {
     icon: <HiOutlineBriefcase className="w-5 h-5" />,

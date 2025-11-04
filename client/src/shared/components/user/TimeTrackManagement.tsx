@@ -21,14 +21,12 @@ import { fetchWorkstreams } from "../../../store/actions/workstreamActions";
 import {
   createTimeTrackTask,
   getTaskList,
-  deleteTimeTrackTask,
+  // deleteTimeTrackTask,
   updateTimeTrackTask,
   finalSubmitTimeTrackTask,
 } from "../../../store/actions/timeTrackActions";
 import { toast } from "react-toastify";
 import TimeTrackManagementModal from "./TimeTrackManagementModal";
-import TimeEntryCard from "./TimeEntryCard";
-import TimeEntryList from "./TimeEntryList";
 import type {
   TimeEntry,
   TimeTrackTask,
@@ -80,9 +78,8 @@ const TimeTrackManagement = () => {
     minutes: 0,
   });
 
- 
   const convertTaskToEntry = useCallback((task: TimeTrackTask): TimeEntry => {
-     const getIdString = (field: any): string => {
+    const getIdString = (field: any): string => {
       if (!field) return "";
       if (typeof field === "string") return field;
       if (typeof field === "object" && field._id) return String(field._id);
@@ -100,18 +97,15 @@ const TimeTrackManagement = () => {
     };
   }, []);
 
-  const convertEntryToTask = useCallback(
-    (entry: TimeEntry) => {
-      return {
-        projectId: entry.project,
-        workstreamId: entry.task,
-        taskDescription: entry.notes,
-        date: entry.date.toISOString().split("T")[0],
-        spendHours: entry.hours.toString(),
-      };
-    },
-    []
-  );
+  const convertEntryToTask = useCallback((entry: TimeEntry) => {
+    return {
+      projectId: entry.project,
+      workstreamId: entry.task,
+      taskDescription: entry.notes,
+      date: toISODate(entry.date),
+      spendHours: entry.hours.toString(),
+    };
+  }, []);
 
   const fetchReferenceData = useCallback(async () => {
     try {
@@ -130,10 +124,10 @@ const TimeTrackManagement = () => {
       let endDate: string;
 
       if (viewMode === "week") {
-         startDate = toISODate(getWeekStart(currentDate));
+        startDate = toISODate(getWeekStart(currentDate));
         endDate = toISODate(getWeekEnd(currentDate));
       } else {
-         startDate = toISODate(currentDate);
+        startDate = toISODate(currentDate);
         endDate = toISODate(currentDate);
       }
 
@@ -222,6 +216,7 @@ const TimeTrackManagement = () => {
   const handleOpenModal = (date: Date | null = null) => {
     setSelectedDate(date || new Date());
     setEditingEntryId(null);
+    setFormData({ project: "", task: "", notes: "", hours: 0, minutes: 0 });
     setOpenModal(true);
   };
 
@@ -235,7 +230,7 @@ const TimeTrackManagement = () => {
     const entry = timeEntries.find((e) => e.id === entryId);
     if (!entry) return;
 
-     if (entry.finalSubmit) {
+    if (entry.finalSubmit) {
       toast.warning("Cannot edit a submitted time entry");
       return;
     }
@@ -263,7 +258,10 @@ const TimeTrackManagement = () => {
     if (totalHours <= 0) return;
 
     const entry: TimeEntry = {
-      id: editingEntryId || crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      id:
+        editingEntryId ||
+        crypto.randomUUID?.() ||
+        `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       date: selectedDate,
       project: String(formData.project),
       task: String(formData.task),
@@ -273,46 +271,52 @@ const TimeTrackManagement = () => {
 
     try {
       const taskPayload = convertEntryToTask(entry);
-      
+
       if (editingEntryId) {
-        await dispatch(updateTimeTrackTask({ 
-          params: { id: editingEntryId }, 
-          data: taskPayload 
-        })).unwrap();
+        await dispatch(
+          updateTimeTrackTask({
+            params: { id: editingEntryId },
+            data: taskPayload,
+          })
+        ).unwrap();
         toast.success("Time entry updated successfully");
       } else {
         await dispatch(createTimeTrackTask(taskPayload)).unwrap();
         toast.success("Time entry added successfully");
       }
-      
+
       handleCloseModal();
       await fetchTasks();
     } catch (error) {
-      toast.error(editingEntryId ? "Failed to update time entry" : "Failed to add time entry");
+      toast.error(
+        editingEntryId
+          ? "Failed to update time entry"
+          : "Failed to add time entry"
+      );
     }
   };
 
-  const handleDeleteEntry = async (entryId: string) => {
-    const entry = timeEntries.find((e) => e.id === entryId);
-    if (entry?.finalSubmit) {
-      toast.warning("Cannot delete a submitted time entry");
-      return;
-    }
+  // const handleDeleteEntry = async (entryId: string) => {
+  //   const entry = timeEntries.find((e) => e.id === entryId);
+  //   if (entry?.finalSubmit) {
+  //     toast.warning("Cannot delete a submitted time entry");
+  //     return;
+  //   }
 
-    try {
-      await dispatch(deleteTimeTrackTask(entryId)).unwrap();
-      toast.success("Time entry deleted successfully");
-      await fetchTasks();
-    } catch (error) {
-      toast.error("Failed to delete time entry");
-    }
-  };
+  //   try {
+  //     await dispatch(deleteTimeTrackTask(entryId)).unwrap();
+  //     toast.success("Time entry deleted successfully");
+  //     await fetchTasks();
+  //   } catch (error) {
+  //     toast.error("Failed to delete time entry");
+  //   }
+  // };
 
   const handleFinalSubmit = async () => {
     try {
       const startDate = toISODate(getWeekStart(currentDate));
       const endDate = toISODate(getWeekEnd(currentDate));
-      
+
       await dispatch(finalSubmitTimeTrackTask({ startDate, endDate })).unwrap();
       toast.success("Time entries submitted successfully");
       await fetchTasks();
@@ -464,233 +468,471 @@ const TimeTrackManagement = () => {
       </Paper>
 
       {viewMode === "day" && (
-        <Paper
-          elevation={0}
-          sx={{ border: "1px solid #e5e7eb", overflow: "hidden" }}
-        >
-          <Box
-            sx={{ p: 3, borderBottom: "2px solid #e5e7eb", bgcolor: "#fafafa" }}
+        <>
+          <Paper
+            elevation={0}
+            sx={{ border: "1px solid #e5e7eb", overflow: "hidden", mb: 2 }}
           >
             <Box
               sx={{
+                display: "flex",
+                borderBottom: "1px solid #e5e7eb",
+              }}
+            >
+              {getWeekDays.map((day, index) => {
+                const isToday =
+                  day.toDateString() === new Date().toDateString();
+                const isSelected =
+                  day.toDateString() === currentDate.toDateString();
+                const dayTotal = getDayTotal(day);
+                return (
+                  <Box
+                    key={index}
+                    onClick={() => setCurrentDate(new Date(day))}
+                    sx={{
+                      flex: 1,
+                      borderRight: index < 6 ? "1px solid #e5e7eb" : "none",
+                      p: 2,
+                      textAlign: "center",
+                      bgcolor: isSelected
+                        ? "#3b82f6"
+                        : isToday
+                          ? alpha("#3b82f6", 0.05)
+                          : "transparent",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      "&:hover": {
+                        bgcolor: isSelected ? "#2563eb" : alpha("#3b82f6", 0.1),
+                      },
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: isSelected
+                          ? "white"
+                          : isToday
+                            ? "#3b82f6"
+                            : "#6b7280",
+                        fontWeight: isSelected ? 700 : isToday ? 600 : 500,
+                        display: "block",
+                        mb: 0.5,
+                      }}
+                    >
+                      {getDayName(day)}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: isSelected
+                          ? "white"
+                          : isToday
+                            ? "#3b82f6"
+                            : "#1f2937",
+                        fontWeight: isSelected ? 700 : isToday ? 600 : 500,
+                        fontSize: "0.875rem",
+                        mb: 0.5,
+                      }}
+                    >
+                      {day.getDate()}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: isSelected
+                          ? "white"
+                          : dayTotal > 0
+                            ? "#10b981"
+                            : "#9ca3af",
+                        fontWeight: 600,
+                        display: "block",
+                      }}
+                    >
+                      {formatHours(dayTotal)}
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+          </Paper>
+
+          {/* Day Details */}
+          <Paper
+            elevation={0}
+            sx={{ border: "1px solid #e5e7eb", overflow: "hidden" }}
+          >
+            <Box sx={{ p: 2 }}>
+              {getEntriesForDay(currentDate).length > 0 ? (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  {getEntriesForDay(currentDate).map((entry) => (
+                    <Box
+                      key={entry.id}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        py: 2,
+                        px: 2,
+                        borderBottom: "1px solid #e5e7eb",
+                        "&:hover": { bgcolor: "#f9fafb" },
+                      }}
+                    >
+                      <Box sx={{ flex: 1 }}>
+                        <Typography
+                          variant="body1"
+                          sx={{ fontWeight: 600, color: "#1f2937", mb: 0.5 }}
+                        >
+                          {getProjectName(entry.project)} (
+                          {getWorkstreamName(entry.task)})
+                        </Typography>
+                      
+                        {entry.notes && (
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: "#3b82f6",
+                              fontSize: "0.8rem",
+                              wordBreak: "break-all",
+                            }}
+                          >
+                            {entry.notes}
+                          </Typography>
+                        )}
+                      </Box>
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                          ml: 3,
+                        }}
+                      >
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            fontWeight: 600,
+                            color: "#1f2937",
+                            minWidth: 60,
+                          }}
+                        >
+                          {formatHours(entry.hours)}
+                        </Typography>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          disabled={entry.finalSubmit}
+                          onClick={() => handleEditEntry(entry.id)}
+                          sx={{
+                            textTransform: "none",
+                            borderColor: "#e5e7eb",
+                            color: "#1f2937",
+                            minWidth: 60,
+                            "&:hover": {
+                              borderColor: "#3b82f6",
+                              bgcolor: alpha("#3b82f6", 0.05),
+                            },
+                          }}
+                        >
+                          {entry.finalSubmit ? "Submitted" : "Edit"}
+                        </Button>
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              ) : (
+                <Box sx={{ textAlign: "center", py: 8, px: 3 }}>
+                  <Typography variant="h6" sx={{ color: "#9ca3af", mb: 2 }}>
+                    No time entries for this day
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#d1d5db" }}>
+                    Click "Track time" to add your first entry
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+
+            <Box
+              sx={{
+                borderTop: "2px solid #e5e7eb",
+                p: 2,
+                bgcolor: "#fafafa",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
               }}
             >
-              <Box>
-                <Typography
-                  variant="h5"
-                  sx={{ fontWeight: 700, color: "#1f2937", mb: 0.5 }}
-                >
-                  {currentDate.toLocaleDateString("en-US", {
-                    weekday: "long",
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </Typography>
-                <Typography variant="body2" sx={{ color: "#6b7280" }}>
-                  Track your time for the day
-                </Typography>
-              </Box>
-              <Box sx={{ textAlign: "right" }}>
-                <Typography
-                  variant="caption"
-                  sx={{ color: "#6b7280", display: "block", mb: 0.5 }}
-                >
-                  Total hours
-                </Typography>
-                <Typography
-                  variant="h4"
-                  sx={{ fontWeight: 700, color: "#10b981" }}
-                >
-                  {formatHours(getDayTotal(currentDate))}
-                </Typography>
-              </Box>
+              <Typography
+                variant="body1"
+                sx={{ color: "#6b7280", fontWeight: 500 }}
+              >
+                Total:
+              </Typography>
+              <Typography
+                variant="h6"
+                sx={{ color: "#1f2937", fontWeight: 700 }}
+              >
+                {formatHours(getDayTotal(currentDate))}
+              </Typography>
             </Box>
-          </Box>
-
-          <Box sx={{ p: 3 }}>
-            {getEntriesForDay(currentDate).length > 0 ? (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {getEntriesForDay(currentDate).map((entry) => (
-                  <TimeEntryCard
-                    key={entry.id}
-                    entry={entry}
-                    getProjectName={getProjectName}
-                    getWorkstreamName={getWorkstreamName}
-                    onDelete={handleDeleteEntry}
-                    onEdit={handleEditEntry}
-                  />
-                ))}
-              </Box>
-            ) : (
-              <Box sx={{ textAlign: "center", py: 8, px: 3 }}>
-                <Typography variant="h6" sx={{ color: "#9ca3af", mb: 2 }}>
-                  No time entries for this day
-                </Typography>
-                <Typography variant="body2" sx={{ color: "#d1d5db", mb: 3 }}>
-                  Click "Track time" to add your first entry
-                </Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => handleOpenModal(currentDate)}
-                  sx={{
-                    bgcolor: "#10b981",
-                    color: "white",
-                    textTransform: "none",
-                    px: 3,
-                    py: 1.5,
-                    "&:hover": { bgcolor: "#059669" },
-                  }}
-                >
-                  Add time entry
-                </Button>
-              </Box>
-            )}
-          </Box>
-
-          <Box
-            sx={{
-              borderTop: "2px solid #e5e7eb",
-              p: 3,
-              bgcolor: "#fafafa",
-              display: "flex",
-              justifyContent: "flex-end",
-              alignItems: "center",
-              gap: 3,
-            }}
-          >
-            <Typography
-              variant="body1"
-              sx={{ color: "#6b7280", fontWeight: 500 }}
-            >
-              Day total
-            </Typography>
-            <Typography variant="h5" sx={{ color: "#1f2937", fontWeight: 700 }}>
-              {formatHours(getDayTotal(currentDate))}
-            </Typography>
-          </Box>
-        </Paper>
+          </Paper>
+        </>
       )}
 
       {viewMode === "week" && (
         <Paper
           elevation={0}
-          sx={{ border: "1px solid #e5e7eb", overflow: "hidden" }}
+          sx={{ border: "1px solid #e5e7eb", overflow: "auto" }}
         >
-          <Box
-            sx={{
-              display: "flex",
-              borderBottom: "2px solid #e5e7eb",
-              bgcolor: "#fafafa",
-            }}
-          >
-            {getWeekDays.map((day, index) => {
-              const isToday = day.toDateString() === new Date().toDateString();
-              const dayTotal = getDayTotal(day);
-              return (
-                <Box
-                  key={index}
-                  sx={{
-                    flex: 1,
-                    borderRight: index < 6 ? "1px solid #e5e7eb" : "none",
-                    p: 2,
-                    textAlign: "center",
-                    bgcolor: isToday ? alpha("#3b82f6", 0.05) : "transparent",
-                  }}
-                  onDoubleClick={() => handleOpenModal(day)}
+          <Box sx={{ minWidth: 1200 }}>
+            {/* Table Header */}
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "3fr repeat(7, 1fr) 1fr",
+                borderBottom: "2px solid #e5e7eb",
+                bgcolor: "#f9fafb",
+              }}
+            >
+              <Box sx={{ p: 1.5, borderRight: "1px solid #e5e7eb" }}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 600, color: "#6b7280" }}
                 >
-                  <Typography
-                    variant="caption"
+                  Task
+                </Typography>
+              </Box>
+              {getWeekDays.map((day, index) => {
+                const isToday =
+                  day.toDateString() === new Date().toDateString();
+                return (
+                  <Box
+                    key={index}
                     sx={{
-                      color: isToday ? "#3b82f6" : "#6b7280",
-                      fontWeight: isToday ? 700 : 500,
-                      display: "block",
-                      mb: 0.5,
+                      p: 1.5,
+                      borderRight: "1px solid #e5e7eb",
+                      textAlign: "center",
+                      bgcolor: isToday ? alpha("#3b82f6", 0.05) : "transparent",
                     }}
                   >
-                    {getDayName(day)}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: isToday ? "#3b82f6" : "#1f2937",
-                      fontWeight: isToday ? 700 : 600,
-                      fontSize: "0.875rem",
-                    }}
-                  >
-                    {day.getDate()}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: dayTotal > 0 ? "#10b981" : "#9ca3af",
-                      fontWeight: 600,
-                      display: "block",
-                      mt: 0.5,
-                    }}
-                  >
-                    {formatHours(dayTotal)}
-                  </Typography>
-                </Box>
-              );
-            })}
-          </Box>
-
-          <Box sx={{ display: "flex", minHeight: 150 }}>
-            {getWeekDays.map((day, index) => {
-              const dayTotal = getDayTotal(day);
-              const isToday = day.toDateString() === new Date().toDateString();
-              return (
-                <Box
-                  key={index}
-                  sx={{
-                    flex: 1,
-                    borderRight: index < 6 ? "1px solid #e5e7eb" : "none",
-                    p: 2,
-                    bgcolor: isToday ? alpha("#3b82f6", 0.02) : "white",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {dayTotal > 0 ? (
-                    <Box sx={{ textAlign: "center" }}>
-                      <Box
-                        sx={{
-                          width: 60,
-                          height: 60,
-                          borderRadius: "50%",
-                          bgcolor: alpha("#10b981", 0.1),
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          mb: 1,
-                          border: "2px solid #10b981",
-                        }}
-                      >
-                        <Typography
-                          variant="h6"
-                          sx={{ color: "#10b981", fontWeight: 700 }}
-                        >
-                          {formatHours(dayTotal)}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  ) : (
-                    <Typography variant="caption" sx={{ color: "#d1d5db" }}>
-                      No entries
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: isToday ? "#3b82f6" : "#6b7280",
+                        fontWeight: 600,
+                        display: "block",
+                      }}
+                    >
+                      {getDayName(day)}
                     </Typography>
-                  )}
-                </Box>
-              );
-            })}
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: isToday ? "#3b82f6" : "#1f2937",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {day.getDate()}{" "}
+                      {day.toLocaleDateString("en-US", { month: "short" })}
+                    </Typography>
+                  </Box>
+                );
+              })}
+              <Box sx={{ p: 1.5, textAlign: "center" }}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 600, color: "#6b7280" }}
+                >
+                  Week total
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Group entries by task */}
+            {(() => {
+              const taskGroups = new Map<string, TimeEntry[]>();
+              timeEntries.forEach((entry) => {
+                const key = `${entry.project}-${entry.task}`;
+                if (!taskGroups.has(key)) {
+                  taskGroups.set(key, []);
+                }
+                taskGroups.get(key)!.push(entry);
+              });
+
+              return Array.from(taskGroups.entries()).map(([key, entries]) => {
+                const [projectId, taskId] = key.split("-");
+                const rowTotal = entries.reduce((sum, e) => sum + e.hours, 0);
+
+                return (
+                  <Box
+                    key={key}
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: "3fr repeat(7, 1fr) 1fr",
+                      borderBottom: "1px solid #e5e7eb",
+                      "&:hover": { bgcolor: "#f9fafb" },
+                    }}
+                  >
+                    {/* Task Name Column */}
+                    <Box
+                      sx={{
+                        p: 1.5,
+                        borderRight: "1px solid #e5e7eb",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: 600, color: "#1f2937", mb: 0.3 }}
+                      >
+                        {getProjectName(projectId)} ({getWorkstreamName(taskId)}
+                        )
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "#6b7280" }}>
+                        Development - bug-fixing
+                      </Typography>
+                    </Box>
+
+                    {/* Day Columns */}
+                    {getWeekDays.map((day, dayIndex) => {
+                      const dayKey = toDateKey(day);
+                      const dayEntry = entries.find(
+                        (e) => toDateKey(new Date(e.date)) === dayKey
+                      );
+                      const isToday =
+                        day.toDateString() === new Date().toDateString();
+
+                      return (
+                        <Box
+                          key={dayIndex}
+                          sx={{
+                            p: 1,
+                            borderRight: "1px solid #e5e7eb",
+                            textAlign: "center",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            bgcolor: isToday
+                              ? alpha("#3b82f6", 0.02)
+                              : "transparent",
+                            cursor: "pointer",
+                            "&:hover": { bgcolor: alpha("#3b82f6", 0.08) },
+                          }}
+                          onClick={() => {
+                            if (dayEntry) {
+                              handleEditEntry(dayEntry.id);
+                            } else {
+                              handleOpenModal(day);
+                            }
+                          }}
+                        >
+                          {dayEntry ? (
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontWeight: 600,
+                                color: dayEntry.finalSubmit
+                                  ? "#6b7280"
+                                  : "#1f2937",
+                              }}
+                            >
+                              {formatHours(dayEntry.hours)}
+                            </Typography>
+                          ) : (
+                            <Typography
+                              variant="body2"
+                              sx={{ color: "#d1d5db" }}
+                            >
+                              -
+                            </Typography>
+                          )}
+                        </Box>
+                      );
+                    })}
+
+                    {/* Week Total Column */}
+                    <Box
+                      sx={{
+                        p: 1.5,
+                        textAlign: "center",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        bgcolor: "#f9fafb",
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: 700, color: "#1f2937" }}
+                      >
+                        {formatHours(rowTotal)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                );
+              });
+            })()}
+
+            {/* Day Totals Row */}
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "3fr repeat(7, 1fr) 1fr",
+                borderTop: "2px solid #e5e7eb",
+                bgcolor: "#f9fafb",
+              }}
+            >
+              <Box sx={{ p: 1.5, borderRight: "1px solid #e5e7eb" }}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 600, color: "#6b7280" }}
+                >
+                  Total
+                </Typography>
+              </Box>
+              {getWeekDays.map((day, index) => {
+                const dayTotal = getDayTotal(day);
+                const isToday =
+                  day.toDateString() === new Date().toDateString();
+                return (
+                  <Box
+                    key={index}
+                    sx={{
+                      p: 1.5,
+                      borderRight: "1px solid #e5e7eb",
+                      textAlign: "center",
+                      bgcolor: isToday ? alpha("#3b82f6", 0.05) : "transparent",
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 700, color: "#1f2937" }}
+                    >
+                      {formatHours(dayTotal)}
+                    </Typography>
+                  </Box>
+                );
+              })}
+              <Box
+                sx={{
+                  p: 1.5,
+                  textAlign: "center",
+                  bgcolor: "#e0f2fe",
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 700, color: "#0369a1" }}
+                >
+                  {formatHours(weekTotal)}
+                </Typography>
+              </Box>
+            </Box>
           </Box>
 
+          {/* Action Buttons */}
           <Box
             sx={{
               borderTop: "2px solid #e5e7eb",
@@ -704,56 +946,41 @@ const TimeTrackManagement = () => {
             <Box sx={{ display: "flex", gap: 2 }}>
               <Button
                 variant="outlined"
-                size="small"
+                startIcon={<AddIcon />}
+                onClick={() => handleOpenModal(getWeekDays[0])}
                 sx={{
                   textTransform: "none",
                   borderColor: "#e5e7eb",
                   color: "#6b7280",
-                  "&:hover": { borderColor: "#3b82f6", color: "#3b82f6" },
+                  "&:hover": { borderColor: "#10b981", color: "#10b981" },
                 }}
               >
-                Copy rows from most recent timesheet
+                Add row
               </Button>
               <Button
                 variant="contained"
-                size="small"
                 sx={{
                   textTransform: "none",
-                  bgcolor: "#3b82f6",
-                  "&:hover": { bgcolor: "#2563eb" },
+                  bgcolor: "#10b981",
+                  "&:hover": { bgcolor: "#059669" },
                 }}
-                onClick={handleFinalSubmit}
               >
-                Submit week for approval
+                Save
               </Button>
             </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Typography
-                variant="body2"
-                sx={{ color: "#6b7280", fontWeight: 500 }}
-              >
-                Week total
-              </Typography>
-              <Typography
-                variant="h6"
-                sx={{ color: "#1f2937", fontWeight: 700 }}
-              >
-                {formatHours(weekTotal)}
-              </Typography>
-            </Box>
+            <Button
+              variant="contained"
+              sx={{
+                textTransform: "none",
+                bgcolor: "#3b82f6",
+                "&:hover": { bgcolor: "#2563eb" },
+              }}
+              onClick={handleFinalSubmit}
+            >
+              Submit week for approval
+            </Button>
           </Box>
         </Paper>
-      )}
-
-      {viewMode === "week" && (
-        <TimeEntryList
-          entries={timeEntries}
-          getProjectName={getProjectName}
-          getWorkstreamName={getWorkstreamName}
-          onDelete={handleDeleteEntry}
-          onEdit={handleEditEntry}
-          showDate
-        />
       )}
 
       <TimeTrackManagementModal
