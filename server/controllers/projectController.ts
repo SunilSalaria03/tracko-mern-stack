@@ -8,8 +8,9 @@ import {
   updateProjectService,
   deleteProjectService,
   addProjectService,
+  projectAssignmentService,
 } from '../services/projectService';
-import { addProjectValidation } from '../validations/projectValidations';
+import { projectAssignmentValidation, addProjectValidation } from '../validations/projectValidations';
 import { IProject } from '../interfaces/projectInterfaces';
 
 export const getProjects = async (
@@ -50,7 +51,7 @@ export const getProjectById = async (
       return helper.failed(res, result.error);
     }
 
-    return helper.success(res, 'Project fetched successfully', result);
+    return helper.success(res, PROJECT_MESSAGES.PROJECTS_FETCHED_SUCCESSFULLY, result);
   } catch (error) {
     console.error('Get project by ID error:', error);
     return helper.error(res, GENERAL_MESSAGES.SOMETHING_WENT_WRONG);
@@ -81,7 +82,7 @@ export const addProject = async (
       return helper.failed(res, result.error);
     }
 
-    return helper.success(res, 'Project created successfully', result);
+    return helper.success(res, PROJECT_MESSAGES.PROJECT_ADDED_SUCCESSFULLY, result);
   } catch (error) {
     console.error('Add project error:', error);
     return helper.error(res, GENERAL_MESSAGES.SOMETHING_WENT_WRONG);
@@ -109,7 +110,7 @@ export const updateProject = async (
       return helper.failed(res, result.error);
     }
 
-    return helper.success(res, 'Project updated successfully', result);
+    return helper.success(res, PROJECT_MESSAGES.PROJECT_UPDATED_SUCCESSFULLY, result);
   } catch (error) {
     console.error('Update project error:', error);
     return helper.error(res, GENERAL_MESSAGES.SOMETHING_WENT_WRONG);
@@ -129,9 +130,37 @@ export const deleteProject = async (
       return helper.failed(res, result.error);
     }
 
-    return helper.success(res, 'Project deleted successfully', result);
+    return helper.success(res, PROJECT_MESSAGES.PROJECT_DELETED_SUCCESSFULLY, result);
   } catch (error) {
     console.error('Delete project error:', error);
+    return helper.error(res, GENERAL_MESSAGES.SOMETHING_WENT_WRONG);
+  }
+};
+
+export const projectAssignment = async (
+  req: AuthRequest,
+  res: Response
+): Promise<Response | void> => {
+  try {
+    const { error, value: validatedData } = projectAssignmentValidation(req.body);
+    if (error) {
+      return helper.failed(res, error.details[0].message);
+    }
+
+    const objToSend: Partial<IProject> = {
+      ...validatedData,
+      addedBy: req.user?.id as string,
+    }
+
+    const result = await projectAssignmentService(objToSend);
+    if ('error' in result) {
+      return helper.failed(res, result.error);
+    }
+
+    return helper.success(res, PROJECT_MESSAGES.PROJECT_ASSIGNMENT_CREATED_SUCCESSFULLY, result);
+
+  } catch (error) {
+    console.error('Add project assignment error:', error);
     return helper.error(res, GENERAL_MESSAGES.SOMETHING_WENT_WRONG);
   }
 };

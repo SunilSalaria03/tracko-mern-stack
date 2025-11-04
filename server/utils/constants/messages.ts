@@ -70,12 +70,19 @@ export const ADMIN_MESSAGES = {
   INSUFFICIENT_PERMISSIONS: 'You do not have sufficient permissions',
 };
 
-export const PROJECT_MESSAGES = {
+export const PROJECT_MESSAGES = { 
+  PROJECTS_REQUIRED: 'Projects are required',
+  PROJECTS_NOT_FOUND: 'Projects not found',
+  INVALID_PROJECT_ID: 'Invalid project ID',
   PROJECT_NOT_FOUND: 'Project not found',
   PROJECT_NAME_ALREADY_EXISTS: 'Project name already exists',
   PROJECTS_FETCHED_SUCCESSFULLY: 'Projects fetched successfully',
   PROJECT_CREATION_NOT_ALLOWED: 'Admin and Manager only can add project',
   PROJECT_UPDATE_NOT_ALLOWED: 'Admin and Manager only can update project',
+  PROJECT_ADDED_SUCCESSFULLY: 'Project added successfully',
+  PROJECT_UPDATED_SUCCESSFULLY: 'Project updated successfully',
+  PROJECT_DELETED_SUCCESSFULLY: 'Project deleted successfully',
+  PROJECT_ASSIGNMENT_CREATED_SUCCESSFULLY: 'Project assignment created successfully',
 };
 
 export const DEPARTMENT_MESSAGES = {

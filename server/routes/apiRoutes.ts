@@ -3,6 +3,7 @@ import * as authController from '../controllers/authController';
 import * as userController from '../controllers/userController';
 import { authMiddleware } from '../middlewares/auth';
 import * as userTaskController from '../controllers/userTaskController';
+import * as projectController from '../controllers/projectController';
 
 const router = Router();
 
@@ -34,5 +35,8 @@ router.get('/userTasks/:id', userTaskController.getUserTaskById);
 router.delete('/userTasks/:id', userTaskController.deleteUserTask);
 router.put('/userTasks/finalSubmit', userTaskController.finalSubmitUserTask);
 router.put('/userTasks/:id', userTaskController.updateUserTask);
+
+// Project assignment routes
+router.post('/projectAssignments', projectController.projectAssignment);
 
 export default router;

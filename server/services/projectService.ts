@@ -1,7 +1,10 @@
+import mongoose from "mongoose";
+
+import userModel from "../models/userModel";
 import { IProject } from "../interfaces/projectInterfaces";
 import { IListParams } from "../interfaces/userInterfaces";
 import projectModel from "../models/projectModel";
-import { GENERAL_MESSAGES, PROJECT_MESSAGES } from "../utils/constants/messages";
+import { GENERAL_MESSAGES, PROJECT_MESSAGES, USER_MESSAGES } from "../utils/constants/messages";
 
 export const getProjectsService = async (params: IListParams) => {
   try {
@@ -159,6 +162,93 @@ export const deleteProjectService = async (projectId: string) => {
     return deletedProject;
   } catch (error) {
     console.error("Delete project service error:", error);
+    const message = error instanceof Error ? error.message : GENERAL_MESSAGES.SOMETHING_WENT_WRONG;
+    return { error: message };
+  }
+};
+
+export const projectAssignmentService = async (data: Partial<IProject>) => {
+  try {
+    if(data.userId){
+      const userIdStr = typeof data.userId === "string" ? data.userId : data.userId.toString();
+      if(!mongoose.Types.ObjectId.isValid(userIdStr)) {
+        return { error: USER_MESSAGES.INVALID_USER_ID };
+      }
+      data.userId = userIdStr;
+    }
+
+    if(!data.projects || data.projects.length === 0){
+      return { error: PROJECT_MESSAGES.PROJECTS_REQUIRED };
+    }
+
+    const user = await userModel.findOne({
+      _id: data.userId,
+      isDeleted: false,
+    });
+    if (!user) {
+      return { error: USER_MESSAGES.INVALID_USER_ID };
+    }
+
+    const projectsToAdd = data.projects
+      .filter(p => p.allowAccess === true)
+      .map(p => p.projectId);
+    
+    const projectsToRemove = data.projects
+      .filter(p => p.allowAccess === false)
+      .map(p => p.projectId);
+
+    const allProjectIds = [...projectsToAdd, ...projectsToRemove];
+    if(allProjectIds.length > 0) {
+      const existingProjects = await projectModel.find({
+        _id: { $in: allProjectIds },
+        isDeleted: false,
+      });
+      
+      if (existingProjects.length !== allProjectIds.length) {
+        return { error: PROJECT_MESSAGES.PROJECTS_NOT_FOUND };
+      }
+    }
+
+    if (projectsToRemove.length > 0) {
+      await userModel.findOneAndUpdate(
+        {
+          _id: data.userId,
+          isDeleted: false,
+        },
+        {
+          $pull: {
+            projectIds: { $in: projectsToRemove },
+          },
+        }
+      );
+    }
+
+    if (projectsToAdd.length > 0) {
+      await userModel.findOneAndUpdate(
+        {
+          _id: data.userId,
+          isDeleted: false,
+        },
+        {
+          $addToSet: {
+            projectIds: { $each: projectsToAdd },
+          },
+        }
+      );
+    }
+
+    const updateUser = await userModel.findOne({
+      _id: data.userId,
+      isDeleted: false,
+    });
+    
+    if (!updateUser) {
+      return { error: USER_MESSAGES.INVALID_USER_ID };
+    }
+    
+    return { message: PROJECT_MESSAGES.PROJECT_ASSIGNMENT_CREATED_SUCCESSFULLY };
+  } catch (error) {
+    console.error("Project assignment service error:", error);
     const message = error instanceof Error ? error.message : GENERAL_MESSAGES.SOMETHING_WENT_WRONG;
     return { error: message };
   }

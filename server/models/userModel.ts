@@ -82,7 +82,12 @@ const UserSchema = new Schema<IUser>(
       type: [mongoose.Schema.Types.ObjectId],
       ref: 'Permission',
       default: [],
-    }
+    }, 
+    projectIds: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: 'Project',
+      default: [],
+    },
   },
   {
     timestamps: true,
