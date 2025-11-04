@@ -109,7 +109,6 @@ export const USER_TASK_MESSAGES = {
   USER_TASK_NOT_FOUND: 'User task not found',
   USER_TASK_DESCRIPTION_ALREADY_EXISTS: 'User task description already exists',
   USER_TASKS_FETCHED_SUCCESSFULLY: 'User tasks fetched successfully',
-  USER_TASK_CREATION_NOT_ALLOWED: 'Admin and Manager only can add user task',
   USER_TASK_UPDATE_NOT_ALLOWED: 'Admin and Manager only can update user task',
   INVALID_USER_TASK_ID: 'Invalid user task ID',
   CANNOT_UPDATE_AFTER_FINAL_SUBMIT_TASK: 'Cannot update after final submission of the task',

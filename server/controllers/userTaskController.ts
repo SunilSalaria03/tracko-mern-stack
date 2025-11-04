@@ -71,10 +71,6 @@ export const addUserTask = async (
       return helper.failed(res, error.details[0].message);
     }
 
-    if (req.user?.role !== 1 && req.user?.role !== 2) {
-      return helper.failed(res, USER_TASK_MESSAGES.USER_TASK_CREATION_NOT_ALLOWED);
-    }
-
     const objToSend: Partial<IUserTask> = {
       ...validatedData,
       userId: req.user?.id as string,

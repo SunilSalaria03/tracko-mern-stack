@@ -8,7 +8,7 @@ const router = Router();
 
 // Public routes (no authentication required)
 router.post('/auth/login', authController.signIn);
-router.post('/auth/signup', authController.signUp);
+// router.post('/auth/signup', authController.signUp);
 router.post('/auth/forgotPassword', authController.forgotPassword);
 router.post('/auth/resetPassword', authController.resetPassword);
 

@@ -133,13 +133,6 @@ export const addUserTaskService = async (data: Partial<IUserTask>) => {
         return { error: "Workstream not found" };
       }
     }
-    const existingUserTask = await userTaskModel.findOne({
-      taskDescription: data.taskDescription,
-      isDeleted: false,
-    });
-    if (existingUserTask) {
-      return { error: "User task with this description already exists" };
-    }
 
     const createdUserTask = await userTaskModel.create(data);
 
