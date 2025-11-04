@@ -1,113 +1,53 @@
-import { createAsyncThunk } from '@reduxjs/toolkit';
-import { API_ENDPOINTS } from '../apiEndpoints';
-import { apiClient } from '../apiClient';
-import { handleApiError } from '../../utils/common/helpers';
-import type { 
-  ProjectListParams, 
-  ProjectListResponse, 
-  Project,
-  ProjectFormData 
-} from '../../utils/interfaces/projectInterface';
-
-export const fetchProjects = createAsyncThunk<
-  ProjectListResponse,
+// src/store/actions/projectActions.ts
+import {
+  createGetThunkWithParams,
+  createPostThunk,
+  createPutThunk,
+  createDeleteThunk,
+  createGetThunk,
+} from "./indexThunkApis";
+import { API_ENDPOINTS } from "../apiEndpoints";
+import type {
   ProjectListParams,
-  { rejectValue: string }
->(
-  'project/fetchProjects',
-  async (params, { rejectWithValue }) => {
-    try {
-      const queryParams = new URLSearchParams();
-      
-      if (params.page) queryParams.append('page', params.page.toString());
-      if (params.limit) queryParams.append('limit', params.limit.toString());
-      if (params.search) queryParams.append('search', params.search);
-      if (params.sortBy) queryParams.append('sortBy', params.sortBy);
-      if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
-      if (params.status) queryParams.append('status', params.status);
-
-      const url = `${API_ENDPOINTS.PROJECTS.LIST}?${queryParams.toString()}`;
-      const response = await apiClient.get<ProjectListResponse>(url);
-      
-      if (!response.success) {
-        return rejectWithValue(response.error || 'Failed to fetch projects');
-      }
-      
-      return (response.body || response.data) as ProjectListResponse;
-    } catch (error) {
-      return rejectWithValue(handleApiError(error));
-    }
-  }
-);
-
-export const createProject = createAsyncThunk<
+  ProjectListResponse,
   Project,
   ProjectFormData,
-  { rejectValue: string }
->(
-  'project/createProject',
-  async (data, { rejectWithValue }) => {
-    try {
-      const response = await apiClient.post<Project, ProjectFormData>(
-        API_ENDPOINTS.PROJECTS.CREATE,
-        data
-      );
-      
-      if (!response.success) {
-        return rejectWithValue(response.error || 'Failed to create project');
-      }
-      
-      return (response.body || response.data) as Project;
-    } catch (error) {
-      return rejectWithValue(handleApiError(error));
-    }
+} from "../../utils/interfaces/projectInterface";
+
+ export type UpdateProjectPayload = { id: string,data:unknown } & Partial<ProjectFormData>;
+
+export const fetchProjects = createGetThunkWithParams<ProjectListResponse, ProjectListParams>(
+  "project/fetchProjects",
+  (params) => {
+    const qs = new URLSearchParams();
+    if (params?.page) qs.append("page", String(params.page));
+    if (params?.perPageLimit) qs.append("limit", String(params.perPageLimit));
+    if (params?.search) qs.append("search", params.search);
+    if (params?.sortBy) qs.append("sortBy", params.sortBy);
+    if (params?.sortOrder) qs.append("sortOrder", params.sortOrder);
+    if (params?.status) qs.append("status", params.status);
+    const query = qs.toString();
+    return `${API_ENDPOINTS.PROJECTS.LIST}${query ? `?${query}` : ""}`;
   }
 );
-
-export const updateProject = createAsyncThunk<
-  Project,
-  { id: string; data: Partial<ProjectFormData> },
-  { rejectValue: string }
->(
-  'project/updateProject',
-  async ({ id, data }, { rejectWithValue }) => {
-    try {
-      const response = await apiClient.put<Project, Partial<ProjectFormData>>(
-        API_ENDPOINTS.PROJECTS.UPDATE(id),
-        data
-      );
-      
-      if (!response.success) {
-        return rejectWithValue(response.error || 'Failed to update project');
-      }
-      
-      return (response.body || response.data) as Project;
-    } catch (error) {
-      return rejectWithValue(handleApiError(error));
-    }
+export const fetchProjectsWithoutParams = createGetThunk<ProjectListResponse>(
+  "project/fetchProjectsWithoutParams",
+  ( ) => {
+    
+    return `${API_ENDPOINTS.PROJECTS.LIST}`;
   }
 );
-
-export const deleteProject = createAsyncThunk<
-  string,
-  string,
-  { rejectValue: string }
->(
-  'project/deleteProject',
-  async (id, { rejectWithValue }) => {
-    try {
-      const response = await apiClient.delete<{ message: string }>(
-        API_ENDPOINTS.PROJECTS.DELETE(id)
-      );
-      
-      if (!response.success) {
-        return rejectWithValue(response.error || 'Failed to delete project');
-      }
-      
-      return id;
-    } catch (error) {
-      return rejectWithValue(handleApiError(error));
-    }
-  }
+export const createProject = createPostThunk<Project, ProjectFormData>(
+  "project/createProject",
+  () => API_ENDPOINTS.PROJECTS.CREATE
 );
 
+export const updateProject = createPutThunk<Project, UpdateProjectPayload>(
+  "project/updateProject",
+  (payload) => API_ENDPOINTS.PROJECTS.UPDATE(payload.id)
+);
+
+export const deleteProject = createDeleteThunk<void>(
+  "project/deleteProject",
+  (id: string) => API_ENDPOINTS.PROJECTS.DELETE(id)
+);

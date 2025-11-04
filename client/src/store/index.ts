@@ -9,6 +9,7 @@ import workstreamSlice from './slices/workstreamSlice';
 import adminSlice from './slices/adminSlice';
 import departmentSlice from './slices/departmentSlice';
 import designationSlice from './slices/designationSlice';
+import taskSlice from './slices/taskSlice';
 import { errorMiddleware, tokenMiddleware } from './middleware';
 
 export const store = configureStore({
@@ -21,6 +22,7 @@ export const store = configureStore({
     adminManagement: adminSlice,
     departmentManagement: departmentSlice,
     designationManagement: designationSlice,
+    task: taskSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

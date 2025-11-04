@@ -1,7 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { Project } from '../../utils/interfaces/projectInterface';
 import { 
-  fetchProjects, 
+  fetchProjects,
+  fetchProjectsWithoutParams,
   createProject, 
   updateProject, 
   deleteProject 
@@ -41,8 +42,7 @@ const projectSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch projects
-      .addCase(fetchProjects.pending, (state) => {
+       .addCase(fetchProjects.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
@@ -58,15 +58,31 @@ const projectSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
+      // Fetch projects without params
+      .addCase(fetchProjectsWithoutParams.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchProjectsWithoutParams.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.projects = action.payload.projects;
+        state.total = action.payload.total;
+        state.currentPage = action.payload.page;
+        state.totalPages = action.payload.totalPages;
+        state.error = null;
+      })
+      .addCase(fetchProjectsWithoutParams.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
       // Create project
       .addCase(createProject.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(createProject.fulfilled, (state, action) => {
+      .addCase(createProject.fulfilled, (state, _action) => {
         state.isLoading = false;
-        // state.projects.unshift(action.payload);
-        state.total += 1;
+         state.total += 1;
         state.error = null;
       })
       .addCase(createProject.rejected, (state, action) => {
@@ -97,7 +113,7 @@ const projectSlice = createSlice({
       })
       .addCase(deleteProject.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.projects = state.projects.filter(proj => proj._id !== action.payload);
+        // state.projects = state.projects.filter(proj => proj._id !== action.payload);
         state.total = state.total - 1;
         state.error = null;
       })

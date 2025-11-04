@@ -59,5 +59,14 @@ export const API_ENDPOINTS = {
       UPDATE: (id: string) => `/admin/designations/${id}`,
       DELETE: (id: string) => `/admin/designations/${id}`,
     },
+
+    TIME_TRACK: {
+      LIST: '/userTasks',
+      BY_ID: (id: string) => `/userTasks/${id}`,
+      CREATE: '/userTasks',
+      UPDATE: (id: string) => `/userTasks/${id}`,
+      DELETE: (id: string) => `/userTasks/${id}`,
+      FINAL_SUBMIT: '/userTasks/finalSubmit',
+    },
   };
   

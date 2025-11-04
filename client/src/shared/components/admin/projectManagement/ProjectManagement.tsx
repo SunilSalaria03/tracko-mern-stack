@@ -69,7 +69,7 @@ const ProjectManagement = () => {
         await dispatch(
           fetchProjects({
             page: effectivePage,
-            limit: effectiveLimit,
+            perPageLimit: effectiveLimit,
             search: effectiveSearch,
             sortBy: "createdAt",
             sortOrder: "desc",

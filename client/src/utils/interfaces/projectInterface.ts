@@ -22,12 +22,15 @@ export interface ProjectFormData {
  }
 
 export interface ProjectListParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  status?: string; // optional filter
+  
+    page?: number; 
+    perPageLimit?: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    status?: string;
+    certificateTypeId?: string;
+  
 }
 
 export interface ProjectListResponse {
