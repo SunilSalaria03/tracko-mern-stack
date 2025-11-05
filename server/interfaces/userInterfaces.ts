@@ -25,6 +25,7 @@ export interface IUser extends Document {
     addedByUserTenantId?: mongoose.Schema.Types.ObjectId | null;
     grantedPermissionIds?: mongoose.Schema.Types.ObjectId[] | null;
     projectIds?: mongoose.Schema.Types.ObjectId[] | null;
+    managerIds?: mongoose.Schema.Types.ObjectId[] | null;
   }
 
 export interface IChangePassword {

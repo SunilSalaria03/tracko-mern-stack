@@ -396,3 +396,5 @@ export const addUserService = async (data: Partial<IUser>, files?: any) => {
     return { error: err.message || 'Something went wrong' };
   }
 };
+
+

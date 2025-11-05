@@ -99,6 +99,12 @@ export const SIDEBAR_MENU_ITEMS: SidebarMenuItem[] = [
     path: "/roles-permissions",
     roles: [0],
   },
+  {
+    icon: <HiOutlineShieldCheck className="w-5 h-5" />,
+    label: "Projects Summary",
+    path: "/projects-summary",
+    roles: [1,2],
+  },
 ];
 
 export const SIDEBAR_BOTTOM_ITEMS: SidebarMenuItem[] = [

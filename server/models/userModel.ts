@@ -88,6 +88,11 @@ const UserSchema = new Schema<IUser>(
       ref: 'Project',
       default: [],
     },
+    managerIds: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: 'User',
+      default: [],
+    },
   },
   {
     timestamps: true,

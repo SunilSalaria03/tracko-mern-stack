@@ -31,11 +31,7 @@ export interface AddEmployeeFormData {
   role: 0 | 1 | 2;
 }
 
-export interface AddEmployeeModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-}
+ 
 
 export interface EmployeeListParams {
   page?: number;
