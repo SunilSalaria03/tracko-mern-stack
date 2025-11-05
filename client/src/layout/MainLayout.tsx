@@ -1,8 +1,8 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../shared/components/common/Navbar";
 import Sidebar from "../shared/components/common/Sidebar";
 import { isManagementRole, isEmployeeRole } from "../utils/constants/roles";
@@ -10,9 +10,10 @@ import { isManagementRole, isEmployeeRole } from "../utils/constants/roles";
 const MainLayout: React.FC = () => {
   const { user } = useSelector((state: any) => state.auth);
   const location = useLocation();
-console.log(user);
-  const hasManagementLayout = user?.role !== undefined && isManagementRole(user.role);
-  const hasEmployeeLayout = user?.role !== undefined && isEmployeeRole(user.role);
+  const hasManagementLayout =
+    user?.role !== undefined && isManagementRole(user.role);
+  const hasEmployeeLayout =
+    user?.role !== undefined && isEmployeeRole(user.role);
 
   if (hasManagementLayout) {
     return (

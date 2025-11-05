@@ -38,4 +38,24 @@ export interface SidebarItem {
   }
 
   export type TimePeriod = 'today' | 'week' | 'month' | 'lastMonth';
+
+  // API Response types
+  export interface ProjectStats {
+    projectId: string;
+    projectName: string;
+    productiveHours: number;
+    color: string;
+  }
+
+  export interface DashboardStatsResponse {
+    period: TimePeriod;
+    projects: ProjectStats[];
+    totalProductiveHours: number;
+    activeProjects: number;
+    averageDailyHours: number;
+  }
+
+  export interface DashboardParams {
+    period?: TimePeriod;
+  }
   

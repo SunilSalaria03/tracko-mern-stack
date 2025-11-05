@@ -4,6 +4,7 @@ import * as userController from '../controllers/userController';
 import { authMiddleware } from '../middlewares/auth';
 import * as userTaskController from '../controllers/userTaskController';
 import * as projectController from '../controllers/projectController';
+import * as dashboardController from '../controllers/dashboardController';
 
 const router = Router();
 
@@ -38,5 +39,8 @@ router.put('/userTasks/:id', userTaskController.updateUserTask);
 
 // Project assignment routes
 router.post('/projectAssignments', projectController.projectAssignment);
+
+// Dashboard routes
+router.get('/dashboard/stats', dashboardController.getDashboardStats);
 
 export default router;

@@ -68,5 +68,8 @@ export const API_ENDPOINTS = {
       DELETE: (id: string) => `/userTasks/${id}`,
       FINAL_SUBMIT: '/userTasks/finalSubmit',
     },
+    DASHBOARD: {
+      STATS: '/dashboard/stats',
+    },
   };
   

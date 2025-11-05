@@ -13,7 +13,7 @@ import {
   Stack,
   useTheme,
   alpha,
-} from '@mui/material';
+} from "@mui/material";
 import {
   AccessTime,
   AccountCircle,
@@ -21,50 +21,61 @@ import {
   PhoneIphone,
   Schedule,
   LocalCafe,
-} from '@mui/icons-material';
-import { useSelector } from 'react-redux';
-import { selectAuth } from '../../../store/selectors';
+  FormatQuote,
+} from "@mui/icons-material";
+import { useSelector } from "react-redux";
+import { selectAuth } from "../../../store/selectors";
+import { useMemo } from "react";
+import { getEventWish } from "../../../utils/common/helpers";
+import { quotes } from "../../../utils/constants/constants";
 
 const Welcome = () => {
   const theme = useTheme();
   const auth = useSelector(selectAuth);
-  const userName = auth?.user?.name || 'User';
+  const userName = auth?.user?.name || "User";
+
+  const dailyQuote = useMemo(() => {
+    const randomIndex = Math.floor(Math.random() * quotes.length);
+    return quotes[randomIndex];
+  }, []);
+
+  const eventWish = useMemo(() => getEventWish(), []);
 
   const onboardingSteps = [
     {
       icon: <AccessTime />,
-      text: 'Learn the basics of time tracking',
+      text: "Learn the basics of time tracking",
     },
     {
       icon: <AccountCircle />,
-      text: 'Upload your profile picture',
+      text: "Upload your profile picture",
     },
     {
       icon: <Timer />,
-      text: 'Track your first hour',
+      text: "Track your first hour",
     },
     {
       icon: <PhoneIphone />,
-      text: 'Get the desktop and mobile apps',
+      text: "Get the desktop and mobile apps",
     },
   ];
 
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: "100vh",
         bgcolor: theme.palette.grey[50],
         py: { xs: 4, md: 6 },
       }}
     >
       <Container maxWidth="lg">
         <Stack
-          direction={{ xs: 'column', md: 'row' }}
+          direction={{ xs: "column", md: "row" }}
           spacing={{ xs: 4, md: 8 }}
           alignItems="flex-start"
         >
           {/* Left Content */}
-          <Box sx={{ flex: 1, maxWidth: { xs: '100%', md: 600 } }}>
+          <Box sx={{ flex: 1, maxWidth: { xs: "100%", md: 600 } }}>
             <Stack spacing={4}>
               <Box>
                 <Stack
@@ -88,14 +99,90 @@ const Welcome = () => {
                     underline="hover"
                     sx={{
                       color: theme.palette.primary.main,
-                      fontSize: '0.875rem',
+                      fontSize: "0.875rem",
                       fontWeight: theme.typography.fontWeightMedium,
-                      whiteSpace: 'nowrap',
+                      whiteSpace: "nowrap",
                     }}
                   >
                     Hide this page
                   </Link>
                 </Stack>
+
+                {/* Event Wish */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    bgcolor: alpha(theme.palette.primary.main, 0.05),
+                    border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                    borderRadius: theme.shape.borderRadius,
+                    p: 2.5,
+                    mb: 3,
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: theme.palette.primary.main,
+                      fontWeight: theme.typography.fontWeightMedium,
+                      textAlign: "center",
+                    }}
+                  >
+                    {eventWish}
+                  </Typography>
+                </Paper>
+
+                {/* Daily Quote */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    bgcolor: alpha(theme.palette.secondary.main, 0.05),
+                    border: `1px solid ${alpha(theme.palette.secondary.main, 0.2)}`,
+                    borderRadius: theme.shape.borderRadius,
+                    p: 3,
+                    mb: 3,
+                    position: "relative",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 2,
+                    }}
+                  >
+                    <FormatQuote
+                      sx={{
+                        fontSize: 40,
+                        color: alpha(theme.palette.secondary.main, 0.3),
+                        transform: "rotate(180deg)",
+                        mt: -1,
+                      }}
+                    />
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          color: theme.palette.text.primary,
+                          fontStyle: "italic",
+                          mb: 1.5,
+                          lineHeight: 1.6,
+                        }}
+                      >
+                        {dailyQuote.text}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: theme.palette.text.secondary,
+                          fontWeight: theme.typography.fontWeightMedium,
+                          textAlign: "right",
+                        }}
+                      >
+                        — {dailyQuote.author}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Paper>
 
                 <Typography
                   variant="h6"
@@ -126,21 +213,24 @@ const Welcome = () => {
                           borderBottom:
                             index < onboardingSteps.length - 1
                               ? `1px solid ${theme.palette.divider}`
-                              : 'none',
-                          '&:hover': {
+                              : "none",
+                          "&:hover": {
                             bgcolor: alpha(theme.palette.action.hover, 0.04),
-                            cursor: 'pointer',
+                            cursor: "pointer",
                           },
-                          transition: theme.transitions.create(['background-color'], {
-                            duration: theme.transitions.duration.short,
-                          }),
+                          transition: theme.transitions.create(
+                            ["background-color"],
+                            {
+                              duration: theme.transitions.duration.short,
+                            }
+                          ),
                         }}
                       >
                         <ListItemIcon
                           sx={{
                             minWidth: 48,
                             color: theme.palette.text.secondary,
-                            '& .MuiSvgIcon-root': {
+                            "& .MuiSvgIcon-root": {
                               fontSize: 28,
                             },
                           }}
@@ -150,7 +240,7 @@ const Welcome = () => {
                         <ListItemText
                           primary={step.text}
                           primaryTypographyProps={{
-                            variant: 'body1',
+                            variant: "body1",
                             sx: {
                               color: theme.palette.text.primary,
                               fontWeight: theme.typography.fontWeightRegular,
@@ -168,9 +258,9 @@ const Welcome = () => {
                       <Checkbox
                         defaultChecked
                         sx={{
-                          color: '#ff6633',
-                          '&.Mui-checked': {
-                            color: '#ff6633',
+                          color: "#ff6633",
+                          "&.Mui-checked": {
+                            color: "#ff6633",
                           },
                         }}
                       />
@@ -182,8 +272,8 @@ const Welcome = () => {
                           color: theme.palette.text.secondary,
                         }}
                       >
-                        Email me occasional updates, offers, tips, and interesting
-                        stories
+                        Email me occasional updates, offers, tips, and
+                        interesting stories
                       </Typography>
                     }
                   />
@@ -195,24 +285,24 @@ const Welcome = () => {
           {/* Right Illustration */}
           <Box
             sx={{
-              flex: '0 0 auto',
-              display: { xs: 'none', md: 'flex' },
-              alignItems: 'center',
-              justifyContent: 'center',
+              flex: "0 0 auto",
+              display: { xs: "none", md: "flex" },
+              alignItems: "center",
+              justifyContent: "center",
               pt: 8,
             }}
           >
             <Stack spacing={4} alignItems="center">
               <Box
                 sx={{
-                  position: 'relative',
+                  position: "relative",
                   width: 120,
                   height: 120,
-                  borderRadius: '50%',
+                  borderRadius: "50%",
                   bgcolor: alpha(theme.palette.primary.main, 0.1),
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
                 <Schedule
@@ -224,14 +314,14 @@ const Welcome = () => {
               </Box>
               <Box
                 sx={{
-                  position: 'relative',
+                  position: "relative",
                   width: 100,
                   height: 100,
-                  borderRadius: '50%',
+                  borderRadius: "50%",
                   bgcolor: alpha(theme.palette.secondary.main, 0.1),
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
                 <LocalCafe

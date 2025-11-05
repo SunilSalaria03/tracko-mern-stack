@@ -106,3 +106,30 @@ export const formatDateTime = (dateString?: string) => {
 export const getStatusLabel = (status?: 0 | 1) => {
   return status === 1 ? "Active" : status === 0 ? "Inactive" : "-";
 };
+
+
+export  const getEventWish = () => {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const month = now.getMonth();
+  const date = now.getDate();
+  const hour = now.getHours();
+
+   if (month === 0 && date === 1) return "🎉 Happy New Year!";
+  if (month === 11 && date === 25) return "🎄 Merry Christmas!";
+  if (month === 11 && date === 31) return "🎊 Happy New Year's Eve!";
+  if (month === 9 && date === 31) return "🎃 Happy Halloween!";
+  if (month === 1 && date === 14) return "💝 Happy Valentine's Day!";
+  if (month === 2 && date === 17) return "☘️ Happy St. Patrick's Day!";
+  if (month === 6 && date === 4) return "🇺🇸 Happy Independence Day!";
+
+   if (dayOfWeek === 1) return "💪 Happy Monday! Let's make it productive!";
+  if (dayOfWeek === 5) return "🎉 Happy Friday! Almost weekend!";
+  if (dayOfWeek === 6 || dayOfWeek === 0) return "😊 Happy Weekend!";
+
+   if (hour >= 5 && hour < 12) return "☀️ Good Morning! Start your day strong!";
+  if (hour >= 12 && hour < 17) return "🌤️ Good Afternoon! Keep up the momentum!";
+  if (hour >= 17 && hour < 21) return "🌆 Good Evening! Finish strong!";
+
+  return "✨ Have a wonderful day!";
+};

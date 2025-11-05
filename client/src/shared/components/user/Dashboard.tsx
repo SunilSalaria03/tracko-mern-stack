@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -7,171 +7,74 @@ import {
   CardContent,
   Typography,
   LinearProgress,
-  ButtonGroup,
+  Chip,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import {
   AccessTime as AccessTimeIcon,
-  FilterList as FilterListIcon,
   Timer as TimerIcon,
+  TrendingUp as TrendingUpIcon,
+  Folder as FolderIcon,
 } from "@mui/icons-material";
 import type {
   TimePeriod,
-  ProductiveHoursSummary,
 } from "../../../utils/interfaces/dashboardInterface";
 import { styled } from "@mui/material/styles";
+import { useAppDispatch, useAppSelector } from "../../../store";
+import { getDashboardStats } from "../../../store/actions/dashboardActions";
 
 const GradientBackground = styled(Box)(({ theme }) => ({
   minHeight: '100vh',
-   padding: theme.spacing(4),
+  background: '#F8FAFB',
+  padding: theme.spacing(4),
 }));
 
-const StyledCard = styled(Card)(({ theme }) => ({
-  boxShadow: '0 4px 24px rgba(56, 112, 255, 0.12)',
-  borderRadius: 20,
-  border: '1px solid #F3F6FD',
-  background: '#fff',
+const StyledCard = styled(Card)(() => ({
+  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+  borderRadius: 12,
+  border: '1px solid #E5E7EB',
+  background: '#FFFFFF',
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+  },
 }));
 
-const SectionHeader = styled(Typography)(({ theme }) => ({
-  fontSize: '1.25rem',
-  fontWeight: 700,
-  color: '#202D40',
-  marginBottom: theme.spacing(2),
-  letterSpacing: 0.3,
-}));
-
-const SoftDivider = styled('div')(({ theme }) => ({
-  width: '100%',
-  height: 1,
-  background: '#E3EBFD',
-  margin: `${theme.spacing(2)} 0`,
+const StatCard = styled(Card)(() => ({
+  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+  borderRadius: 12,
+  border: '1px solid #E5E7EB',
+  background: '#FFFFFF',
+  height: '100%',
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+  },
 }));
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("today");
+  
+  const { 
+    projects, 
+    totalProductiveHours, 
+    activeProjects, 
+    averageDailyHours,
+    isLoading, 
+    error 
+  } = useAppSelector((state) => state.dashboard);
 
-   const productiveHoursData: ProductiveHoursSummary = {
-    today: [
-      {
-        projectId: "1",
-        projectName: "E-Commerce Platform",
-        productiveHours: 4.5,
-        color: "#3B82F6",
-      },
-      {
-        projectId: "2",
-        projectName: "Mobile App Development",
-        productiveHours: 3.2,
-        color: "#10B981",
-      },
-      {
-        projectId: "3",
-        projectName: "CRM System",
-        productiveHours: 2.8,
-        color: "#F59E0B",
-      },
-    ],
-    week: [
-      {
-        projectId: "1",
-        projectName: "E-Commerce Platform",
-        productiveHours: 28.5,
-        color: "#3B82F6",
-      },
-      {
-        projectId: "2",
-        projectName: "Mobile App Development",
-        productiveHours: 22.3,
-        color: "#10B981",
-      },
-      {
-        projectId: "3",
-        projectName: "CRM System",
-        productiveHours: 18.7,
-        color: "#F59E0B",
-      },
-      {
-        projectId: "4",
-        projectName: "Data Analytics Dashboard",
-        productiveHours: 15.2,
-        color: "#8B5CF6",
-      },
-    ],
-    month: [
-      {
-        projectId: "1",
-        projectName: "E-Commerce Platform",
-        productiveHours: 115.5,
-        color: "#3B82F6",
-      },
-      {
-        projectId: "2",
-        projectName: "Mobile App Development",
-        productiveHours: 98.8,
-        color: "#10B981",
-      },
-      {
-        projectId: "3",
-        projectName: "CRM System",
-        productiveHours: 87.3,
-        color: "#F59E0B",
-      },
-      {
-        projectId: "4",
-        projectName: "Data Analytics Dashboard",
-        productiveHours: 72.4,
-        color: "#8B5CF6",
-      },
-      {
-        projectId: "5",
-        projectName: "API Gateway",
-        productiveHours: 45.6,
-        color: "#EC4899",
-      },
-    ],
-    lastMonth: [
-      {
-        projectId: "1",
-        projectName: "E-Commerce Platform",
-        productiveHours: 105.2,
-        color: "#3B82F6",
-      },
-      {
-        projectId: "2",
-        projectName: "Mobile App Development",
-        productiveHours: 89.5,
-        color: "#10B981",
-      },
-      {
-        projectId: "3",
-        projectName: "CRM System",
-        productiveHours: 78.9,
-        color: "#F59E0B",
-      },
-      {
-        projectId: "4",
-        projectName: "Data Analytics Dashboard",
-        productiveHours: 65.3,
-        color: "#8B5CF6",
-      },
-      {
-        projectId: "5",
-        projectName: "API Gateway",
-        productiveHours: 52.1,
-        color: "#EC4899",
-      },
-    ],
+  useEffect(() => {
+    dispatch(getDashboardStats({ period: selectedPeriod }));
+  }, [dispatch, selectedPeriod]);
+
+  const handlePeriodChange = (period: TimePeriod) => {
+    setSelectedPeriod(period);
   };
-
-  const currentProjects = productiveHoursData[selectedPeriod];
-
-  const totalProductiveHours = useMemo(() => {
-    return currentProjects.reduce(
-      (sum, project) => sum + project.productiveHours,
-      0
-    );
-  }, [currentProjects]);
 
   const periodLabels = {
     today: "Today",
@@ -180,173 +83,326 @@ const Dashboard: React.FC = () => {
     lastMonth: "Last Month",
   };
 
+  if (isLoading) {
+    return (
+      <GradientBackground>
+        <Box 
+          display="flex" 
+          justifyContent="center" 
+          alignItems="center" 
+          minHeight="60vh"
+        >
+          <CircularProgress size={60} />
+        </Box>
+      </GradientBackground>
+    );
+  }
+
   return (
     <GradientBackground>
-      <Box maxWidth="880px" mx="auto">
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 4 }}>
-          <SectionHeader variant="h4">
-            <AccessTimeIcon sx={{ fontSize: 32, mb: -0.8, color: '#3569EF', mr: 1 }} />
-            My Project Dashboard
-          </SectionHeader>
-          <Button
-            variant="contained"
-            startIcon={<TimerIcon />}
-            onClick={() => navigate("/time")}
-            sx={{
-              textTransform: "none",
-              fontWeight: 600,
-              borderRadius: 3,
-              boxShadow: '0 2px 8px rgba(43, 98, 255, 0.08)',
-              background: 'linear-gradient(90deg,#3569EF 0%,#7F56D9 100%)',
-              color: '#fff',
-              px: 3.5,
-              py: 1.2,
-              '&:hover': {
-                background: 'linear-gradient(90deg,#2442B1 50%,#7C4BEE 100%)',
-                boxShadow: '0 6px 18px rgba(67, 56, 202, 0.13)',
-              },
-            }}
-          >
-            Track Time
-          </Button>
+      <Box maxWidth="1200px" mx="auto">
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+        {/* Header Section */}
+        <Box sx={{ mb: 4 }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+            <Box>
+              <Typography 
+                variant="h4" 
+                sx={{ 
+                  fontWeight: 700, 
+                  color: '#111827',
+                  fontSize: '2rem',
+                  letterSpacing: '-0.02em',
+                  mb: 0.5,
+                }}
+              >
+                Project Dashboard
+              </Typography>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: '#6B7280',
+                  fontSize: '0.95rem',
+                }}
+              >
+                Track and analyze your productive hours across projects
+              </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              startIcon={<TimerIcon />}
+              onClick={() => navigate("/time")}
+              sx={{
+                textTransform: "none",
+                fontWeight: 600,
+                borderRadius: 2,
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                background: '#2563EB',
+                color: '#fff',
+                px: 3,
+                py: 1.25,
+                '&:hover': {
+                  background: '#1D4ED8',
+                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                },
+              }}
+            >
+              Track Time
+            </Button>
+          </Box>
         </Box>
-        <StyledCard sx={{ mb: 4 }}>
+
+        {/* Stats Overview */}
+        <Box 
+          sx={{ 
+            display: 'grid', 
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+            gap: 3,
+            mb: 3,
+          }}
+        >
+          <StatCard>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Box 
+                  sx={{ 
+                    width: 48, 
+                    height: 48, 
+                    borderRadius: 2, 
+                    background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <AccessTimeIcon sx={{ color: '#fff', fontSize: 24 }} />
+                </Box>
+              </Box>
+              <Typography variant="body2" sx={{ color: '#6B7280', mb: 0.5, fontWeight: 500 }}>
+                Total Hours ({periodLabels[selectedPeriod]})
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: '#111827', fontSize: '1.875rem' }}>
+                {totalProductiveHours.toFixed(1)}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#6B7280' }}>
+                hours tracked
+              </Typography>
+            </CardContent>
+          </StatCard>
+          
+          <StatCard>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Box 
+                  sx={{ 
+                    width: 48, 
+                    height: 48, 
+                    borderRadius: 2, 
+                    background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <FolderIcon sx={{ color: '#fff', fontSize: 24 }} />
+                </Box>
+              </Box>
+              <Typography variant="body2" sx={{ color: '#6B7280', mb: 0.5, fontWeight: 500 }}>
+                Active Projects
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: '#111827', fontSize: '1.875rem' }}>
+                {activeProjects}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#6B7280' }}>
+                projects in progress
+              </Typography>
+            </CardContent>
+          </StatCard>
+          
+          <StatCard>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Box 
+                  sx={{ 
+                    width: 48, 
+                    height: 48, 
+                    borderRadius: 2, 
+                    background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <TrendingUpIcon sx={{ color: '#fff', fontSize: 24 }} />
+                </Box>
+              </Box>
+              <Typography variant="body2" sx={{ color: '#6B7280', mb: 0.5, fontWeight: 500 }}>
+                Average Daily Hours
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: '#111827', fontSize: '1.875rem' }}>
+                {averageDailyHours.toFixed(1)}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#6B7280' }}>
+                hours per day
+              </Typography>
+            </CardContent>
+          </StatCard>
+        </Box>
+        {/* Projects Section */}
+        <StyledCard>
           <CardContent sx={{ p: 4 }}>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
-                <AccessTimeIcon sx={{ fontSize: 28, color: '#3569EF', mb: -0.7 }} />
-                <Typography variant="h6" fontWeight={700} color="#202D40">
-                  Projects Productive Hours
-                </Typography>
-              </Box>
-              <ButtonGroup variant="contained" size="small" sx={{ boxShadow: '0 2px 6px rgba(43, 98, 255, 0.04)', borderRadius: 10 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: '#111827', fontSize: '1.25rem' }}>
+                Project Breakdown
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, background: '#F3F4F6', borderRadius: 2, p: 0.5 }}>
                 {(Object.keys(periodLabels) as TimePeriod[]).map((period) => (
                   <Button
                     key={period}
-                    onClick={() => setSelectedPeriod(period)}
-                    variant={selectedPeriod === period ? "contained" : "outlined"}
+                    onClick={() => handlePeriodChange(period)}
                     sx={{
                       textTransform: "none",
-                      borderRadius: 2,
-                      fontWeight: selectedPeriod === period ? 700 : 500,
-                      background: selectedPeriod === period
-                        ? 'linear-gradient(90deg,#3569EF 0%,#7F56D9 100%)'
-                        : '#fff',
-                      color: selectedPeriod === period ? '#fff' : '#3569EF',
-                      borderColor: '#D2DBF8',
-                      transition: "all .2s",
+                      borderRadius: 1.5,
+                      fontWeight: 600,
+                      fontSize: '0.875rem',
+                      px: 2.5,
+                      py: 0.75,
+                      minWidth: 'auto',
+                      background: selectedPeriod === period ? '#FFFFFF' : 'transparent',
+                      color: selectedPeriod === period ? '#2563EB' : '#6B7280',
+                      boxShadow: selectedPeriod === period ? '0 1px 3px rgba(0, 0, 0, 0.1)' : 'none',
+                      transition: "all 0.2s",
                       '&:hover': {
-                        background: selectedPeriod === period
-                          ? 'linear-gradient(90deg,#2442B1 0%,#7C4BEE 100%)'
-                          : '#F5F7FB',
-                        color: '#3569EF',
+                        background: selectedPeriod === period ? '#FFFFFF' : 'rgba(255, 255, 255, 0.5)',
+                        color: selectedPeriod === period ? '#2563EB' : '#111827',
                       },
                     }}
                   >
                     {periodLabels[period]}
                   </Button>
                 ))}
-              </ButtonGroup>
-            </Box>
-            <SoftDivider />
-            <Box
-              sx={{
-                background: "linear-gradient(90deg, #EAF2FF 0%, #F6EEFF 100%)",
-                borderRadius: 3,
-                p: 3,
-                mb: 3,
-                border: 1,
-                borderColor: "#EFF4FC",
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <Box>
-                <Typography variant="body2" color="#6D7685" sx={{ mb: 0.5 }}>
-                  Total Productive Hours ({periodLabels[selectedPeriod]})
-                </Typography>
-                <Typography variant="h2" fontWeight={800} color="#3569EF" sx={{ fontSize: '2.4rem' }}>
-                  {totalProductiveHours.toFixed(1)} hrs
-                </Typography>
-              </Box>
-              <Box sx={{ textAlign: "right" }}>
-                <Typography variant="body2" color="#6D7685" sx={{ mb: 0.5 }}>
-                  Active Projects
-                </Typography>
-                <Typography variant="h2" fontWeight={800} color="#E94298" sx={{ fontSize: '2.4rem' }}>
-                  {currentProjects.length}
-                </Typography>
               </Box>
             </Box>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {currentProjects.map((project) => {
-                const percentage =
-                  (project.productiveHours / totalProductiveHours) * 100;
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+              {projects.map((project) => {
+                const percentage = totalProductiveHours > 0
+                  ? (project.productiveHours / totalProductiveHours) * 100
+                  : 0;
                 return (
-                  <Card
+                  <Box
                     key={project.projectId}
-                    variant="outlined"
                     sx={{
-                      p: 2.2,
-                      borderRadius: 4,
-                      border: '1.5px solid #E3EBF8',
-                      transition: "box-shadow 0.3s, border 0.2s",
-                      boxShadow: '0 2px 8px rgba(43, 98, 255, 0.07)',
-                      background: '#FAFBFE',
+                      p: 3,
+                      borderRadius: 3,
+                      border: '1px solid #E5E7EB',
+                      background: '#FFFFFF',
+                      transition: "all 0.2s ease",
                       '&:hover': {
-                        border: '2px solid ' + project.color,
-                        boxShadow: '0 8px 24px rgba(56, 112, 255, 0.13)',
-                        background: '#F3F6FD',
+                        borderColor: project.color,
+                        boxShadow: `0 4px 12px ${project.color}20`,
+                        transform: 'translateY(-2px)',
                       },
                     }}
                   >
-                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2.5 }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                         <Box
                           sx={{
-                            width: 22,
-                            height: 22,
+                            width: 12,
+                            height: 12,
                             borderRadius: "50%",
                             backgroundColor: project.color,
-                            boxShadow: '0 0 0 3px #fff, 0 2px 10px ' + project.color + '33',
+                            flexShrink: 0,
                           }}
                         />
-                        <Typography variant="subtitle1" fontWeight={700} color="#222E45">
+                        <Typography 
+                          variant="subtitle1" 
+                          sx={{ 
+                            fontWeight: 600, 
+                            color: '#111827',
+                            fontSize: '1rem',
+                          }}
+                        >
                           {project.projectName}
                         </Typography>
                       </Box>
-                      <Box sx={{ textAlign: "right" }}>
-                        <Typography variant="h5" fontWeight={700} color="#3569EF">
-                          {project.productiveHours.toFixed(1)} hrs
+                      <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                        <Typography 
+                          variant="h6" 
+                          sx={{ 
+                            fontWeight: 700, 
+                            color: '#111827',
+                            fontSize: '1.25rem',
+                          }}
+                        >
+                          {project.productiveHours.toFixed(1)}
                         </Typography>
-                        <Typography variant="caption" color="#6D7685" fontWeight={600}>
-                          {percentage.toFixed(1)}% of total
+                        <Typography variant="body2" sx={{ color: '#6B7280', fontWeight: 500 }}>
+                          hrs
                         </Typography>
                       </Box>
                     </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={percentage}
-                      sx={{
-                        height: 11,
-                        borderRadius: 6,
-                        backgroundColor: "#EFF3FB",
-                        '& .MuiLinearProgress-bar': {
-                          background: project.color,
-                          borderRadius: 6,
-                          transition: "transform 0.5s ease",
-                        },
-                      }}
-                    />
-                  </Card>
+                    <Box sx={{ mb: 1 }}>
+                      <LinearProgress
+                        variant="determinate"
+                        value={percentage}
+                        sx={{
+                          height: 8,
+                          borderRadius: 4,
+                          backgroundColor: "#F3F4F6",
+                          '& .MuiLinearProgress-bar': {
+                            background: project.color,
+                            borderRadius: 4,
+                            transition: "transform 0.4s ease",
+                          },
+                        }}
+                      />
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="caption" sx={{ color: '#6B7280', fontWeight: 500 }}>
+                        {percentage.toFixed(1)}% of total time
+                      </Typography>
+                      <Chip 
+                        label={`${percentage.toFixed(0)}%`}
+                        size="small"
+                        sx={{
+                          backgroundColor: `${project.color}15`,
+                          color: project.color,
+                          fontWeight: 600,
+                          fontSize: '0.75rem',
+                          height: 24,
+                        }}
+                      />
+                    </Box>
+                  </Box>
                 );
               })}
             </Box>
-            {currentProjects.length === 0 && (
-              <Box sx={{ textAlign: "center", py: 7 }}>
-                <AccessTimeIcon sx={{ fontSize: 72, color: "#D4DBED", mb: 2 }} />
-                <Typography variant="h6" color="#8DA4C7" sx={{ mt: 2 }}>
+            {projects.length === 0 && !isLoading && (
+              <Box sx={{ textAlign: "center", py: 8 }}>
+                <Box
+                  sx={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: '50%',
+                    background: '#F3F4F6',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mx: 'auto',
+                    mb: 3,
+                  }}
+                >
+                  <AccessTimeIcon sx={{ fontSize: 40, color: "#9CA3AF" }} />
+                </Box>
+                <Typography variant="h6" sx={{ color: '#111827', fontWeight: 600, mb: 1 }}>
+                  No Data Available
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#6B7280' }}>
                   No productive hours recorded for this period
                 </Typography>
               </Box>

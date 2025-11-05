@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarMonth,
+  Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { useAppDispatch, useAppSelector } from "../../../store";
 import { fetchProjectsWithoutParams } from "../../../store/actions/projectActions";
@@ -21,7 +22,7 @@ import { fetchWorkstreams } from "../../../store/actions/workstreamActions";
 import {
   createTimeTrackTask,
   getTaskList,
-  // deleteTimeTrackTask,
+  deleteTimeTrackTask,
   updateTimeTrackTask,
   finalSubmitTimeTrackTask,
 } from "../../../store/actions/timeTrackActions";
@@ -70,6 +71,8 @@ const TimeTrackManagement = () => {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     project: "",
     task: "",
@@ -213,10 +216,20 @@ const TimeTrackManagement = () => {
   const handleReturnToToday = () => setCurrentDate(new Date());
   const handleViewModeChange = (mode: ViewMode) => setViewMode(mode);
 
-  const handleOpenModal = (date: Date | null = null) => {
+  const handleOpenModal = (
+    date: Date | null = null,
+    preSelectedProject?: string,
+    preSelectedTask?: string
+  ) => {
     setSelectedDate(date || new Date());
     setEditingEntryId(null);
-    setFormData({ project: "", task: "", notes: "", hours: 0, minutes: 0 });
+    setFormData({
+      project: preSelectedProject || "",
+      task: preSelectedTask || "",
+      notes: "",
+      hours: 0,
+      minutes: 0,
+    });
     setOpenModal(true);
   };
 
@@ -296,26 +309,47 @@ const TimeTrackManagement = () => {
     }
   };
 
-  // const handleDeleteEntry = async (entryId: string) => {
-  //   const entry = timeEntries.find((e) => e.id === entryId);
-  //   if (entry?.finalSubmit) {
-  //     toast.warning("Cannot delete a submitted time entry");
-  //     return;
-  //   }
+  const handleDeleteClick = (entryId: string) => {
+    const entry = timeEntries.find((e) => e.id === entryId);
+    if (entry?.finalSubmit) {
+      toast.warning("Cannot delete a submitted time entry");
+      return;
+    }
+    setEntryToDelete(entryId);
+    setDeleteDialogOpen(true);
+  };
 
-  //   try {
-  //     await dispatch(deleteTimeTrackTask(entryId)).unwrap();
-  //     toast.success("Time entry deleted successfully");
-  //     await fetchTasks();
-  //   } catch (error) {
-  //     toast.error("Failed to delete time entry");
-  //   }
-  // };
+  const handleDeleteConfirm = async () => {
+    if (!entryToDelete) return;
+
+    try {
+      await dispatch(deleteTimeTrackTask(entryToDelete)).unwrap();
+      toast.success("Time entry deleted successfully");
+      setDeleteDialogOpen(false);
+      setEntryToDelete(null);
+      await fetchTasks();
+    } catch (error) {
+      toast.error("Failed to delete time entry");
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setEntryToDelete(null);
+  };
 
   const handleFinalSubmit = async () => {
     try {
-      const startDate = toISODate(getWeekStart(currentDate));
-      const endDate = toISODate(getWeekEnd(currentDate));
+      let startDate: string;
+      let endDate: string;
+
+      if (viewMode === "week") {
+        startDate = toISODate(getWeekStart(currentDate));
+        endDate = toISODate(getWeekEnd(currentDate));
+      } else {
+         startDate = toISODate(currentDate);
+        endDate = toISODate(currentDate);
+      }
 
       await dispatch(finalSubmitTimeTrackTask({ startDate, endDate })).unwrap();
       toast.success("Time entries submitted successfully");
@@ -349,7 +383,7 @@ const TimeTrackManagement = () => {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => handleOpenModal(null)}
+          onClick={() => handleOpenModal(viewMode === "day" ? currentDate : null)}
           sx={{
             bgcolor: "#10b981",
             color: "white",
@@ -636,6 +670,22 @@ const TimeTrackManagement = () => {
                         >
                           {entry.finalSubmit ? "Submitted" : "Edit"}
                         </Button>
+                        <IconButton
+                          size="small"
+                          disabled={entry.finalSubmit}
+                          onClick={() => handleDeleteClick(entry.id)}
+                          sx={{
+                            color: "#ef4444",
+                            "&:hover": {
+                              bgcolor: alpha("#ef4444", 0.1),
+                            },
+                            "&:disabled": {
+                              color: "#d1d5db",
+                            },
+                          }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
                       </Box>
                     </Box>
                   ))}
@@ -662,18 +712,32 @@ const TimeTrackManagement = () => {
                 alignItems: "center",
               }}
             >
-              <Typography
-                variant="body1"
-                sx={{ color: "#6b7280", fontWeight: 500 }}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Typography
+                  variant="body1"
+                  sx={{ color: "#6b7280", fontWeight: 500 }}
+                >
+                  Total:
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{ color: "#1f2937", fontWeight: 700 }}
+                >
+                  {formatHours(getDayTotal(currentDate))}
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                sx={{
+                  textTransform: "none",
+                  bgcolor: "#3b82f6",
+                  "&:hover": { bgcolor: "#2563eb" },
+                }}
+                onClick={handleFinalSubmit}
+                disabled={getEntriesForDay(currentDate).length === 0}
               >
-                Total:
-              </Typography>
-              <Typography
-                variant="h6"
-                sx={{ color: "#1f2937", fontWeight: 700 }}
-              >
-                {formatHours(getDayTotal(currentDate))}
-              </Typography>
+                Submit for approval
+              </Button>
             </Box>
           </Paper>
         </>
@@ -773,8 +837,7 @@ const TimeTrackManagement = () => {
                       "&:hover": { bgcolor: "#f9fafb" },
                     }}
                   >
-                    {/* Task Name Column */}
-                    <Box
+                     <Box
                       sx={{
                         p: 1.5,
                         borderRight: "1px solid #e5e7eb",
@@ -790,9 +853,7 @@ const TimeTrackManagement = () => {
                         {getProjectName(projectId)} ({getWorkstreamName(taskId)}
                         )
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "#6b7280" }}>
-                        Development - bug-fixing
-                      </Typography>
+                     
                     </Box>
 
                     {/* Day Columns */}
@@ -824,7 +885,7 @@ const TimeTrackManagement = () => {
                             if (dayEntry) {
                               handleEditEntry(dayEntry.id);
                             } else {
-                              handleOpenModal(day);
+                              handleOpenModal(day, projectId, taskId);
                             }
                           }}
                         >
@@ -947,7 +1008,7 @@ const TimeTrackManagement = () => {
               <Button
                 variant="outlined"
                 startIcon={<AddIcon />}
-                onClick={() => handleOpenModal(getWeekDays[0])}
+                onClick={() => handleOpenModal(getWeekDays[currentDate.getDay()-1])}
                 sx={{
                   textTransform: "none",
                   borderColor: "#e5e7eb",
@@ -1002,7 +1063,90 @@ const TimeTrackManagement = () => {
       >
         <CircularProgress color="inherit" />
       </Backdrop>
+
+       <TimeTrackDeleteDialog
+        open={deleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+      />
     </Box>
+  );
+};
+
+ const TimeTrackDeleteDialog = ({
+  open,
+  onConfirm,
+  onCancel,
+}: {
+  open: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) => {
+  return (
+    <Paper
+      sx={{
+        position: "fixed",
+        top: "50%",
+        left: "50%",
+        transform: open ? "translate(-50%, -50%)" : "translate(-50%, -50%) scale(0.9)",
+        opacity: open ? 1 : 0,
+        visibility: open ? "visible" : "hidden",
+        transition: "all 0.2s",
+        zIndex: 1300,
+        p: 3,
+        maxWidth: 400,
+        width: "90%",
+        boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+      }}
+    >
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, color: "#ef4444", mb: 1 }}>
+          Delete Time Entry
+        </Typography>
+        <Typography variant="body2" sx={{ color: "#6b7280" }}>
+          Are you sure you want to delete this time entry? This action cannot be undone.
+        </Typography>
+      </Box>
+      <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
+        <Button
+          onClick={onCancel}
+          variant="outlined"
+          sx={{
+            textTransform: "none",
+            borderColor: "#e5e7eb",
+            color: "#6b7280",
+            "&:hover": { borderColor: "#9ca3af", bgcolor: alpha("#6b7280", 0.05) },
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={onConfirm}
+          variant="contained"
+          sx={{
+            textTransform: "none",
+            bgcolor: "#ef4444",
+            "&:hover": { bgcolor: "#dc2626" },
+          }}
+        >
+          Delete
+        </Button>
+      </Box>
+      {open && (
+        <Box
+          onClick={onCancel}
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            bgcolor: "rgba(0, 0, 0, 0.5)",
+            zIndex: -1,
+          }}
+        />
+      )}
+    </Paper>
   );
 };
 

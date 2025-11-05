@@ -10,6 +10,7 @@ import adminSlice from './slices/adminSlice';
 import departmentSlice from './slices/departmentSlice';
 import designationSlice from './slices/designationSlice';
 import taskSlice from './slices/taskSlice';
+import dashboardSlice from './slices/dashboardSlice';
 import { errorMiddleware, tokenMiddleware } from './middleware';
 
 export const store = configureStore({
@@ -23,6 +24,7 @@ export const store = configureStore({
     departmentManagement: departmentSlice,
     designationManagement: designationSlice,
     task: taskSlice,
+    dashboard: dashboardSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
