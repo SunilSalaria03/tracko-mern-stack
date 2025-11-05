@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent,  } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import {
   Box,
   Button,
@@ -15,14 +15,16 @@ import {
   IconButton,
 } from "@mui/material";
 import type { FormikProps } from "formik";
-import type { User, UserRole } from "../../../../utils/interfaces/userInterface";
+import type {
+  User,
+  UserRole,
+} from "../../../../utils/interfaces/userInterface";
 import { getRoleName } from "../../../../utils/interfaces/userInterface";
 import { fetchDepartments } from "../../../../store/actions/departmentActions";
 import { fetchDesignations } from "../../../../store/actions/designationActions";
-import { useDispatch } from "react-redux";
-import { useAppSelector } from "../../../../store";
+import { useAppDispatch, useAppSelector } from "../../../../store";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 
- 
 type UserFormDialogProps = {
   open: boolean;
   onClose: () => void;
@@ -45,7 +47,7 @@ export const UserFormDialog = ({
   const { designations } = useAppSelector(
     (state) => state.designationManagement
   );
-const dispatch = useDispatch()
+  const dispatch = useAppDispatch();
 
   const fetchOptions = async () => {
     try {
@@ -69,7 +71,7 @@ const dispatch = useDispatch()
       PaperProps={{ sx: { borderRadius: 2 } }}
     >
       <DialogTitle>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+        <Typography   sx={{ fontWeight: 600,  }}>
           {editingId ? "Edit User" : "Add New User"}
         </Typography>
       </DialogTitle>
@@ -119,7 +121,8 @@ const dispatch = useDispatch()
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
             error={
-              formik.touched.designation && Boolean((formik.errors as any).designation)
+              formik.touched.designation &&
+              Boolean((formik.errors as any).designation)
             }
             helperText={
               formik.touched.designation && (formik.errors as any).designation
@@ -143,7 +146,8 @@ const dispatch = useDispatch()
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
             error={
-              formik.touched.department && Boolean((formik.errors as any).department)
+              formik.touched.department &&
+              Boolean((formik.errors as any).department)
             }
             helperText={
               formik.touched.department && (formik.errors as any).department
@@ -169,7 +173,9 @@ const dispatch = useDispatch()
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               error={formik.touched.password && Boolean(formik.errors.password)}
-              helperText={formik.touched.password && (formik.errors as any).password}
+              helperText={
+                formik.touched.password && (formik.errors as any).password
+              }
               placeholder="Enter password"
               InputProps={{
                 endAdornment: (
@@ -181,9 +187,19 @@ const dispatch = useDispatch()
                       size="small"
                     >
                       {showPassword ? (
-                        <span className="material-icons" style={{ fontSize: 18 }}>visibility_off</span>
+                        <span
+                          className="material-icons"
+                          style={{ fontSize: 18 }}
+                        >
+                          <VisibilityOff />
+                        </span>
                       ) : (
-                        <span className="material-icons" style={{ fontSize: 18 }}>visibility</span>
+                        <span
+                          className="material-icons"
+                          style={{ fontSize: 18 }}
+                        >
+                          <Visibility />
+                        </span>
                       )}
                     </IconButton>
                   </InputAdornment>
@@ -200,7 +216,9 @@ const dispatch = useDispatch()
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               error={formik.touched.password && Boolean(formik.errors.password)}
-              helperText={formik.touched.password && (formik.errors as any).password}
+              helperText={
+                formik.touched.password && (formik.errors as any).password
+              }
               placeholder="Optional"
               InputProps={{
                 endAdornment: (
@@ -212,9 +230,19 @@ const dispatch = useDispatch()
                       size="small"
                     >
                       {showPassword ? (
-                        <span className="material-icons" style={{ fontSize: 18 }}>visibility_off</span>
+                        <span
+                          className="material-icons"
+                          style={{ fontSize: 18 }}
+                        >
+                          <VisibilityOff />
+                        </span>
                       ) : (
-                        <span className="material-icons" style={{ fontSize: 18 }}>visibility</span>
+                        <span
+                          className="material-icons"
+                          style={{ fontSize: 18 }}
+                        >
+                          <Visibility />
+                        </span>
                       )}
                     </IconButton>
                   </InputAdornment>
@@ -229,7 +257,9 @@ const dispatch = useDispatch()
             label="Role"
             fullWidth
             value={formik.values.role ?? 3}
-            onChange={(e) => formik.setFieldValue("role", Number(e.target.value) as UserRole)}
+            onChange={(e) =>
+              formik.setFieldValue("role", Number(e.target.value) as UserRole)
+            }
             onBlur={formik.handleBlur}
             error={formik.touched.role && Boolean(formik.errors.role)}
             helperText={
@@ -238,7 +268,7 @@ const dispatch = useDispatch()
                 : "Select user role"
             }
           >
-            {[0, 1, 2, 3].map((r) => (
+            {[1, 2, 3].map((r) => (
               <MenuItem key={r} value={r}>
                 {getRoleName(r as UserRole)}
               </MenuItem>
@@ -251,7 +281,9 @@ const dispatch = useDispatch()
             label="Status"
             fullWidth
             value={formik.values.status ?? 1}
-            onChange={(e) => formik.setFieldValue("status", Number(e.target.value) as 0 | 1)}
+            onChange={(e) =>
+              formik.setFieldValue("status", Number(e.target.value) as 0 | 1)
+            }
             onBlur={formik.handleBlur}
             error={formik.touched.status && Boolean(formik.errors.status)}
             helperText={
@@ -260,8 +292,8 @@ const dispatch = useDispatch()
                 : "Active = 1, Inactive = 0"
             }
           >
-            <MenuItem value={1}>Active (1)</MenuItem>
-            <MenuItem value={0}>Inactive (0)</MenuItem>
+            <MenuItem value={1}>Active </MenuItem>
+            <MenuItem value={0}>Inactive </MenuItem>
           </TextField>
 
           <TextField
@@ -279,11 +311,14 @@ const dispatch = useDispatch()
                 : "Start with +country code, then number")
             }
             error={
-              Boolean(formik.touched.countryCode && (formik.errors as any).countryCode) ||
-              Boolean(formik.touched.phoneNumber && (formik.errors as any).phoneNumber)
+              Boolean(
+                formik.touched.countryCode && (formik.errors as any).countryCode
+              ) ||
+              Boolean(
+                formik.touched.phoneNumber && (formik.errors as any).phoneNumber
+              )
             }
           />
- 
 
           <TextField
             name="dateOfBirth"
@@ -293,7 +328,9 @@ const dispatch = useDispatch()
             value={formik.values.dateOfBirth || ""}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
-            error={formik.touched.dateOfBirth && Boolean(formik.errors.dateOfBirth)}
+            error={
+              formik.touched.dateOfBirth && Boolean(formik.errors.dateOfBirth)
+            }
             helperText={
               formik.touched.dateOfBirth && formik.errors.dateOfBirth
                 ? String(formik.errors.dateOfBirth)
@@ -304,7 +341,9 @@ const dispatch = useDispatch()
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ borderTop: "1px solid #e5e7eb", px: 3, py: 2, gap: 1 }}>
+      <DialogActions
+        sx={{ borderTop: "1px solid #e5e7eb", px: 3, py: 2, gap: 1 }}
+      >
         <Button
           onClick={onClose}
           variant="outlined"
@@ -351,7 +390,12 @@ type UserViewDialogProps = {
   formatDate: (d?: string) => string;
 };
 
-export const UserViewDialog = ({ open, onClose, user, formatDate }: UserViewDialogProps) => {
+export const UserViewDialog = ({
+  open,
+  onClose,
+  user,
+  formatDate,
+}: UserViewDialogProps) => {
   return (
     <Dialog
       open={open}
@@ -367,54 +411,99 @@ export const UserViewDialog = ({ open, onClose, user, formatDate }: UserViewDial
       </DialogTitle>
       <DialogContent>
         {user ? (
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2, py: 1 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+              gap: 2,
+              py: 1,
+            }}
+          >
             <Box>
-              <Typography variant="caption" sx={{ color: "#6b7280" }}>Name</Typography>
+              <Typography variant="caption" sx={{ color: "#6b7280" }}>
+                Name
+              </Typography>
               <Typography variant="body1">{user.name || "-"}</Typography>
             </Box>
             <Box>
-              <Typography variant="caption" sx={{ color: "#6b7280" }}>Email</Typography>
+              <Typography variant="caption" sx={{ color: "#6b7280" }}>
+                Email
+              </Typography>
               <Typography variant="body1">{user.email}</Typography>
             </Box>
             <Box>
-              <Typography variant="caption" sx={{ color: "#6b7280" }}>Role</Typography>
-              <Typography variant="body1">{getRoleName((user.role ?? 3) as UserRole)}</Typography>
+              <Typography variant="caption" sx={{ color: "#6b7280" }}>
+                Role
+              </Typography>
+              <Typography variant="body1">
+                {getRoleName((user.role ?? 3) as UserRole)}
+              </Typography>
             </Box>
             <Box>
-              <Typography variant="caption" sx={{ color: "#6b7280" }}>Status</Typography>
-              <Typography variant="body1">{user.status === 1 ? "Active" : "Inactive"}</Typography>
+              <Typography variant="caption" sx={{ color: "#6b7280" }}>
+                Status
+              </Typography>
+              <Typography variant="body1">
+                {user.status === 1 ? "Active" : "Inactive"}
+              </Typography>
             </Box>
             <Box>
-              <Typography variant="caption" sx={{ color: "#6b7280" }}>Phone</Typography>
+              <Typography variant="caption" sx={{ color: "#6b7280" }}>
+                Phone
+              </Typography>
               <Typography variant="body1">{`${user.countryCode ? user.countryCode + " " : ""}${user.phoneNumber || "-"}`}</Typography>
             </Box>
             <Box>
-              <Typography variant="caption" sx={{ color: "#6b7280" }}>DOB</Typography>
-              <Typography variant="body1">{user.dateOfBirth ? formatDate(user.dateOfBirth) : "-"}</Typography>
+              <Typography variant="caption" sx={{ color: "#6b7280" }}>
+                DOB
+              </Typography>
+              <Typography variant="body1">
+                {user.dateOfBirth ? formatDate(user.dateOfBirth) : "-"}
+              </Typography>
             </Box>
             <Box>
-              <Typography variant="caption" sx={{ color: "#6b7280" }}>Designation</Typography>
+              <Typography variant="caption" sx={{ color: "#6b7280" }}>
+                Designation
+              </Typography>
               <Typography variant="body1">{user.designation || "-"}</Typography>
             </Box>
             <Box>
-              <Typography variant="caption" sx={{ color: "#6b7280" }}>Department</Typography>
-              <Typography variant="body1">{(user as any).department || "-"}</Typography>
+              <Typography variant="caption" sx={{ color: "#6b7280" }}>
+                Department
+              </Typography>
+              <Typography variant="body1">
+                {(user as any).department || "-"}
+              </Typography>
             </Box>
             <Box>
-              <Typography variant="caption" sx={{ color: "#6b7280" }}>Created</Typography>
-              <Typography variant="body1">{formatDate(user.createdAt)}</Typography>
+              <Typography variant="caption" sx={{ color: "#6b7280" }}>
+                Created
+              </Typography>
+              <Typography variant="body1">
+                {formatDate(user.createdAt)}
+              </Typography>
             </Box>
             <Box>
-              <Typography variant="caption" sx={{ color: "#6b7280" }}>Updated</Typography>
-              <Typography variant="body1">{formatDate(user.updatedAt)}</Typography>
+              <Typography variant="caption" sx={{ color: "#6b7280" }}>
+                Updated
+              </Typography>
+              <Typography variant="body1">
+                {formatDate(user.updatedAt)}
+              </Typography>
             </Box>
             <Box sx={{ gridColumn: { xs: "auto", sm: "1 / -1" } }}>
-              <Typography variant="caption" sx={{ color: "#6b7280" }}>Profile Image URL</Typography>
-              <Typography variant="body1" sx={{ wordBreak: "break-all" }}>{user.profileImage || "-"}</Typography>
+              <Typography variant="caption" sx={{ color: "#6b7280" }}>
+                Profile Image URL
+              </Typography>
+              <Typography variant="body1" sx={{ wordBreak: "break-all" }}>
+                {user.profileImage || "-"}
+              </Typography>
             </Box>
           </Box>
         ) : (
-          <Typography variant="body2" sx={{ color: "#6b7280" }}>No user selected.</Typography>
+          <Typography variant="body2" sx={{ color: "#6b7280" }}>
+            No user selected.
+          </Typography>
         )}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -437,5 +526,3 @@ export const UserViewDialog = ({ open, onClose, user, formatDate }: UserViewDial
     </Dialog>
   );
 };
-
-

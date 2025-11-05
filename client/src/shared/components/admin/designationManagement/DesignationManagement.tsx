@@ -219,7 +219,10 @@ export default function DesignationManagement() {
   const list = useMemo(() => designations, [designations]);
 
   const getDeptName = (deptId?: string) => {
-    return deptId?.name || "-";
+    // Use the departments list to get correct department name by ID
+    if (!deptId || !departments) return "-";
+    const dept = departments.find((d: Department) => d._id === deptId);
+    return dept ? dept.name : "-";
   };
 
   return (

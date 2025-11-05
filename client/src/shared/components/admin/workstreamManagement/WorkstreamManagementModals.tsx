@@ -1,5 +1,4 @@
 import { useFormik, type FormikHelpers } from "formik";
-import * as Yup from "yup";
 import {
   Dialog,
   DialogTitle,
@@ -13,24 +12,15 @@ import {
   CircularProgress,
   Typography,
 } from "@mui/material";
-import type { Workstream, WorkstreamFormData } from "../../../../utils/interfaces/workstreamInterface";
-
-/* ---------- Validation (numeric status: 0|1) ---------- */
-const workstreamValidationSchema = Yup.object({
-  name: Yup.string().trim().required("Workstream name is required").max(100, "Name is too long"),
-  description: Yup.string().max(500, "Description is too long").required("Description is required"),
-  status: Yup.mixed<0 | 1>().oneOf([0, 1], "Invalid status").required("Status is required"),
-});
-
- type WorkstreamFormModalProps = {
-  open: boolean;
-  isEdit: boolean;
-  initialValues: WorkstreamFormData;
-  isSubmitting?: boolean;
-  onClose: () => void;
-  onSubmit: (values: WorkstreamFormData) => Promise<void> | void;
-  showStatusSelect?: boolean;
-};
+import type { 
+  WorkstreamFormData,
+  WorkstreamFormModalProps,
+  WorkstreamViewModalProps,
+  WorkstreamDeleteModalProps
+} from "../../../../utils/interfaces/workstreamInterface";
+import { useMemo } from "react";
+import { workstreamValidationSchema } from "../../../../utils/validations/workstreamValidation";
+import { formatDateTime, getStatusLabel } from "../../../../utils/common/helpers";
 
 export function WorkstreamFormModal({
   open,
@@ -41,8 +31,15 @@ export function WorkstreamFormModal({
   onSubmit,
   showStatusSelect = true,
 }: WorkstreamFormModalProps) {
+  const normalizedInitial = useMemo<WorkstreamFormData>(() => {
+    return {
+      name: initialValues?.name ?? "",
+      description: initialValues?.description ?? "",
+      status: initialValues?.status ?? 1,
+    };
+  }, [initialValues]);
   const formik = useFormik<WorkstreamFormData>({
-    initialValues,
+    initialValues: normalizedInitial,
     enableReinitialize: true,
     validationSchema: workstreamValidationSchema,
     validateOnBlur: true,
@@ -151,12 +148,6 @@ export function WorkstreamFormModal({
   );
 }
 
- type WorkstreamViewModalProps = {
-  open: boolean;
-  workstream: Workstream | null;
-  onClose: () => void;
-};
-
 export function WorkstreamViewModal({ open, workstream, onClose }: WorkstreamViewModalProps) {
   const Row = ({ label, value }: { label: string; value?: string }) => (
     <Box sx={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 2, py: 1, borderBottom: "1px solid #eee" }}>
@@ -164,9 +155,6 @@ export function WorkstreamViewModal({ open, workstream, onClose }: WorkstreamVie
       <Typography sx={{ color: "#111827" }}>{value || "-"}</Typography>
     </Box>
   );
-
-  const formatDateTime = (d?: string) => (d ? new Date(d).toLocaleString() : "-");
-  const statusLabel = (s?: 0 | 1) => (s === 1 ? "Active" : s === 0 ? "Inactive" : "-");
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
@@ -180,7 +168,7 @@ export function WorkstreamViewModal({ open, workstream, onClose }: WorkstreamVie
         {workstream ? (
           <Box>
             <Row label="Name" value={workstream.name} />
-            <Row label="Status" value={statusLabel(workstream.status as 0 | 1)} />
+            <Row label="Status" value={getStatusLabel(workstream.status as 0 | 1)} />
             <Row label="Description" value={workstream.description} />
             <Row label="Created" value={formatDateTime(workstream.createdAt)} />
             <Row label="Updated" value={formatDateTime(workstream.updatedAt)} />
@@ -198,14 +186,6 @@ export function WorkstreamViewModal({ open, workstream, onClose }: WorkstreamVie
     </Dialog>
   );
 }
-
- type WorkstreamDeleteModalProps = {
-  open: boolean;
-  workstreamName?: string;
-  isLoading?: boolean;
-  onCancel: () => void;
-  onConfirm: () => void | Promise<void>;
-};
 
 export function WorkstreamDeleteModal({
   open,

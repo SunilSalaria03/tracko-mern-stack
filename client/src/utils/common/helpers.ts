@@ -96,3 +96,13 @@ export const getWeekEnd = (date: Date) => {
   d.setHours(23, 59, 59, 999);
   return d;
 };
+
+// Format date and time for display
+export const formatDateTime = (dateString?: string) => {
+  return dateString ? new Date(dateString).toLocaleString() : "-";
+};
+
+// Get status label for display
+export const getStatusLabel = (status?: 0 | 1) => {
+  return status === 1 ? "Active" : status === 0 ? "Inactive" : "-";
+};

@@ -41,4 +41,28 @@ export interface WorkstreamModalProps {
   workstream?: Workstream | null;
 }
 
+export type WorkstreamFormModalProps = {
+  open: boolean;
+  isEdit: boolean;
+  initialValues: WorkstreamFormData;
+  isSubmitting?: boolean;
+  onClose: () => void;
+  onSubmit: (values: WorkstreamFormData) => Promise<void> | void;
+  showStatusSelect?: boolean;
+};
+
+export type WorkstreamViewModalProps = {
+  open: boolean;
+  workstream: Workstream | null;
+  onClose: () => void;
+};
+
+export type WorkstreamDeleteModalProps = {
+  open: boolean;
+  workstreamName?: string;
+  isLoading?: boolean;
+  onCancel: () => void;
+  onConfirm: () => void | Promise<void>;
+};
+
  

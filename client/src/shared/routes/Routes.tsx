@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "../../layout/MainLayout";
 import DesignationsPage from "../../pages/admin/DesignationsPage";
+import PageNotFound from "../components/common/PageNotFound";
 
 const LoginPage = lazy(() => import("../../pages/auth/LoginPage"));
 const ForgotPasswordPage = lazy(
@@ -95,6 +96,7 @@ const AppRoutes: React.FC = () => (
             <Route path="/time" element={<TimeTrackPage />} />
           </Route>
         </Route>
+        <Route path="*" element={<PageNotFound />} />
       </Routes>
     </Suspense>
   </BrowserRouter>

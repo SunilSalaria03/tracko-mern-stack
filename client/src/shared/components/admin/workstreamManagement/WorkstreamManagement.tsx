@@ -46,7 +46,6 @@ import {
   WorkstreamDeleteModal,
 } from "./WorkstreamManagementModals";
 
-/* ---------- tiny debounce ---------- */
 function useDebounced<T>(value: T, delay = 500) {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
@@ -56,7 +55,6 @@ function useDebounced<T>(value: T, delay = 500) {
   return debounced;
 }
 
-/* ---------- local initial form values (numeric status: 1=Active) ---------- */
 const INITIAL_FORM: WorkstreamFormData = {
   name: "",
   description: "",
@@ -69,27 +67,22 @@ const WorkstreamManagement = () => {
     (s) => s.workstream
   );
 
-  // pagination + search
-  const [page, setPage] = useState(0);
+   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounced(searchTerm, 500);
 
-  // modals
-  const [formOpen, setFormOpen] = useState(false);
+   const [formOpen, setFormOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  // editing/viewing targets
-  const [editing, setEditing] = useState<Workstream | null>(null);
+   const [editing, setEditing] = useState<Workstream | null>(null);
   const [viewing, setViewing] = useState<Workstream | null>(null);
   const [deleting, setDeleting] = useState<Workstream | null>(null);
 
-  // form values (for Formik modal)
-  const [formValues, setFormValues] = useState<WorkstreamFormData>(INITIAL_FORM);
+   const [formValues, setFormValues] = useState<WorkstreamFormData>(INITIAL_FORM);
 
-  // fetch list
-  useEffect(() => {
+   useEffect(() => {
     dispatch(
       fetchWorkstreams({
         page: page + 1,
@@ -101,8 +94,7 @@ const WorkstreamManagement = () => {
     );
   }, [dispatch, page, rowsPerPage, debouncedSearch]);
 
-  // toast error
-  useEffect(() => {
+   useEffect(() => {
     if (error) toast.error(error);
   }, [error]);
 
@@ -127,7 +119,6 @@ const WorkstreamManagement = () => {
         })
       : "-";
 
-  /* ------------ open/close handlers ------------ */
   const openAdd = () => {
     setEditing(null);
     setFormValues(INITIAL_FORM);
@@ -164,7 +155,6 @@ const WorkstreamManagement = () => {
     setDeleteOpen(false);
   };
 
-  /* ------------ submit handlers ------------ */
   const refresh = () =>
     dispatch(
       fetchWorkstreams({
@@ -204,12 +194,10 @@ const WorkstreamManagement = () => {
     }
   };
 
-  /* ------------ memo list ----------- */
   const list = useMemo(() => workstreams, [workstreams]);
 
   return (
     <Box sx={{ p: 3, bgcolor: "#fafafa", minHeight: "100vh" }}>
-      {/* Header */}
       <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 600, color: "#1f2937", mb: 1 }}>
@@ -238,7 +226,6 @@ const WorkstreamManagement = () => {
         </Button>
       </Box>
 
-      {/* Search */}
       <Paper elevation={0} sx={{ mb: 2, p: 2, border: "1px solid #e5e7eb" }}>
         <TextField
           fullWidth
@@ -263,7 +250,6 @@ const WorkstreamManagement = () => {
         />
       </Paper>
 
-      {/* Table */}
       <Paper elevation={0} sx={{ border: "1px solid #e5e7eb", overflow: "hidden" }}>
         {isLoading && (
           <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 4 }}>

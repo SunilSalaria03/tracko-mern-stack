@@ -17,13 +17,11 @@ const Sidebar: React.FC = () => {
   const location = useLocation();
   const { user } = useSelector((state: RootState) => state.auth);
 
-  // Filter menu items based on user role
-  const sidebarMenu = useMemo(() => {
+   const sidebarMenu = useMemo(() => {
     return filterMenuByRole(SIDEBAR_MENU_ITEMS, user?.role);
   }, [user]);
 
-  // Filter bottom items based on user role
-  const sidebarBottomMenu = useMemo(() => {
+   const sidebarBottomMenu = useMemo(() => {
     return filterMenuByRole(SIDEBAR_BOTTOM_ITEMS, user?.role);
   }, [user]);
 

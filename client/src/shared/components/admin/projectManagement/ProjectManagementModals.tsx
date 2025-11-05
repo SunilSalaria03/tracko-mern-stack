@@ -14,6 +14,7 @@ import {
   CircularProgress,
   alpha,
 } from "@mui/material";
+import { useMemo } from "react";
 
 type ProjectFormModalProps = {
   isOpen: boolean;
@@ -32,8 +33,18 @@ export const ProjectFormModal = ({
   onClose,
   onSubmit,
 }: ProjectFormModalProps) => {
+
+  const normalizedInitial = useMemo<ProjectFormData>(() => {
+    return {
+      startDate: initialValues?.startDate ?? "",
+      endDate: initialValues?.endDate ?? "",
+      status: initialValues?.status ?? 1,
+      name: initialValues?.name ?? "",
+      description: initialValues?.description ?? "",
+    };
+  }, [initialValues]);
   const formik = useFormik<ProjectFormData>({
-    initialValues,
+    initialValues: normalizedInitial,
     validationSchema: projectValidationSchema,
     enableReinitialize: true,
     onSubmit: async (values, { setSubmitting }) => {

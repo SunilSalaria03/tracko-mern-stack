@@ -1,5 +1,5 @@
 import { useFormik } from "formik";
- import {
+import {
   Dialog,
   DialogTitle,
   DialogContent,
@@ -7,10 +7,13 @@ import { useFormik } from "formik";
   Box,
   Button,
   TextField,
-  MenuItem,
   alpha,
   CircularProgress,
   Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import type {
   Designation,
@@ -20,8 +23,7 @@ import type { Department } from "../../../../utils/interfaces/departmentInterfac
 import { useMemo } from "react";
 import { designationValidationSchema } from "../../../../utils/validations/designationValidation";
 
-
- type FormProps = {
+type FormProps = {
   open: boolean;
   isEdit: boolean;
   initialValues: DesignationFormData;
@@ -42,14 +44,17 @@ export function DesignationFormModal({
 }: FormProps) {
   const normalizedInitial = useMemo<DesignationFormData>(() => {
     return {
-      departmentId: initialValues?.departmentId
-        ? String(initialValues.departmentId)
-        : "",
+      departmentId:
+        typeof initialValues?.departmentId === "object" &&
+        initialValues?.departmentId !== null
+          ? (initialValues.departmentId as { _id: string })._id
+          : typeof initialValues?.departmentId === "string"
+            ? initialValues.departmentId
+            : "",
       name: initialValues?.name ?? "",
       description: initialValues?.description ?? "",
     };
   }, [initialValues]);
-
   const formik = useFormik<DesignationFormData>({
     initialValues: normalizedInitial,
     enableReinitialize: true,
@@ -64,8 +69,8 @@ export function DesignationFormModal({
       }
     },
   });
-
-   return (
+ 
+  return (
     <Dialog
       open={open}
       onClose={onClose}
@@ -84,73 +89,127 @@ export function DesignationFormModal({
           component="form"
           onSubmit={formik.handleSubmit}
           sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-            gap: 2.5,
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
           }}
         >
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              flexDirection: { xs: "column", md: "row" },
+            }}
+          >
+            <FormControl
+              fullWidth
+              required
+              disabled={formik.isSubmitting || isSubmitting}
+              error={
+                formik.touched.departmentId &&
+                Boolean(formik.errors.departmentId)
+              }
+              sx={{ flex: 1 }}
+            >
+              <InputLabel sx={{ fontSize: "16px" }}>Department</InputLabel>
+              <Select
+                name="departmentId"
+                value={formik.values.departmentId}
+                onChange={(event) =>
+                  formik.setFieldValue("departmentId", event.target.value)
+                }
+                onBlur={formik.handleBlur}
+                label="Department"
+                sx={{
+                  "& .MuiSelect-select": {
+                    backgroundColor: formik.values.departmentId
+                      ? "action.selected"
+                      : "transparent",
+                    fontSize: "16px",
+                  },
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "divider",
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "primary.main",
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "primary.main",
+                    borderWidth: 2,
+                  },
+                }}
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      "& .MuiMenuItem-root": {
+                        "&:hover": {
+                          backgroundColor: "action.hover",
+                          color: "text.primary",
+                        },
+                        "&.Mui-selected": {
+                          backgroundColor: "primary.main",
+                          color: "primary.contrastText",
+                          "&:hover": {
+                            backgroundColor: "primary.dark",
+                          },
+                        },
+                      },
+                    },
+                  },
+                }}
+              >
+                {departments.map((dept) => {
+                  return (
+                    <MenuItem key={dept._id} value={dept._id}>
+                      {dept.name}
+                    </MenuItem>
+                  );
+                })}
+              </Select>
+              {formik.touched.departmentId && formik.errors.departmentId && (
+                <Typography
+                  variant="caption"
+                  color="error"
+                  sx={{ mt: 0.5, ml: 1.5, fontSize: "14px" }}
+                >
+                  {formik.errors.departmentId as string}
+                </Typography>
+              )}
+            </FormControl>
+            <TextField
+              label="Designation Name"
+              name="name"
+              id="name"
+              fullWidth
+              required
+              value={formik.values.name}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.name && Boolean(formik.errors.name)}
+              helperText={formik.touched.name && (formik.errors.name as string)}
+              placeholder="Enter designation name"
+              sx={{ flex: 1 }}
+            />
+          </Box>
           <TextField
-            select
-            label="Department"
-            name="departmentId"
-            id="departmentId"
+            label="Description"
+            name="description"
+            id="description"
             fullWidth
-            required
-            value={formik.values.departmentId}
+            multiline
+            rows={3}
+            value={formik.values.description || ""}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
             error={
-              formik.touched.departmentId && Boolean(formik.errors.departmentId)
+              formik.touched.description && Boolean(formik.errors.description)
             }
             helperText={
-              formik.touched.departmentId &&
-              (formik.errors.departmentId as string)
+              formik.touched.description &&
+              (formik.errors.description as string)
             }
-          >
-            {(departments || []).map((d) => {
-               return (
-                <MenuItem key={d._id} value={d._id}>
-                  {d.name}
-                </MenuItem>
-              );
-            })}
-          </TextField>
-
-          <TextField
-            label="Designation Name"
-            name="name"
-            id="name"
-            fullWidth
-            required
-            value={formik.values.name}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.name && Boolean(formik.errors.name)}
-            helperText={formik.touched.name && (formik.errors.name as string)}
-            placeholder="Enter designation name"
+            placeholder="Enter designation description"
           />
-
-          <Box sx={{ gridColumn: { xs: "auto", md: "1 / -1" } }}>
-            <TextField
-              label="Description"
-              name="description"
-              id="description"
-              fullWidth
-              multiline
-              rows={3}
-              value={formik.values.description || ""}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              error={
-                formik.touched.description && Boolean(formik.errors.description)
-              }
-              helperText={
-                formik.touched.description &&
-                (formik.errors.description as string)
-              }
-              placeholder="Enter designation description"
-            />
-          </Box>
         </Box>
       </DialogContent>
 
