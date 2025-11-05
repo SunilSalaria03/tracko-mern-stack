@@ -30,6 +30,8 @@ export const API_ENDPOINTS = {
       CREATE: '/admin/projects',
       UPDATE: (id: string) => `/admin/projects/${id}`,
       DELETE: (id: string) => `/admin/projects/${id}`,
+      ASSIGN: '/admin/projectAssignments',
+      ASSIGNED: '/projects/assigned',
     },
     WORKSTREAMS: {
       LIST: '/admin/workstreams',
@@ -67,6 +69,7 @@ export const API_ENDPOINTS = {
       UPDATE: (id: string) => `/userTasks/${id}`,
       DELETE: (id: string) => `/userTasks/${id}`,
       FINAL_SUBMIT: '/userTasks/finalSubmit',
+      ASSIGNED: '/projects/assigned',
     },
     DASHBOARD: {
       STATS: '/dashboard/stats',

@@ -2,7 +2,7 @@ export interface Employee {
   _id: string;
   email: string;
   name: string;
-  role: 0 | 1 | 2;
+  role: 0 | 1 | 2 | 3;
   profileImage?: string;
   phoneNumber?: string;
   countryCode?: string;
@@ -13,6 +13,9 @@ export interface Employee {
   state?: string;
   zipCode?: string;
   isDeleted?: boolean;
+  department?: string;
+  designation?: string;
+  projectIds?: string[];
   createdAt?: string;
   updatedAt?: string;
 }

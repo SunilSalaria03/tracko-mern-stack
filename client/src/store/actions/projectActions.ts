@@ -12,6 +12,7 @@ import type {
   ProjectListResponse,
   Project,
   ProjectFormData,
+  ProjectAssignmentPayload,
 } from "../../utils/interfaces/projectInterface";
 
  export type UpdateProjectPayload = { id: string,data:unknown } & Partial<ProjectFormData>;
@@ -50,4 +51,16 @@ export const updateProject = createPutThunk<Project, UpdateProjectPayload>(
 export const deleteProject = createDeleteThunk<void>(
   "project/deleteProject",
   (id: string) => API_ENDPOINTS.PROJECTS.DELETE(id)
+);
+
+export const assignProjects = createPostThunk<any, ProjectAssignmentPayload>(
+  "project/assignProjects",
+  () => API_ENDPOINTS.PROJECTS.ASSIGN
+);
+export const fetchAssignedProjects = createGetThunk<ProjectListResponse>(
+  "project/fetchAssignedProjects",
+  ( ) => {
+    
+    return `${API_ENDPOINTS.PROJECTS.ASSIGNED}`;
+  }
 );

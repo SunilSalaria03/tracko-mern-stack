@@ -35,6 +35,7 @@ export interface ProjectListParams {
 
 export interface ProjectListResponse {
   projects: Project[];
+  projectAssignments: Project[];
   total: number;
   page: number;
   limit: number;
@@ -46,5 +47,22 @@ export interface ProjectModalProps {
   onClose: () => void;
   onSuccess: () => void;
   project?: Project | null;
+}
+
+export interface ProjectAssignment {
+  projectId: string;
+  allowAccess: boolean;
+}
+
+export interface ProjectAssignmentPayload {
+  userId: string;
+  projects: ProjectAssignment[];
+}
+
+export interface ProjectAssignmentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  userId?: string | null;
 }
 

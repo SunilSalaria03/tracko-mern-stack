@@ -9,6 +9,7 @@ import {
   deleteProjectService,
   addProjectService,
   projectAssignmentService,
+  getProjectAssignmentsService,
 } from '../services/projectService';
 import { projectAssignmentValidation, addProjectValidation } from '../validations/projectValidations';
 import { IProject } from '../interfaces/projectInterfaces';
@@ -161,6 +162,24 @@ export const projectAssignment = async (
 
   } catch (error) {
     console.error('Add project assignment error:', error);
+    return helper.error(res, GENERAL_MESSAGES.SOMETHING_WENT_WRONG);
+  }
+};
+
+
+export const getProjectAssignments = async(
+  req: AuthRequest,
+  res: Response
+): Promise<Response | void> => {
+  try {
+    const result = await getProjectAssignmentsService({ userId: req.user?.id as string });
+    
+    if ('error' in result) {
+      return helper.failed(res, result.error);
+    }
+    return helper.success(res, PROJECT_MESSAGES.PROJECTS_FETCHED_SUCCESSFULLY, result);
+  } catch (error) {
+    console.error('Get project assignments error:', error);
     return helper.error(res, GENERAL_MESSAGES.SOMETHING_WENT_WRONG);
   }
 };

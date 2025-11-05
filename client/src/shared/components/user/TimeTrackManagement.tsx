@@ -17,7 +17,7 @@ import {
   Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { useAppDispatch, useAppSelector } from "../../../store";
-import { fetchProjectsWithoutParams } from "../../../store/actions/projectActions";
+import {   fetchAssignedProjects, } from "../../../store/actions/projectActions";
 import { fetchWorkstreams } from "../../../store/actions/workstreamActions";
 import {
   createTimeTrackTask,
@@ -49,15 +49,17 @@ type ViewMode = "day" | "week";
 const TimeTrackManagement = () => {
   const dispatch = useAppDispatch();
 
-  const projects = useAppSelector((s) => s.project?.projects ?? []);
+   const projectAssignments = useAppSelector((s) => s.project?.projectAssignments ?? []);
   const workstreams = useAppSelector((s) => s.workstream?.workstreams ?? []);
   const tasks = useAppSelector((s) => s.task?.tasks ?? []);
   const isLoading = useAppSelector((s) => s.task?.isLoading ?? false);
 
+console.log({projectAssignments});
+
   const getProjectName = useCallback(
     (id: string) =>
-      projects.find((p: any) => String(getDisplayId(p)) === id)?.name ?? id,
-    [projects]
+      projectAssignments.find((p: any) => String(getDisplayId(p)) === id)?.name ?? id,
+    [projectAssignments]
   );
   const getWorkstreamName = useCallback(
     (id: string) =>
@@ -113,7 +115,7 @@ const TimeTrackManagement = () => {
   const fetchReferenceData = useCallback(async () => {
     try {
       await Promise.all([
-        dispatch(fetchProjectsWithoutParams()).unwrap(),
+        dispatch(fetchAssignedProjects()).unwrap(),
         dispatch(fetchWorkstreams({ page: 1, limit: 1000 })).unwrap(),
       ]);
     } catch {
@@ -1047,7 +1049,7 @@ const TimeTrackManagement = () => {
       <TimeTrackManagementModal
         open={openModal}
         selectedDate={selectedDate}
-        projects={projects}
+        projects={projectAssignments}
         workstreams={workstreams}
         formData={formData}
         onClose={handleCloseModal}

@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import * as helper from '../helpers/commonHelpers';
 import { AuthRequest } from '../interfaces/commonInterfaces';
-import { GENERAL_MESSAGES } from '../utils/constants/messages';
+import { DASHBOARD_MESSAGES, GENERAL_MESSAGES, USER_MESSAGES } from '../utils/constants/messages';
 import { getDashboardStatsService } from '../services/dashboardService';
 
 export const getDashboardStats = async (
@@ -13,7 +13,7 @@ export const getDashboardStats = async (
     const userId = req.user?.id;
 
     if (!userId) {
-      return helper.failed(res, 'User not authenticated');
+      return helper.failed(res, USER_MESSAGES.INVALID_USER_ID);
     }
 
     const result = await getDashboardStatsService({ userId, period });
@@ -22,7 +22,7 @@ export const getDashboardStats = async (
       return helper.failed(res, result.error);
     }
 
-    return helper.success(res, 'Dashboard stats fetched successfully', result);
+    return helper.success(res, DASHBOARD_MESSAGES.DASHBOARD_STATS_FETCHED_SUCCESSFULLY, result);
   } catch (error) {
     console.error('Get dashboard stats error:', error);
     return helper.error(res, GENERAL_MESSAGES.SOMETHING_WENT_WRONG);

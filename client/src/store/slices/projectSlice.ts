@@ -5,11 +5,14 @@ import {
   fetchProjectsWithoutParams,
   createProject, 
   updateProject, 
-  deleteProject 
+  deleteProject,
+  assignProjects, 
+  fetchAssignedProjects
 } from '../actions/projectActions';
 
 interface ProjectState {
   projects: Project[];
+  projectAssignments: Project[];
   total: number;
   currentPage: number;
   totalPages: number;
@@ -19,6 +22,7 @@ interface ProjectState {
 
 const initialState: ProjectState = {
   projects: [],
+  projectAssignments: [],
   total: 0,
   currentPage: 1,
   totalPages: 1,
@@ -111,16 +115,41 @@ const projectSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(deleteProject.fulfilled, (state, action) => {
+      .addCase(deleteProject.fulfilled, (state, ) => {
         state.isLoading = false;
-        // state.projects = state.projects.filter(proj => proj._id !== action.payload);
-        state.total = state.total - 1;
+         state.total = state.total - 1;
         state.error = null;
       })
       .addCase(deleteProject.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
-      });
+      })
+      // Assign project
+      .addCase(assignProjects.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(assignProjects.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+       })
+      .addCase(assignProjects.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+       // Fetch Assigned projects  
+       .addCase(fetchAssignedProjects.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchAssignedProjects.fulfilled, (state, action) => {
+         state.projectAssignments = action.payload.projectAssignments;
+        
+      })
+      .addCase(fetchAssignedProjects.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
   },
 });
 

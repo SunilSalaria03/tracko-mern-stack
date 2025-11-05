@@ -4,7 +4,11 @@ import userModel from "../models/userModel";
 import { IProject } from "../interfaces/projectInterfaces";
 import { IListParams } from "../interfaces/userInterfaces";
 import projectModel from "../models/projectModel";
-import { GENERAL_MESSAGES, PROJECT_MESSAGES, USER_MESSAGES } from "../utils/constants/messages";
+import {
+  GENERAL_MESSAGES,
+  PROJECT_MESSAGES,
+  USER_MESSAGES,
+} from "../utils/constants/messages";
 
 export const getProjectsService = async (params: IListParams) => {
   try {
@@ -119,11 +123,14 @@ export const updateProjectService = async (data: Partial<IProject>) => {
       }
     }
 
-    const updatedProject = await projectModel
-      .findOneAndUpdate({ _id: data?.id, isDeleted: false }, data, {
+    const updatedProject = await projectModel.findOneAndUpdate(
+      { _id: data?.id, isDeleted: false },
+      data,
+      {
         new: true,
         runValidators: true,
-      })
+      }
+    );
 
     if (!updatedProject) {
       return { error: PROJECT_MESSAGES.PROJECT_NOT_FOUND };
@@ -133,7 +140,9 @@ export const updateProjectService = async (data: Partial<IProject>) => {
   } catch (error) {
     console.error("Update project service error:", error);
     const message =
-      error instanceof Error ? error.message : GENERAL_MESSAGES.SOMETHING_WENT_WRONG;
+      error instanceof Error
+        ? error.message
+        : GENERAL_MESSAGES.SOMETHING_WENT_WRONG;
     return { error: message };
   }
 };
@@ -162,22 +171,26 @@ export const deleteProjectService = async (projectId: string) => {
     return deletedProject;
   } catch (error) {
     console.error("Delete project service error:", error);
-    const message = error instanceof Error ? error.message : GENERAL_MESSAGES.SOMETHING_WENT_WRONG;
+    const message =
+      error instanceof Error
+        ? error.message
+        : GENERAL_MESSAGES.SOMETHING_WENT_WRONG;
     return { error: message };
   }
 };
 
 export const projectAssignmentService = async (data: Partial<IProject>) => {
   try {
-    if(data.userId){
-      const userIdStr = typeof data.userId === "string" ? data.userId : data.userId.toString();
-      if(!mongoose.Types.ObjectId.isValid(userIdStr)) {
+    if (data.userId) {
+      const userIdStr =
+        typeof data.userId === "string" ? data.userId : data.userId.toString();
+      if (!mongoose.Types.ObjectId.isValid(userIdStr)) {
         return { error: USER_MESSAGES.INVALID_USER_ID };
       }
       data.userId = userIdStr;
     }
 
-    if(!data.projects || data.projects.length === 0){
+    if (!data.projects || data.projects.length === 0) {
       return { error: PROJECT_MESSAGES.PROJECTS_REQUIRED };
     }
 
@@ -190,20 +203,20 @@ export const projectAssignmentService = async (data: Partial<IProject>) => {
     }
 
     const projectsToAdd = data.projects
-      .filter(p => p.allowAccess === true)
-      .map(p => p.projectId);
-    
+      .filter((p) => p.allowAccess === true)
+      .map((p) => p.projectId);
+
     const projectsToRemove = data.projects
-      .filter(p => p.allowAccess === false)
-      .map(p => p.projectId);
+      .filter((p) => p.allowAccess === false)
+      .map((p) => p.projectId);
 
     const allProjectIds = [...projectsToAdd, ...projectsToRemove];
-    if(allProjectIds.length > 0) {
+    if (allProjectIds.length > 0) {
       const existingProjects = await projectModel.find({
         _id: { $in: allProjectIds },
         isDeleted: false,
       });
-      
+
       if (existingProjects.length !== allProjectIds.length) {
         return { error: PROJECT_MESSAGES.PROJECTS_NOT_FOUND };
       }
@@ -241,15 +254,79 @@ export const projectAssignmentService = async (data: Partial<IProject>) => {
       _id: data.userId,
       isDeleted: false,
     });
-    
+
     if (!updateUser) {
       return { error: USER_MESSAGES.INVALID_USER_ID };
     }
-    
-    return { message: PROJECT_MESSAGES.PROJECT_ASSIGNMENT_CREATED_SUCCESSFULLY };
+
+    return {
+      message: PROJECT_MESSAGES.PROJECT_ASSIGNMENT_CREATED_SUCCESSFULLY,
+    };
   } catch (error) {
     console.error("Project assignment service error:", error);
-    const message = error instanceof Error ? error.message : GENERAL_MESSAGES.SOMETHING_WENT_WRONG;
+    const message =
+      error instanceof Error
+        ? error.message
+        : GENERAL_MESSAGES.SOMETHING_WENT_WRONG;
     return { error: message };
   }
 };
+
+export const getProjectAssignmentsService = async (params: IListParams & { userId?: string }) => {
+  try {
+    const page = params.page || 1;
+    const limit = params.limit || 10;
+    const sortBy = params.sortBy || "createdAt";
+    const sortOrder = params.sortOrder || "desc";
+    const userId = params.userId;
+
+    if (!userId) {
+      return { error: "User ID is required" };
+    }
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return { error: USER_MESSAGES.INVALID_USER_ID };
+    }
+
+    const sortObj: Record<string, 1 | -1> = {};
+    sortObj[sortBy] = sortOrder === "asc" ? 1 : -1;
+
+    const skip = (page - 1) * limit;
+
+    // Build query for assigned projects
+    const query = {
+      _id: { $in: user.projectIds || [] },
+      isDeleted: false,
+    };
+
+    const [projectAssignments, total] = await Promise.all([
+      projectModel
+        .find(query)
+        .populate("addedBy", "name email")
+        .sort(sortObj)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      projectModel.countDocuments(query),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      projectAssignments,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  } catch (error) {
+    console.error("Project assignment service error:", error);
+    const message =
+      error instanceof Error
+        ? error.message
+        : GENERAL_MESSAGES.SOMETHING_WENT_WRONG;
+    return { error: message };
+  }
+};
+

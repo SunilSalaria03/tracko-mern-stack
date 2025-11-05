@@ -54,4 +54,7 @@ router.get('/permissions/:id', permissionController.getPermissionById);
 router.delete('/permissions/:id', permissionController.deletePermission);
 router.post('/permissions/grantPermissionsToUser', permissionController.grantPermissionsToUser);
 
+// Project assignment routes
+router.post('/projectAssignments', projectController.projectAssignment);
+
 export default router;

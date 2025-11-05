@@ -20,6 +20,7 @@ const ManagementWelcomePage = lazy(
 );
  
 const ProjectsPage = lazy(() => import("../../pages/admin/ProjectsPage"));
+const ProjectAssignmentPage = lazy(() => import("../../pages/admin/ProjectAssignmentPage"));
 const UsersPage = lazy(() => import("../../pages/admin/UsersPage"));
 const WorkstreamsPage = lazy(() => import("../../pages/admin/WorkstreamsPage"));
 const AdminsPage = lazy(() => import("../../pages/superadmin/AdminsPage"));
@@ -79,13 +80,17 @@ const AppRoutes: React.FC = () => (
             <Route path="/home" element={<ManagementWelcomePage />} />
             <Route path="/dashboard" element={<ManagementDashboardPage />} />    
             <Route path="/projects" element={<ProjectsPage />} />
-            <Route path="/users" element={<UsersPage />} />
+             <Route path="/users" element={<UsersPage />} />
             <Route path="/workstreams" element={<WorkstreamsPage />} />
             <Route path="/departments" element={<DepartmentsPage />} />
             <Route path="/designations" element={<DesignationsPage />} />
           </Route>
         </Route>
-
+        <Route element={<ProtectedRoute requiredRole={[2]} />}>
+          <Route element={<MainLayout />}>
+            <Route path="/project-assignments" element={<ProjectAssignmentPage />} />
+          </Route>
+        </Route>
         <Route element={<ProtectedRoute requiredRole={[3]} />}>
           <Route element={<MainLayout />}>
             <Route path="/welcome" element={<EmployeeWelcomePage />} />

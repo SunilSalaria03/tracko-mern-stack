@@ -157,7 +157,7 @@ export const getUsers = async (
 
     console.log('req.user', req.user);
     const user = req.user;
-    if (user.role !== 0 && user.role !== 1) {
+    if (user.role !== 0 && user.role !== 1 && user.role !== 2) {
       return helper.failed(res, 'Access denied. Admin only.');
     }
 
