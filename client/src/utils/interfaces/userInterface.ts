@@ -13,6 +13,8 @@ export type EditableUser = {
   phoneNumber?: string;
   countryCode?: string;
   dateOfBirth?: string;
+  designationId?: string;
+  departmentId?: string;
 };
 
 export interface User {
@@ -33,6 +35,8 @@ export interface User {
   addedBy?: string | null;
   createdAt?: string;
   updatedAt?: string;
+  designationId?: string;
+  departmentId?: string;
 }
 
 export interface UsersResponse {

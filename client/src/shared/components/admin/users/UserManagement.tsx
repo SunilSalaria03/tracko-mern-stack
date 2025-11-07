@@ -204,15 +204,21 @@ const UserManagement = () => {
         const payload: EditableUser = {
           email: (values.email || "").trim(),
           name: values.name?.trim() || "",
-          designation: values.designation?.trim() || "",
-          department: values.department?.trim() || "",
-          profileImage: values.profileImage?.trim() || "",
+          designationId: values.designation?.trim() || "",
+          departmentId: values.department?.trim() || "",
           role: (values.role ?? 3) as UserRole,
           phoneNumber: values.phoneNumber?.trim() || "",
           countryCode: values.countryCode?.trim() || "",
           dateOfBirth: values.dateOfBirth?.trim() || "",
           ...(values.password ? { password: values.password.trim() } : {}),
         };
+
+        if (values.profileImage) {
+          payload.profileImage = values.profileImage?.trim() || "";
+        } 
+        if (values.status) {
+          payload.status = values.status
+        }
 
         if (editingId) {
           await dispatch(updateUser({ id: editingId, data: payload })).unwrap();

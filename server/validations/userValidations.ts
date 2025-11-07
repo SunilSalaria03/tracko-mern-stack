@@ -43,6 +43,9 @@ export const addUserValidation = (data: Partial<IUser>) => {
       departmentId: Joi.string().required().messages({
         'any.required': 'Department is required',
       }),
+      status: Joi.number().valid(0, 1).optional().messages({
+        'any.only': 'Status must be one of: 0, 1',
+      }),
     });
   
     return schema.validate(data, { abortEarly: false });
