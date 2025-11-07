@@ -67,7 +67,7 @@ const ViewEmployeePage: React.FC = () => {
         <Navbar />
         <div className="flex flex-1 min-h-0 overflow-hidden">
           <Sidebar />
-          <main className="flex-1 min-h-0 h-full p-8 overflow-auto">
+          <main className="flex-1 min-h-0 h-full p-5 overflow-auto">
             <div className="flex items-center justify-center h-full">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
@@ -83,7 +83,7 @@ const ViewEmployeePage: React.FC = () => {
         <Navbar />
         <div className="flex flex-1 min-h-0 overflow-hidden">
           <Sidebar />
-          <main className="flex-1 min-h-0 h-full p-8 overflow-auto">
+          <main className="flex-1 min-h-0 h-full p-5 overflow-auto">
             <div className="text-center">
               <p className="text-gray-500">Employee not found</p>
               <button
@@ -104,7 +104,7 @@ const ViewEmployeePage: React.FC = () => {
       <Navbar />
       <div className="flex flex-1 min-h-0 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 min-h-0 h-full p-8 overflow-auto">
+        <main className="flex-1 min-h-0 h-full p-5 overflow-auto">
           <div className="max-w-4xl mx-auto">
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">

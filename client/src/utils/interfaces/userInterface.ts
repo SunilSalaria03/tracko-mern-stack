@@ -1,5 +1,20 @@
 export type UserRole = 0 | 1 | 2 | 3;
 
+export type EditableUser = {
+  _id?: string;
+  email?: string;
+  password?: string;
+  name?: string;
+  designation?: string;
+  department?: string;
+  profileImage?: string;
+  status?: 0 | 1;
+  role?: UserRole;
+  phoneNumber?: string;
+  countryCode?: string;
+  dateOfBirth?: string;
+};
+
 export interface User {
   _id: string;
   tenantId?: string | null;
