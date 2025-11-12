@@ -326,6 +326,13 @@ const UserManagement = () => {
   const columnDefs = useMemo<ColDef[]>(
     () => [
       {
+        headerName: "Sr. No.",
+        field: "srNo",
+        valueGetter: (params) => params.node ? params.node?.rowIndex ? params.node?.rowIndex + 1 : 1 : 0,
+        cellStyle: () => ({ display: "flex", alignItems: "center" }),
+
+      },
+      {
         headerName: "User",
         field: "name",
         cellRenderer: NameCellRenderer,
