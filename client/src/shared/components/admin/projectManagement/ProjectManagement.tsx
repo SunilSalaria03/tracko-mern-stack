@@ -1,16 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   Box,
   Button,
   Typography,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
   IconButton,
   TextField,
   InputAdornment,
@@ -18,6 +11,7 @@ import {
   Alert,
   Tooltip,
   alpha,
+  Chip,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -25,8 +19,11 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
   Close as CloseIcon,
-  Visibility as VisibilityIcon,
+  Download as DownloadIcon,
+  Visibility as ViewIcon,
 } from "@mui/icons-material";
+import { AgGridReact } from "ag-grid-react";
+import type { ColDef, GridApi, GridReadyEvent, ICellRendererParams } from "ag-grid-community";
 import { useAppDispatch, useAppSelector } from "../../../../store";
 import {
   fetchProjects,
@@ -34,184 +31,425 @@ import {
   updateProject,
   deleteProject,
 } from "../../../../store/actions/projectActions";
-import type { Project, ProjectFormData } from "../../../../utils/interfaces/projectInterface";
 import { toast } from "react-toastify";
-import { ProjectFormModal, ProjectDeleteModal, ProjectViewModal } from "./ProjectManagementModals.tsx";
+import { ProjectFormModal, ProjectDeleteModal, ProjectViewModal } from "./ProjectManagementModals";
+import type { Project, ProjectFormData } from "../../../../utils/interfaces/projectInterface";
+import { useDebounced } from "../../../../utils/common/helpers";
 
-const initialFormValues: ProjectFormData = { name: "", description: "", startDate: "", endDate: "", status: 1 };
+// -------------------- Constants & Helpers --------------------
+
+const initialFormValues: ProjectFormData = {
+  name: "",
+  description: "",
+  startDate: "",
+  endDate: "",
+  status: 1,
+};
+
+const toInputDate = (d?: string) => {
+  if (!d) return "";
+  const dt = new Date(d);
+  if (Number.isNaN(dt.getTime())) return "";
+  return dt.toISOString().slice(0, 10); // yyyy-MM-dd
+};
+
+const projectToFormData = (p: Project): ProjectFormData => ({
+  name: p.name ?? "",
+  description: p.description ?? "",
+  startDate: toInputDate(p.startDate),
+  endDate: toInputDate(p.endDate),
+  status: (p.status ?? 1) as 0 | 1 | 2 | 3,
+});
+
+const formatDate = (dateString?: string): string =>
+  dateString
+    ? new Date(dateString).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "-";
+
+// -------------------- Cell Renderers --------------------
+
+const StatusCellRenderer = (props: ICellRendererParams) => {
+  const s = props.value ?? 1;
+  const statusMap: Record<number, { label: string; color: string; bg: string }> = {
+    0: { label: "Inactive", color: "#dc2626", bg: alpha("#ef4444", 0.1) },
+    1: { label: "Active", color: "#059669", bg: alpha("#10b981", 0.1) },
+    2: { label: "Completed", color: "#2563eb", bg: alpha("#3b82f6", 0.1) },
+    3: { label: "Cancelled", color: "#92400e", bg: alpha("#f59e0b", 0.1) },
+  };
+  const sData = statusMap[s] || statusMap[1];
+
+  return (
+    <Chip
+      label={sData.label}
+      size="small"
+      sx={{
+        bgcolor: sData.bg,
+        color: sData.color,
+        fontWeight: 600,
+        fontSize: "0.75rem",
+        height: 24,
+        "& .MuiChip-label": { px: 1.5 },
+      }}
+    />
+  );
+};
+
+const ActionsCellRenderer = (props: ICellRendererParams) => {
+  const { onEdit, onDelete, onView } = props.context;
+  const project = props.data as Project;
+
+  return (
+    <Box sx={{ display: "flex", gap: 0.5 }}>
+      <Tooltip title="View">
+        <IconButton
+          size="small"
+          onClick={() => onView(project)}
+          sx={{ color: "#6b7280", "&:hover": { color: "#10b981", bgcolor: alpha("#10b981", 0.1) } }}
+        >
+          <ViewIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Edit">
+        <IconButton
+          size="small"
+          onClick={() => onEdit(project)}
+          sx={{ color: "#6b7280", "&:hover": { color: "#3b82f6", bgcolor: alpha("#3b82f6", 0.1) } }}
+        >
+          <EditIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Delete">
+        <IconButton
+          size="small"
+          onClick={() => onDelete(project)}
+          sx={{ color: "#6b7280", "&:hover": { color: "#ef4444", bgcolor: alpha("#ef4444", 0.1) } }}
+        >
+          <DeleteIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+    </Box>
+  );
+};
+
+// -------------------- Main Component --------------------
 
 const ProjectManagement = () => {
   const dispatch = useAppDispatch();
-  const { projects, total, isLoading, error } = useAppSelector((state) => state.project);
+  const { projects, isLoading, error } = useAppSelector((s) => s.project);
 
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  // search
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debouncedSearch = useDebounced(searchTerm.trim().toLowerCase(), 400);
+
+  // modals & selection
   const [openFormModal, setOpenFormModal] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [openViewModal, setOpenViewModal] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [isEdit, setIsEdit] = useState(false);
 
+  // grid
+  const [gridApi, setGridApi] = useState<GridApi | null>(null);
+  const gridRef = useRef<AgGridReact>(null);
+
+  // fetch
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 400);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
+    dispatch(fetchProjects({ sortBy: "createdAt", sortOrder: "desc" }))
+      .unwrap()
+      .catch(() => toast.error("Failed to fetch projects"));
+  }, [dispatch]);
 
-  const fetchProjectsData = useCallback(
-    async (opts?: { page?: number; limit?: number; search?: string }) => {
-      const effectivePage = (opts?.page ?? page) + 1;
-      const effectiveLimit = opts?.limit ?? rowsPerPage;
-      const effectiveSearch = opts?.search ?? debouncedSearch;
+  // stats
+  const stats = useMemo(() => {
+    const total = projects.length;
+    const active = projects.filter((p) => p.status === 1).length;
+    const completed = projects.filter((p) => p.status === 2).length;
+    return { total, active, completed };
+  }, [projects]);
 
-      try {
-        await dispatch(
-          fetchProjects({
-            page: effectivePage,
-            perPageLimit: effectiveLimit,
-            search: effectiveSearch,
-            sortBy: "createdAt",
-            sortOrder: "desc",
-          })
-        ).unwrap();
-      } catch {
-        toast.error("Failed to fetch projects");
-      }
-    },
-    [dispatch, page, rowsPerPage, debouncedSearch]
-  );
+  // form initial values (ALWAYS ProjectFormData)
+  const formInitialValues = useMemo<ProjectFormData>(() => {
+    return editingProject ? projectToFormData(editingProject) : initialFormValues;
+  }, [editingProject]);
 
-  useEffect(() => {
-    fetchProjectsData();
-  }, [page, rowsPerPage, debouncedSearch]);
-
-  const getProjectInitialValues = (): ProjectFormData => {
-    if (isEdit && selectedProject) {
-      const start = selectedProject.startDate ? new Date(selectedProject.startDate) : undefined;
-      const end = selectedProject.endDate ? new Date(selectedProject.endDate) : undefined;
-      const toInputDate = (d?: Date) => (d ? d.toISOString().slice(0, 10) : "");
-      return {
-        name: selectedProject.name,
-        description: selectedProject.description || "",
-        startDate: toInputDate(start),
-        endDate: toInputDate(end),
-        status: (selectedProject.status ?? 1) as 0 | 1 | 2 | 3,
-      };
-    }
-    return initialFormValues;
-  };
-
-  const handleChangePage = (_: unknown, newPage: number) => setPage(newPage);
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-    setPage(0);
-  };
-
-  const handleOpenAddModal = () => {
-    setIsEdit(false);
-    setSelectedProject(null);
+  // handlers
+  const handleOpenAdd = useCallback(() => {
+    setEditingProject(null);
     setOpenFormModal(true);
-  };
+  }, []);
 
-  const handleOpenEditModal = (project: Project) => {
-    setIsEdit(true);
-    setSelectedProject(project);
+  const handleOpenEdit = useCallback((project: Project) => {
+    setEditingProject(project);
     setOpenFormModal(true);
-  };
+  }, []);
 
-  const handleCloseFormModal = () => {
-    setOpenFormModal(false);
-    setSelectedProject(null);
-  };
-
-  const handleOpenDeleteModal = (project: Project) => {
-    setSelectedProject(project);
-    setOpenDeleteModal(true);
-  };
-
-  const handleCloseDeleteModal = () => {
-    setOpenDeleteModal(false);
-    setSelectedProject(null);
-  };
-
-  const handleOpenViewModal = (project: Project) => {
+  const handleOpenView = useCallback((project: Project) => {
     setSelectedProject(project);
     setOpenViewModal(true);
-  };
+  }, []);
 
-  const handleCloseViewModal = () => {
+  const handleOpenDelete = useCallback((project: Project) => {
+    setSelectedProject(project);
+    setOpenDeleteModal(true);
+  }, []);
+
+  const handleCloseModals = useCallback(() => {
+    setOpenFormModal(false);
+    setOpenDeleteModal(false);
     setOpenViewModal(false);
+    setEditingProject(null);
     setSelectedProject(null);
-  };
+  }, []);
 
   const handleDelete = async () => {
     if (!selectedProject) return;
     try {
       await dispatch(deleteProject(selectedProject._id)).unwrap();
       toast.success("Project deleted successfully!");
-
-      const isLastRowOnPage = projects.length === 1 && page > 0;
-      const nextPage = isLastRowOnPage ? page - 1 : page;
-      if (isLastRowOnPage) setPage(nextPage);
-      await fetchProjectsData({ page: nextPage });
-      handleCloseDeleteModal();
+      await dispatch(fetchProjects({ sortBy: "createdAt", sortOrder: "desc" })).unwrap();
+      handleCloseModals();
     } catch {
       toast.error("Failed to delete project");
     }
   };
 
-  const formatDate = (dateString?: string): string =>
-    dateString
-      ? new Date(dateString).toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        })
-      : "-";
+  const handleExportCSV = useCallback(() => {
+    if (gridApi) {
+      gridApi.exportDataAsCsv({
+        fileName: `projects_${new Date().toISOString().split("T")[0]}.csv`,
+      });
+      toast.success("Projects exported successfully!");
+    }
+  }, [gridApi]);
+
+  const filtered = useMemo(() => {
+    const q = debouncedSearch;
+    if (!q) return projects;
+    return projects.filter((p) =>
+      [p.name, p.description, p.addedBy?.name, String(p.status)]
+        .map((v) => (v || "").toString().toLowerCase())
+        .some((v) => v.includes(q))
+    );
+  }, [projects, debouncedSearch]);
+
+  const onGridReady = useCallback((params: GridReadyEvent) => {
+    setGridApi(params.api);
+  }, []);
+
+  const columnDefs = useMemo<ColDef[]>(() => {
+    return [
+      {
+        headerName: "Project Name",
+        field: "name",
+        flex: 2,
+        minWidth: 220,
+        sortable: true,
+        filter: true,
+      },
+      {
+        headerName: "Description",
+        field: "description",
+        flex: 2,
+        minWidth: 220,
+        valueFormatter: (p) =>
+          p.value ? `${p.value.substring(0, 50)}${p.value.length > 50 ? "..." : ""}` : "-",
+      },
+      {
+        headerName: "Added By",
+        field: "addedBy.name",
+        flex: 1.5,
+        minWidth: 150,
+        valueGetter: (p) => p.data?.addedBy?.name || "-",
+      },
+      {
+        headerName: "Status",
+        field: "status",
+        flex: 1,
+        minWidth: 110,
+        cellRenderer: StatusCellRenderer,
+      },
+      {
+        headerName: "Created",
+        field: "createdAt",
+        flex: 1.3,
+        minWidth: 130,
+        valueFormatter: (p) => formatDate(p.value),
+      },
+      {
+        headerName: "Updated",
+        field: "updatedAt",
+        flex: 1.3,
+        minWidth: 130,
+        valueFormatter: (p) => formatDate(p.value),
+      },
+      {
+        headerName: "Actions",
+        field: "actions",
+        cellRenderer: ActionsCellRenderer,
+        flex: 1,
+        minWidth: 120,
+        pinned: "right",
+      },
+    ];
+  }, []);
+
+  const defaultColDef = useMemo<ColDef>(
+    () => ({
+      sortable: true,
+      filter: true,
+      resizable: true,
+      floatingFilter: false,
+    }),
+    []
+  );
+
+  const context = useMemo(
+    () => ({
+      onEdit: handleOpenEdit,
+      onDelete: handleOpenDelete,
+      onView: handleOpenView,
+    }),
+    [handleOpenEdit, handleOpenDelete, handleOpenView]
+  );
+
+  // -------------------- Render --------------------
 
   return (
     <Box sx={{ p: 3, bgcolor: "#fafafa", minHeight: "100vh" }}>
-      <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 600, color: "#1f2937", mb: 1 }}>
-            Project Management
-          </Typography>
-          <Typography variant="body2" sx={{ color: "#6b7280" }}>
-            Manage and track all your projects
-          </Typography>
+      {/* Header */}
+      <Box
+        sx={{
+          mb: 3,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 2,
+        }}
+      >
+        <Typography variant="h4" sx={{ fontWeight: 600, color: "#1f2937" }}>
+          Project Management
+        </Typography>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={handleExportCSV}
+            disabled={filtered.length === 0}
+            sx={{
+              borderColor: "#d1d5db",
+              color: "#6b7280",
+              textTransform: "none",
+              px: 2.5,
+              py: 1,
+              fontWeight: 600,
+              "&:hover": { borderColor: "#9ca3af", bgcolor: alpha("#6b7280", 0.05) },
+              "&:disabled": { borderColor: "#e5e7eb", color: "#d1d5db" },
+            }}
+          >
+            Export CSV
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpenAdd}
+            sx={{
+              bgcolor: "#10b981",
+              color: "white",
+              textTransform: "none",
+              px: 3,
+              py: 1,
+              fontWeight: 600,
+              "&:hover": { bgcolor: "#059669" },
+            }}
+          >
+            Add Project
+          </Button>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenAddModal}
-          sx={{
-            bgcolor: "#10b981",
-            color: "white",
-            textTransform: "none",
-            px: 3,
-            py: 1.5,
-            fontSize: "1rem",
-            fontWeight: 600,
-            "&:hover": { bgcolor: "#059669" },
-          }}
-        >
-          Add Project
-        </Button>
       </Box>
 
-      <Paper elevation={0} sx={{ mb: 2, p: 2, border: "1px solid #e5e7eb" }}>
+      {/* Stats Cards */}
+      <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
+        <Paper
+          elevation={0}
+          sx={{
+            flex: 1,
+            minWidth: 200,
+            p: 2.5,
+            border: "1px solid #e5e7eb",
+            borderLeft: "4px solid #3b82f6",
+            transition: "all 0.2s",
+            "&:hover": { boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)", transform: "translateY(-2px)" },
+          }}
+        >
+          <Typography variant="body2" sx={{ color: "#6b7280", mb: 0.5, fontWeight: 500 }}>
+            Total Projects
+          </Typography>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: "#1f2937" }}>
+            {stats.total}
+          </Typography>
+        </Paper>
+
+        <Paper
+          elevation={0}
+          sx={{
+            flex: 1,
+            minWidth: 200,
+            p: 2.5,
+            border: "1px solid #e5e7eb",
+            borderLeft: "4px solid #10b981",
+            transition: "all 0.2s",
+            "&:hover": { boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)", transform: "translateY(-2px)" },
+          }}
+        >
+          <Typography variant="body2" sx={{ color: "#6b7280", mb: 0.5, fontWeight: 500 }}>
+            Active Projects
+          </Typography>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: "#1f2937" }}>
+            {stats.active}
+          </Typography>
+        </Paper>
+
+        <Paper
+          elevation={0}
+          sx={{
+            flex: 1,
+            minWidth: 200,
+            p: 2.5,
+            border: "1px solid #e5e7eb",
+            borderLeft: "4px solid #2563eb",
+            transition: "all 0.2s",
+            "&:hover": { boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)", transform: "translateY(-2px)" },
+          }}
+        >
+          <Typography variant="body2" sx={{ color: "#6b7280", mb: 0.5, fontWeight: 500 }}>
+            Completed Projects
+          </Typography>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: "#1f2937" }}>
+            {stats.completed}
+          </Typography>
+        </Paper>
+      </Box>
+
+      {/* Search Bar */}
+      <Paper
+        elevation={0}
+        sx={{
+          mb: 3,
+          border: "1px solid #e5e7eb",
+          transition: "all 0.2s",
+          "&:focus-within": { borderColor: "#3b82f6", boxShadow: "0 0 0 3px rgba(59,130,246,0.1)" },
+        }}
+      >
         <TextField
           fullWidth
-          placeholder="Search projects by name, code, or client..."
+          placeholder="Search projects by name, description, or status..."
           value={searchTerm}
-          onChange={handleSearch}
+          onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -220,188 +458,95 @@ const ProjectManagement = () => {
             ),
             endAdornment: !!searchTerm && (
               <InputAdornment position="end">
-                <IconButton size="small" onClick={() => setSearchTerm("")} sx={{ color: "#6b7280" }}>
+                <IconButton
+                  size="small"
+                  onClick={() => setSearchTerm("")}
+                  sx={{ color: "#6b7280", "&:hover": { color: "#ef4444", bgcolor: alpha("#ef4444", 0.1) } }}
+                >
                   <CloseIcon fontSize="small" />
                 </IconButton>
               </InputAdornment>
             ),
           }}
-          sx={{ "& .MuiOutlinedInput-root": { bgcolor: "white" } }}
+          sx={{
+            "& .MuiOutlinedInput-root": {
+              bgcolor: "white",
+              "& fieldset": { border: "none" },
+            },
+          }}
         />
       </Paper>
 
-      <Paper elevation={0} sx={{ border: "1px solid #e5e7eb", overflow: "hidden" }}>
-        {isLoading && (
-          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 4 }}>
-            <CircularProgress />
+      {/* AG Grid */}
+      <Paper elevation={0} sx={{ border: "1px solid #e5e7eb", borderRadius: 2, overflow: "hidden" }}>
+        {isLoading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 8 }}>
+            <CircularProgress sx={{ color: "#3b82f6" }} />
           </Box>
-        )}
-
-        {!isLoading && error && (
+        ) : error ? (
           <Box sx={{ p: 3 }}>
             <Alert severity="error">{error}</Alert>
           </Box>
-        )}
-
-        {!isLoading && !error && projects.length === 0 && (
-          <Box sx={{ textAlign: "center", py: 8, px: 3 }}>
-            <Typography variant="h6" sx={{ color: "#9ca3af", mb: 2 }}>
+        ) : filtered.length === 0 ? (
+          <Box sx={{ textAlign: "center", py: 8 }}>
+            <Typography variant="h6" sx={{ color: "#9ca3af", mb: 1 }}>
               No projects found
             </Typography>
             <Typography variant="body2" sx={{ color: "#d1d5db", mb: 3 }}>
-              {searchTerm ? "Try adjusting your search terms" : "Click 'Add Project' to create your first project"}
+              {debouncedSearch ? "Try adjusting your search terms" : "Click 'Add Project' to create your first project"}
             </Typography>
-            {!searchTerm && (
+            {!debouncedSearch && (
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
-                onClick={handleOpenAddModal}
-                sx={{
-                  bgcolor: "#10b981",
-                  color: "white",
-                  textTransform: "none",
-                  px: 3,
-                  py: 1.5,
-                  "&:hover": { bgcolor: "#059669" },
-                }}
+                onClick={handleOpenAdd}
+                sx={{ bgcolor: "#10b981", "&:hover": { bgcolor: "#059669" } }}
               >
                 Add Project
               </Button>
             )}
           </Box>
-        )}
-
-        {!isLoading && !error && projects.length > 0 && (
-          <>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ bgcolor: "#f9fafb" }}>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>S.No</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Project Name</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Added By</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Status</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Created Date</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Updated Date</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 600, color: "#374151" }}>
-                      Actions
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {projects.map((project, index) => (
-                    <TableRow
-                      key={project._id}
-                      sx={{
-                        "&:hover": { bgcolor: alpha("#3b82f6", 0.05) },
-                        transition: "background-color 0.2s",
-                      }}
-                    >
-                      <TableCell>{page * rowsPerPage + index + 1}</TableCell>
-                      <TableCell>
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: "#1f2937" }}>
-                            {project.name}
-                          </Typography>
-                          {project.description && (
-                            <Typography variant="caption" sx={{ color: "#6b7280", display: "block", mt: 0.5 }}>
-                              {project.description.length > 50
-                                ? `${project.description.substring(0, 50)}...`
-                                : project.description}
-                            </Typography>
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell>{project.addedBy?.name || "-"}</TableCell>
-                      <TableCell sx={{ color: "#6b7280" }}>
-                        {(() => {
-                          const s = project.status ?? 1;
-                          return s === 0 ? "Inactive" : s === 1 ? "Active" : s === 2 ? "Completed" : s === 3 ? "Cancelled" : "-";
-                        })()}
-                      </TableCell>
-                      <TableCell sx={{ color: "#6b7280" }}>{formatDate(project.createdAt)}</TableCell>
-                      <TableCell sx={{ color: "#6b7280" }}>{formatDate(project.updatedAt)}</TableCell>
-                      <TableCell align="center">
-                        <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
-                          <Tooltip title="View Project">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleOpenViewModal(project)}
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": { color: "#3b82f6", bgcolor: alpha("#3b82f6", 0.1) },
-                              }}
-                            >
-                              <VisibilityIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Edit Project">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleOpenEditModal(project)}
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": { color: "#3b82f6", bgcolor: alpha("#3b82f6", 0.1) },
-                              }}
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete Project">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleOpenDeleteModal(project)}
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": { color: "#ef4444", bgcolor: alpha("#ef4444", 0.1) },
-                              }}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25, 50]}
-              component="div"
-              count={total}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              sx={{ borderTop: "1px solid #e5e7eb" }}
+        ) : (
+          <div className="ag-theme-alpine" style={{ height: 600, width: "100%" }}>
+            <AgGridReact
+              ref={gridRef}
+              rowData={filtered}
+              columnDefs={columnDefs}
+              defaultColDef={defaultColDef}
+              pagination={true}
+              paginationPageSize={10}
+              onGridReady={onGridReady}
+              animateRows={true}
+              rowHeight={60}
+              headerHeight={48}
+              context={context}
+              suppressCellFocus={true}
+              enableCellTextSelection={true}
             />
-          </>
+          </div>
         )}
       </Paper>
 
+      {/* Modals */}
       <ProjectFormModal
         isOpen={openFormModal}
-        isEdit={isEdit}
-        initialValues={getProjectInitialValues()}
+        isEdit={!!editingProject}
+        initialValues={formInitialValues} // ✅ always ProjectFormData
         isLoading={isLoading}
-        onClose={handleCloseFormModal}
-        onSubmit={async (values: ProjectFormData) => {
+        onClose={handleCloseModals}
+        onSubmit={async (values) => {
           try {
-            if (isEdit && selectedProject) {
-              await dispatch(updateProject({ id: selectedProject._id, data: values })).unwrap();
+            if (editingProject) {
+              await dispatch(updateProject({ id: editingProject._id, data: values })).unwrap();
               toast.success("Project updated successfully!");
-              await fetchProjectsData();
             } else {
               await dispatch(createProject(values)).unwrap();
               toast.success("Project created successfully!");
-              setPage(0);
-              await fetchProjectsData({ page: 0 });
             }
-            handleCloseFormModal();
+            await dispatch(fetchProjects({ sortBy: "createdAt", sortOrder: "desc" })).unwrap();
+            handleCloseModals();
           } catch {
-            toast.error(isEdit ? "Failed to update project" : "Failed to create project");
+            toast.error(editingProject ? "Failed to update project" : "Failed to create project");
           }
         }}
       />
@@ -410,15 +555,11 @@ const ProjectManagement = () => {
         isOpen={openDeleteModal}
         projectName={selectedProject?.name || ""}
         isLoading={isLoading}
-        onCancel={handleCloseDeleteModal}
+        onCancel={handleCloseModals}
         onConfirm={handleDelete}
       />
 
-      <ProjectViewModal
-        isOpen={openViewModal}
-        project={selectedProject}
-        onClose={handleCloseViewModal}
-      />
+      <ProjectViewModal isOpen={openViewModal} project={selectedProject} onClose={handleCloseModals} />
     </Box>
   );
 };
