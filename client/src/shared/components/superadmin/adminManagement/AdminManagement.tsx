@@ -1,17 +1,10 @@
 // src/features/admins/pages/AdminManagement.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   Box,
   Button,
   Typography,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
   IconButton,
   TextField,
   InputAdornment,
@@ -28,8 +21,13 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
   Close as CloseIcon,
-  Visibility as VisibilityIcon,
+  Visibility as ViewIcon,
+  Download as DownloadIcon,
 } from "@mui/icons-material";
+
+import { AgGridReact } from "ag-grid-react";
+import type { ColDef, GridApi, GridReadyEvent, ICellRendererParams } from "ag-grid-community";
+
 import { useAppDispatch, useAppSelector } from "../../../../store";
 import {
   fetchAdmins,
@@ -37,10 +35,8 @@ import {
   updateAdmin,
   deleteAdmin,
 } from "../../../../store/actions/adminActions";
-import type {
-  Admin,
-  AdminFormData,
-} from "../../../../utils/interfaces/adminInterface";
+
+import type { Admin, AdminFormData } from "../../../../utils/interfaces/adminInterface";
 import { ROLES, ROLE_NAMES } from "../../../../utils/constants/roles";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -51,13 +47,89 @@ import {
   AdminViewModal,
 } from "./AdminManagementModals";
 
+// ---------- debounce ----------
+function useDebounced<T>(value: T, delay = 400) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
+
+// ---------- helpers ----------
+const getRoleChipColor = (role: number) =>
+  role === ROLES.SUPER_ADMIN ? "error" : role === ROLES.ADMIN ? "warning" : "info";
+
+const formatPhone = (cc?: string, ph?: string) => [cc, ph].filter(Boolean).join(" ");
+
+const formatDate = (d?: string) =>
+  d
+    ? new Date(d).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "-";
+
+// ---------- cell renderers ----------
+const RoleCellRenderer = (p: ICellRendererParams) => {
+  const role = (p.value as number) ?? ROLES.MANAGER;
+  return <Chip label={ROLE_NAMES[role]} color={getRoleChipColor(role)} size="small" />;
+};
+
+const StatusCellRenderer = (p: ICellRendererParams) => {
+  const status = Number(p.value ?? 0);
+  return status === 1 ? (
+    <Chip label="Active" color="success" size="small" />
+  ) : (
+    <Chip label="Inactive" size="small" />
+  );
+};
+
+const ActionsCellRenderer = (p: ICellRendererParams) => {
+  const { onView, onEdit, onDelete } = p.context;
+  const admin = p.data as Admin;
+  return (
+    <Box sx={{ display: "flex", gap: 0.5, justifyContent: "left", alignItems: "center" }}>
+      <Tooltip title="View">
+        <IconButton
+          size="small"
+          onClick={() => onView(admin)}
+          sx={{ color: "#6b7280", "&:hover": { color: "#10b981", bgcolor: alpha("#10b981", 0.1) } }}
+        >
+          <ViewIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Edit">
+        <IconButton
+          size="small"
+          onClick={() => onEdit(admin)}
+          sx={{ color: "#6b7280", "&:hover": { color: "#3b82f6", bgcolor: alpha("#3b82f6", 0.1) } }}
+        >
+          <EditIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Delete">
+        <IconButton
+          size="small"
+          onClick={() => onDelete(admin)}
+          sx={{ color: "#6b7280", "&:hover": { color: "#ef4444", bgcolor: alpha("#ef4444", 0.1) } }}
+        >
+          <DeleteIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+    </Box>
+  );
+};
+
+// ---------- component ----------
 const AdminManagement = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { admins, total, isLoading, error } = useAppSelector(
-    (s) => s.adminManagement
-  );
-   const { user } = useAppSelector((s) => s.auth);
+
+  const { admins, isLoading, error } = useAppSelector((s) => s.adminManagement);
+  const { user } = useAppSelector((s) => s.auth);
 
   // Super Admin gate
   useEffect(() => {
@@ -67,64 +139,77 @@ const AdminManagement = () => {
     }
   }, [user, navigate]);
 
-  // filters & paging
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  // search & filters
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debouncedSearch = useDebounced(searchTerm.trim().toLowerCase(), 400);
   const [roleFilter, setRoleFilter] = useState<0 | 1 | 2 | "">("");
   const [statusFilter, setStatusFilter] = useState<0 | 1 | "">("");
 
-  // modals & targets
+  // grid
+  const gridRef = useRef<AgGridReact>(null);
+  const [gridApi, setGridApi] = useState<GridApi | null>(null);
+
+  // modals
   const [formOpen, setFormOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+
   const [editing, setEditing] = useState<Admin | null>(null);
   const [viewing, setViewing] = useState<Admin | null>(null);
   const [deleting, setDeleting] = useState<Admin | null>(null);
-  const [formValues, setFormValues] =
-    useState<AdminFormData>(adminInitialValues);
+  const [formValues, setFormValues] = useState<AdminFormData>(adminInitialValues);
 
-  // debounce search
+  // fetch once (sorted). We’re doing client-side filter/pagination in AG Grid.
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 500);
-    return () => clearTimeout(t);
-  }, [searchTerm]);
+    dispatch(fetchAdmins({ sortBy: "createdAt", sortOrder: "desc" }))
+      .unwrap()
+      .catch(() => toast.error("Failed to fetch admins"));
+  }, [dispatch]);
 
-  // fetch list
-  const refresh = () =>
-    dispatch(
-      fetchAdmins({
-        page: page + 1,
-        limit: rowsPerPage,
-        search: debouncedSearch,
-        role: roleFilter === "" ? undefined : roleFilter,
-        status: statusFilter === "" ? undefined : statusFilter,
-        sortBy: "createdAt",
-        sortOrder: "desc",
-      })
-    );
-
-  useEffect(() => {
-    refresh();
-  }, [page, rowsPerPage, debouncedSearch, roleFilter, statusFilter]);
-
+  // toast API errors
   useEffect(() => {
     if (error) toast.error(error);
   }, [error]);
 
-   const handleChangePage = (_: unknown, newPage: number) => setPage(newPage);
-  const handleChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(e.target.value, 10));
-    setPage(0);
-  };
+  // derived + filtered list
+  const filteredAdmins = useMemo(() => {
+    let data = admins;
 
-   const openCreate = () => {
+    if (roleFilter !== "") {
+      data = data.filter((a) => Number(a.role) === Number(roleFilter));
+    }
+    if (statusFilter !== "") {
+      data = data.filter((a) => Number(a.status) === Number(statusFilter));
+    }
+    if (debouncedSearch) {
+      const q = debouncedSearch;
+      data = data.filter((a) =>
+        [a.name, a.email, a.department, a.designation, a.phoneNumber, a.countryCode]
+          .map((v) => (v || "").toString().toLowerCase())
+          .some((v) => v.includes(q))
+      );
+    }
+    return data;
+  }, [admins, roleFilter, statusFilter, debouncedSearch]);
+
+  // stats
+  const stats = useMemo(() => {
+    const total = admins.length;
+    const active = admins.filter((a) => Number(a.status) === 1).length;
+    const superAdmins = admins.filter((a) => a.role === ROLES.SUPER_ADMIN).length;
+    const adminsCount = admins.filter((a) => a.role === ROLES.ADMIN).length;
+    const managers = admins.filter((a) => a.role === ROLES.MANAGER).length;
+    return { total, active, superAdmins, adminsCount, managers };
+  }, [admins]);
+
+  // handlers
+  const openCreate = useCallback(() => {
     setEditing(null);
     setFormValues(adminInitialValues);
     setFormOpen(true);
-  };
-  const openEdit = (a: Admin) => {
+  }, []);
+
+  const openEdit = useCallback((a: Admin) => {
     setEditing(a);
     setFormValues({
       role: a.role,
@@ -134,76 +219,196 @@ const AdminManagement = () => {
       countryCode: a.countryCode,
       designation: a.designation,
       department: a.department,
-       password: "",  
+      password: "", // keep empty when editing
       dateOfBirth: a.dateOfBirth || "",
     });
     setFormOpen(true);
-  };
-  const closeForm = () => setFormOpen(false);
+  }, []);
 
-  const openView = (a: Admin) => {
+  const closeForm = useCallback(() => setFormOpen(false), []);
+
+  const openView = useCallback((a: Admin) => {
     setViewing(a);
     setViewOpen(true);
-  };
-  const closeView = () => {
+  }, []);
+  const closeView = useCallback(() => {
     setViewing(null);
     setViewOpen(false);
-  };
+  }, []);
 
-  const openDelete = (a: Admin) => {
+  const openDelete = useCallback((a: Admin) => {
     setDeleting(a);
     setDeleteOpen(true);
-  };
-  const closeDelete = () => {
+  }, []);
+  const closeDelete = useCallback(() => {
     setDeleting(null);
     setDeleteOpen(false);
-  };
+  }, []);
 
-  // submit handlers
-  const handleFormSubmit = async (vals: AdminFormData) => {
-    try {
-      if (editing) {
-        await dispatch(updateAdmin({ id: editing._id, data: vals })).unwrap();
-        toast.success("Admin updated successfully");
-      } else {
-        await dispatch(createAdmin(vals)).unwrap();
-        toast.success("Admin created successfully");
+  const handleFormSubmit = useCallback(
+    async (vals: AdminFormData) => {
+      try {
+        if (editing) {
+          await dispatch(updateAdmin({ id: editing._id, data: vals })).unwrap();
+          toast.success("Admin updated successfully");
+        } else {
+          await dispatch(createAdmin(vals)).unwrap();
+          toast.success("Admin created successfully");
+        }
+        closeForm();
+        await dispatch(fetchAdmins({ sortBy: "createdAt", sortOrder: "desc" })).unwrap();
+      } catch (e: any) {
+        toast.error(e || (editing ? "Failed to update admin" : "Failed to create admin"));
       }
-      closeForm();
-      refresh();
-    } catch (e: any) {
-      toast.error(
-        e || (editing ? "Failed to update admin" : "Failed to create admin")
-      );
-    }
-  };
+    },
+    [dispatch, editing, closeForm]
+  );
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = useCallback(async () => {
     if (!deleting) return;
     try {
       await dispatch(deleteAdmin(deleting._id)).unwrap();
       toast.success("Admin deleted successfully");
       closeDelete();
-      refresh();
+      await dispatch(fetchAdmins({ sortBy: "createdAt", sortOrder: "desc" })).unwrap();
     } catch (e: any) {
       toast.error(e || "Delete failed");
     }
-  };
+  }, [dispatch, deleting, closeDelete]);
 
-  // helpers
-  const getRoleChipColor = (role: number) =>
-    role === ROLES.SUPER_ADMIN
-      ? "error"
-      : role === ROLES.ADMIN
-        ? "warning"
-        : "info";
+  const onGridReady = useCallback((params: GridReadyEvent) => {
+    setGridApi(params.api);
+  }, []);
 
-  const getStatusChip = (status: number) =>
-    status === 1 ? (
-      <Chip label="Active" color="success" size="small" />
-    ) : (
-      <Chip label="Inactive" size="small" />
-    );
+  const handleExportCSV = useCallback(() => {
+    if (gridApi) {
+      gridApi.exportDataAsCsv({
+        fileName: `admins_${new Date().toISOString().split("T")[0]}.csv`,
+      });
+      toast.success("Admins exported successfully!");
+    }
+  }, [gridApi]);
+
+  // grid defs
+  const columnDefs = useMemo<ColDef[]>(
+    () => [
+      {
+        headerName: "Name",
+        field: "name",
+        flex: 1.5,
+        minWidth: 160,
+        sortable: true,
+        filter: true,
+        cellRenderer: (p: ICellRendererParams) => {
+          const a = p.data as Admin;
+          return (
+            <Typography variant="body2" sx={{ fontWeight: 600, color: "#1f2937" }}>
+              {a.name}
+            </Typography>
+          );
+        },
+      },
+      {
+        headerName: "Email",
+        field: "email",
+        flex: 1.8,
+        minWidth: 200,
+        sortable: true,
+        filter: true,
+        valueGetter: (p) => (p.data as Admin).email || "-",
+      },
+      {
+        headerName: "Role",
+        field: "role",
+        flex: 1,
+        minWidth: 120,
+        cellRenderer: RoleCellRenderer,
+        sortable: true,
+      },
+      {
+        headerName: "Designation",
+        field: "designation",
+        flex: 1.2,
+        minWidth: 140,
+        sortable: true,
+        valueGetter: (p) => (p.data as Admin).designation || "-",
+      },
+      {
+        headerName: "Department",
+        field: "department",
+        flex: 1.2,
+        minWidth: 140,
+        sortable: true,
+        valueGetter: (p) => (p.data as Admin).department || "-",
+      },
+      {
+        headerName: "Phone",
+        field: "phoneNumber",
+        flex: 1.4,
+        minWidth: 150,
+        sortable: true,
+        valueGetter: (p) => {
+          const a = p.data as Admin;
+          return formatPhone(a.countryCode, a.phoneNumber) || "-";
+        },
+      },
+      {
+        headerName: "Status",
+        field: "status",
+        flex: 1,
+        minWidth: 110,
+        cellRenderer: StatusCellRenderer,
+        sortable: true,
+      },
+      {
+        headerName: "Created",
+        field: "createdAt",
+        flex: 1.2,
+        minWidth: 130,
+        sortable: true,
+        valueFormatter: (p) => formatDate(p.value),
+      },
+      {
+        headerName: "Updated",
+        field: "updatedAt",
+        flex: 1.2,
+        minWidth: 130,
+        sortable: true,
+        valueFormatter: (p) => formatDate(p.value),
+      },
+      {
+        headerName: "Actions",
+        field: "actions",
+        cellRenderer: ActionsCellRenderer,
+        flex: 1,
+        minWidth: 130,
+        pinned: "right",
+      },
+    ],
+    []
+  );
+
+  const defaultColDef = useMemo<ColDef>(
+    () => ({
+      sortable: true,
+      filter: true,
+      resizable: true,
+      floatingFilter: false,
+    }),
+    []
+  );
+
+  const context = useMemo(
+    () => ({
+      onView: openView,
+      onEdit: openEdit,
+      onDelete: openDelete,
+    }),
+    [openView, openEdit, openDelete]
+  );
+
+  // UI filtered dataset is `filteredAdmins`; feed that to the grid
+  const gridData = filteredAdmins;
 
   return (
     <Box sx={{ p: 3, bgcolor: "#fafafa", minHeight: "100vh" }}>
@@ -214,317 +419,218 @@ const AdminManagement = () => {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          flexWrap: "wrap",
+          gap: 2,
         }}
       >
-        <Box>
-          <Typography
-            variant="h4"
-            sx={{ fontWeight: 600, color: "#1f2937", mb: 1 }}
+        <Typography variant="h4" sx={{ fontWeight: 600, color: "#1f2937" }}>
+          Admin Management
+        </Typography>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={handleExportCSV}
+            disabled={gridData.length === 0}
+            sx={{
+              borderColor: "#d1d5db",
+              color: "#6b7280",
+              textTransform: "none",
+              px: 2.5,
+              py: 1,
+              fontWeight: 600,
+              "&:hover": { borderColor: "#9ca3af", bgcolor: alpha("#6b7280", 0.05) },
+              "&:disabled": { borderColor: "#e5e7eb", color: "#d1d5db" },
+            }}
           >
-            Admin Management
-          </Typography>
-          <Typography variant="body2" sx={{ color: "#6b7280" }}>
-            Manage administrators, managers, and permissions
-          </Typography>
+            Export CSV
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={openCreate}
+            sx={{
+              bgcolor: "#10b981",
+              color: "white",
+              textTransform: "none",
+              px: 3,
+              py: 1,
+              fontWeight: 600,
+              "&:hover": { bgcolor: "#059669" },
+            }}
+          >
+            Add Admin
+          </Button>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={openCreate}
+      </Box>
+
+      {/* Stats */}
+      <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
+        <Paper
+          elevation={0}
           sx={{
-            bgcolor: "#10b981",
-            color: "white",
-            textTransform: "none",
-            px: 3,
-            py: 1.5,
-            fontSize: "1rem",
-            fontWeight: 600,
-            "&:hover": { bgcolor: "#059669" },
+            flex: 1,
+            minWidth: 200,
+            p: 2.5,
+            border: "1px solid #e5e7eb",
+            borderLeft: "4px solid #3b82f6",
+            "&:hover": { boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)", transform: "translateY(-2px)" },
           }}
         >
-          Add Admin
-        </Button>
+          <Typography variant="body2" sx={{ color: "#6b7280", mb: 0.5, fontWeight: 500 }}>
+            Total Admins
+          </Typography>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: "#1f2937" }}>
+            {stats.total}
+          </Typography>
+        </Paper>
+        <Paper
+          elevation={0}
+          sx={{
+            flex: 1,
+            minWidth: 200,
+            p: 2.5,
+            border: "1px solid #e5e7eb",
+            borderLeft: "4px solid #10b981",
+            "&:hover": { boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)", transform: "translateY(-2px)" },
+          }}
+        >
+          <Typography variant="body2" sx={{ color: "#6b7280", mb: 0.5, fontWeight: 500 }}>
+            Active Admins
+          </Typography>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: "#1f2937" }}>
+            {stats.active}
+          </Typography>
+        </Paper>
+        <Paper
+          elevation={0}
+          sx={{
+            flex: 1,
+            minWidth: 200,
+            p: 2.5,
+            border: "1px solid #e5e7eb",
+            borderLeft: "4px solid #ef4444",
+            "&:hover": { boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)", transform: "translateY(-2px)" },
+          }}
+        >
+          <Typography variant="body2" sx={{ color: "#6b7280", mb: 0.5, fontWeight: 500 }}>
+            Super Admins / Admins / Managers
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: "#1f2937" }}>
+            {stats.superAdmins} / {stats.adminsCount} / {stats.managers}
+          </Typography>
+        </Paper>
       </Box>
 
       {/* Search + Filters */}
-      <Paper elevation={0} sx={{ mb: 2, p: 2, border: "1px solid #e5e7eb" }}>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <Paper elevation={0} sx={{ mb: 3, border: "1px solid #e5e7eb", "&:focus-within": { borderColor: "#3b82f6", boxShadow: "0 0 0 3px rgba(59,130,246,0.1)" } }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 16, p: 2 }}>
           <TextField
             fullWidth
-            placeholder="Search by name or email..."
+            placeholder="Search by name, email, department, designation, or phone..."
             value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setPage(0);
-            }}
+            onChange={(e) => setSearchTerm(e.target.value)}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
                   <SearchIcon sx={{ color: "#6b7280" }} />
                 </InputAdornment>
               ),
-              endAdornment: searchTerm && (
+              endAdornment: !!searchTerm && (
                 <InputAdornment position="end">
                   <IconButton
                     size="small"
                     onClick={() => setSearchTerm("")}
-                    sx={{ color: "#6b7280" }}
+                    sx={{ color: "#6b7280", "&:hover": { color: "#ef4444", bgcolor: alpha("#ef4444", 0.1) } }}
                   >
                     <CloseIcon fontSize="small" />
                   </IconButton>
                 </InputAdornment>
               ),
             }}
-            sx={{ "& .MuiOutlinedInput-root": { bgcolor: "white" } }}
+            sx={{ "& .MuiOutlinedInput-root": { bgcolor: "white", "& fieldset": { border: "none" } } }}
           />
 
-          <Box sx={{ display: "flex", gap: 2 }}>
-            <TextField
-              select
-              label="Role Filter"
-              value={roleFilter}
-              onChange={(e) => {
-                setRoleFilter(e.target.value as 0 | 1 | 2 | "");
-                setPage(0);
-              }}
-              sx={{ minWidth: 160 }}
-            >
-              <MenuItem value="">All Roles</MenuItem>
-              <MenuItem value={ROLES.SUPER_ADMIN}>
-                {ROLE_NAMES[ROLES.SUPER_ADMIN]}
-              </MenuItem>
-              <MenuItem value={ROLES.ADMIN}>{ROLE_NAMES[ROLES.ADMIN]}</MenuItem>
-              <MenuItem value={ROLES.MANAGER}>
-                {ROLE_NAMES[ROLES.MANAGER]}
-              </MenuItem>
-            </TextField>
+          <TextField
+            select
+            label="Role"
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value as 0 | 1 | 2 | "")}
+            sx={{ minWidth: 160, bgcolor: "white" }}
+            size="small"
+          >
+            <MenuItem value="">All Roles</MenuItem>
+            <MenuItem value={ROLES.SUPER_ADMIN}>{ROLE_NAMES[ROLES.SUPER_ADMIN]}</MenuItem>
+            <MenuItem value={ROLES.ADMIN}>{ROLE_NAMES[ROLES.ADMIN]}</MenuItem>
+            <MenuItem value={ROLES.MANAGER}>{ROLE_NAMES[ROLES.MANAGER]}</MenuItem>
+          </TextField>
 
-            <TextField
-              select
-              label="Status Filter"
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value as 0 | 1 | "");
-                setPage(0);
-              }}
-              sx={{ minWidth: 160 }}
-            >
-              <MenuItem value="">All Status</MenuItem>
-              <MenuItem value={1}>Active</MenuItem>
-              <MenuItem value={0}>Inactive</MenuItem>
-            </TextField>
-          </Box>
+          <TextField
+            select
+            label="Status"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as 0 | 1 | "")}
+            sx={{ minWidth: 160, bgcolor: "white" }}
+            size="small"
+          >
+            <MenuItem value="">All Status</MenuItem>
+            <MenuItem value={1}>Active</MenuItem>
+            <MenuItem value={0}>Inactive</MenuItem>
+          </TextField>
         </Box>
       </Paper>
 
-      {/* Table */}
-      <Paper
-        elevation={0}
-        sx={{ border: "1px solid #e5e7eb", overflow: "hidden" }}
-      >
-        {isLoading && (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              py: 4,
-            }}
-          >
-            <CircularProgress />
+      {/* Grid */}
+      <Paper elevation={0} sx={{ border: "1px solid #e5e7eb", borderRadius: 2, overflow: "hidden" }}>
+        {isLoading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 8 }}>
+            <CircularProgress sx={{ color: "#3b82f6" }} />
           </Box>
-        )}
-
-        {!isLoading && error && (
+        ) : error ? (
           <Box sx={{ p: 3 }}>
             <Alert severity="error">{error}</Alert>
           </Box>
-        )}
-
-        {!isLoading && !error && admins.length === 0 && (
-          <Box sx={{ textAlign: "center", py: 8, px: 3 }}>
-            <Typography variant="h6" sx={{ color: "#9ca3af", mb: 2 }}>
+        ) : gridData.length === 0 ? (
+          <Box sx={{ textAlign: "center", py: 8 }}>
+            <Typography variant="h6" sx={{ color: "#9ca3af", mb: 1 }}>
               No admins found
             </Typography>
             <Typography variant="body2" sx={{ color: "#d1d5db", mb: 3 }}>
-              {searchTerm
-                ? "Try adjusting your search terms"
-                : "Click 'Add Admin' to create your first admin"}
+              {debouncedSearch ? "Try adjusting your search terms" : "Click 'Add Admin' to create your first admin"}
             </Typography>
-            {!searchTerm && (
+            {!debouncedSearch && (
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
                 onClick={openCreate}
-                sx={{
-                  bgcolor: "#10b981",
-                  color: "white",
-                  textTransform: "none",
-                  px: 3,
-                  py: 1.5,
-                  "&:hover": { bgcolor: "#059669" },
-                }}
+                sx={{ bgcolor: "#10b981", "&:hover": { bgcolor: "#059669" } }}
               >
                 Add Admin
               </Button>
             )}
           </Box>
-        )}
-
-        {!isLoading && !error && admins.length > 0 && (
-          <>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ bgcolor: "#f9fafb" }}>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
-                      Name
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
-                      Email
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
-                      Role
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
-                      Designation
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
-                      Department
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
-                      Phone
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
-                      Status
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{ fontWeight: 600, color: "#374151" }}
-                    >
-                      Actions
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-
-                <TableBody>
-                  {admins.map((admin) => (
-                    <TableRow
-                      key={admin._id}
-                      sx={{
-                        "&:hover": { bgcolor: alpha("#3b82f6", 0.05) },
-                        transition: "background-color 0.2s",
-                      }}
-                    >
-                      <TableCell>
-                        <Typography
-                          variant="body2"
-                          sx={{ fontWeight: 600, color: "#1f2937" }}
-                        >
-                          {admin.name}
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ color: "#6b7280" }}>
-                        {admin.email}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={ROLE_NAMES[admin.role]}
-                          color={getRoleChipColor(admin.role)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell sx={{ color: "#6b7280" }}>
-                        {admin.designation}
-                      </TableCell>
-                      <TableCell sx={{ color: "#6b7280" }}>
-                        {admin.department}
-                      </TableCell>
-                      <TableCell sx={{ color: "#6b7280" }}>
-                        {admin.countryCode} {admin.phoneNumber}
-                      </TableCell>
-                      <TableCell>
-                        {admin.status === 1 ? (
-                          <Chip label="Active" color="success" size="small" />
-                        ) : (
-                          <Chip label="Inactive" size="small" />
-                        )}
-                      </TableCell>
-                      <TableCell align="center">
-                        <Box
-                          sx={{
-                            display: "flex",
-                            gap: 1,
-                            justifyContent: "center",
-                          }}
-                        >
-                          <Tooltip title="View">
-                            <IconButton
-                              size="small"
-                              onClick={() => openView(admin)}
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": {
-                                  color: "#111827",
-                                  bgcolor: alpha("#111827", 0.06),
-                                },
-                              }}
-                            >
-                              <VisibilityIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Edit">
-                            <IconButton
-                              size="small"
-                              onClick={() => openEdit(admin)}
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": {
-                                  color: "#3b82f6",
-                                  bgcolor: alpha("#3b82f6", 0.1),
-                                },
-                              }}
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete">
-                            <IconButton
-                              size="small"
-                              onClick={() => openDelete(admin)}
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": {
-                                  color: "#ef4444",
-                                  bgcolor: alpha("#ef4444", 0.1),
-                                },
-                              }}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25, 50]}
-              component="div"
-              count={total}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              sx={{ borderTop: "1px solid #e5e7eb" }}
+        ) : (
+          <div className="ag-theme-alpine" style={{ height: 600, width: "100%" }}>
+            <AgGridReact
+              ref={gridRef}
+              rowData={gridData}
+              columnDefs={columnDefs}
+              defaultColDef={defaultColDef}
+              pagination={true}
+              paginationPageSize={10}
+              onGridReady={onGridReady}
+              animateRows={true}
+              rowHeight={60}
+              headerHeight={48}
+              context={context}
+              suppressCellFocus={true}
+              enableCellTextSelection={true}
             />
-          </>
+          </div>
         )}
       </Paper>
 
+      {/* Modals */}
       <AdminFormModal
         open={formOpen}
         isEdit={!!editing}
@@ -541,9 +647,7 @@ const AdminManagement = () => {
         isLoading={isLoading}
         onCancel={closeDelete}
         onConfirm={handleConfirmDelete}
-        highlight={
-          deleting ? `${deleting.name} (${deleting.email})` : undefined
-        }
+        highlight={deleting ? `${deleting.name} (${deleting.email})` : undefined}
       />
     </Box>
   );

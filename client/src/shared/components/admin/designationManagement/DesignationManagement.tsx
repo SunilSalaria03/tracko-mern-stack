@@ -1,16 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   Box,
   Button,
   Typography,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
   IconButton,
   TextField,
   InputAdornment,
@@ -25,8 +18,12 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
   Close as CloseIcon,
-  Visibility as VisibilityIcon,
+  Visibility as ViewIcon,
+  Download as DownloadIcon,
 } from "@mui/icons-material";
+import { AgGridReact } from "ag-grid-react";
+import type { ColDef, GridApi, GridReadyEvent, ICellRendererParams } from "ag-grid-community";
+
 import { useAppDispatch, useAppSelector } from "../../../../store";
 import {
   fetchDesignations,
@@ -35,11 +32,13 @@ import {
   deleteDesignation,
 } from "../../../../store/actions/designationActions";
 import { fetchDepartments } from "../../../../store/actions/departmentActions";
+
 import type {
   Designation,
   DesignationFormData,
 } from "../../../../utils/interfaces/designationInterface";
 import type { Department } from "../../../../utils/interfaces/departmentInterface";
+
 import { toast } from "react-toastify";
 import {
   DesignationFormModal,
@@ -47,7 +46,8 @@ import {
   DesignationDeleteModal,
 } from "./DesignationManagementModals";
 
-function useDebounced<T>(value: T, delay = 500) {
+// -------------------- Debounce Hook --------------------
+function useDebounced<T>(value: T, delay = 400) {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
     const t = setTimeout(() => setDebounced(value), delay);
@@ -56,175 +56,316 @@ function useDebounced<T>(value: T, delay = 500) {
   return debounced;
 }
 
+// -------------------- Constants & Helpers --------------------
 const INITIAL_FORM: DesignationFormData = {
   departmentId: "",
   name: "",
   description: "",
 };
 
+const formatDate = (d?: string) =>
+  d
+    ? new Date(d).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "-";
+
+// -------------------- Cell Renderers --------------------
+const ActionsCellRenderer = (props: ICellRendererParams) => {
+  const { onEdit, onDelete, onView, getDeptName } = props.context;
+  const item = props.data as Designation;
+
+  return (
+    <Box sx={{ display: "flex", gap: 0.5 }}>
+      <Tooltip title="View">
+        <IconButton
+          size="small"
+          onClick={() => onView(item, getDeptName(item.departmentId))}
+          sx={{ color: "#6b7280", "&:hover": { color: "#10b981", bgcolor: alpha("#10b981", 0.1) } }}
+        >
+          <ViewIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Edit">
+        <IconButton
+          size="small"
+          onClick={() => onEdit(item)}
+          sx={{ color: "#6b7280", "&:hover": { color: "#3b82f6", bgcolor: alpha("#3b82f6", 0.1) } }}
+        >
+          <EditIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Delete">
+        <IconButton
+          size="small"
+          onClick={() => onDelete(item)}
+          sx={{ color: "#6b7280", "&:hover": { color: "#ef4444", bgcolor: alpha("#ef4444", 0.1) } }}
+        >
+          <DeleteIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+    </Box>
+  );
+};
+
+// -------------------- Main Component --------------------
 export default function DesignationManagement() {
   const dispatch = useAppDispatch();
 
-  const { designations, total, isLoading, error } = useAppSelector(
-    (s) => s.designationManagement
-  );
-  const { departments } = useAppSelector(
-    (s) => s.departmentManagement || { departments: [] }
-  );
+  const { designations, isLoading, error } = useAppSelector((s) => s.designationManagement);
+  const { departments } = useAppSelector((s) => s.departmentManagement || { departments: [] });
 
-   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  // search
   const [searchTerm, setSearchTerm] = useState("");
-  const debouncedSearch = useDebounced(searchTerm, 500);
+  const debouncedSearch = useDebounced(searchTerm.trim().toLowerCase(), 400);
 
-   const [formOpen, setFormOpen] = useState(false);
+  // modals & selection
+  const [formOpen, setFormOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-   const [editing, setEditing] = useState<Designation | null>(null);
+  const [editing, setEditing] = useState<Designation | null>(null);
   const [viewing, setViewing] = useState<Designation | null>(null);
   const [deleting, setDeleting] = useState<Designation | null>(null);
 
-  const [formValues, setFormValues] =
-    useState<DesignationFormData>(INITIAL_FORM);
-   useEffect(() => {
-    dispatch(
-      fetchDesignations({
-        page: page + 1,
-        limit: rowsPerPage,
-        search: debouncedSearch.trim(),
-        sortBy: "createdAt",
-        sortOrder: "desc",
-      })
-    );
-  }, [dispatch, page, rowsPerPage, debouncedSearch]);
+  // grid
+  const [gridApi, setGridApi] = useState<GridApi | null>(null);
+  const gridRef = useRef<AgGridReact>(null);
+
+  // fetch (client-side grid): designations + departments
+  useEffect(() => {
+    dispatch(fetchDesignations({ sortBy: "createdAt", sortOrder: "desc" }))
+      .unwrap()
+      .catch(() => toast.error("Failed to fetch designations"));
+  }, [dispatch]);
 
   useEffect(() => {
     if (!departments || departments.length === 0) {
-      dispatch(
-        fetchDepartments({
-          page: 1,
-          limit: 100,
-          sortBy: "name",
-          sortOrder: "asc",
-        }) as any
-      );
+      dispatch(fetchDepartments({ sortBy: "name", sortOrder: "asc" }) as any).catch(() => {
+        /* no-op */
+      });
     }
   }, [dispatch]);
 
-   useEffect(() => {
+  // error toast
+  useEffect(() => {
     if (error) toast.error(error);
   }, [error]);
 
-  const handleChangePage = (_: unknown, newPage: number) => setPage(newPage);
-  const handleChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(e.target.value, 10));
-    setPage(0);
-  };
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setPage(0);
-  };
+  // stats (no status for designations, so show other helpful counts)
+  const stats = useMemo(() => {
+    const total = designations.length;
+    const uniqueDeptCount = new Set(designations.map((d) => d.departmentId).filter(Boolean)).size;
+    const recentCount = designations.filter((d) => {
+      if (!d.createdAt) return false;
+      const dt = new Date(d.createdAt);
+      const now = new Date();
+      const diff = (now.getTime() - dt.getTime()) / (1000 * 60 * 60 * 24);
+      return diff <= 30; // last 30 days
+    }).length;
+    return { total, uniqueDeptCount, recentCount };
+  }, [designations]);
 
-  const formatDate = (d?: string) =>
-    d
-      ? new Date(d).toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        })
-      : "-";
+  // department lookup
+  const getDeptName = useCallback(
+    (deptId?: string) => {
+      if (!deptId || !departments) return "-";
+      const dept = departments.find((d: Department) => d._id === deptId);
+      return dept ? dept.name : "-";
+    },
+    [departments]
+  );
 
-  /* open/close handlers */
-  const openAdd = () => {
+  // filtered rows
+  const filtered = useMemo(() => {
+    const q = debouncedSearch;
+    if (!q) return designations;
+    return designations.filter((d) =>
+      [d.name, d.description, getDeptName(d.departmentId)]
+        .map((v) => (v || "").toString().toLowerCase())
+        .some((v) => v.includes(q))
+    );
+  }, [designations, debouncedSearch, getDeptName]);
+
+  // handlers
+  const openAdd = useCallback(() => {
     setEditing(null);
-    setFormValues(INITIAL_FORM);
     setFormOpen(true);
-  };
-  const openEdit = (item: Designation) => {
-    setEditing(item);
-    setFormValues({
-      departmentId: item.departmentId || "",
-      name: item.name,
-      description: item.description || "",
-    });
-    setFormOpen(true);
-  };
-  const closeForm = () => setFormOpen(false);
+  }, []);
 
-  const openView = (item: Designation) => {
+  const openEdit = useCallback((item: Designation) => {
+    setEditing(item);
+    setFormOpen(true);
+  }, []);
+
+  const closeForm = useCallback(() => {
+    setFormOpen(false);
+    setEditing(null);
+  }, []);
+
+  const openView = useCallback((item: Designation) => {
     setViewing(item);
     setViewOpen(true);
-  };
-  const closeView = () => {
+  }, []);
+
+  const closeView = useCallback(() => {
     setViewing(null);
     setViewOpen(false);
-  };
+  }, []);
 
-  const openDelete = (item: Designation) => {
+  const openDelete = useCallback((item: Designation) => {
     setDeleting(item);
     setDeleteOpen(true);
-  };
-  const closeDelete = () => {
+  }, []);
+
+  const closeDelete = useCallback(() => {
     setDeleting(null);
     setDeleteOpen(false);
-  };
+  }, []);
 
-  /* submit handlers */
-  const refresh = () =>
-    dispatch(
-      fetchDesignations({
-        page: page + 1,
-        limit: rowsPerPage,
-        search: debouncedSearch.trim(),
-        sortBy: "createdAt",
-        sortOrder: "desc",
-      })
-    );
+  const refresh = useCallback(async () => {
+    await dispatch(fetchDesignations({ sortBy: "createdAt", sortOrder: "desc" })).unwrap();
+  }, [dispatch]);
 
-  const handleFormSubmit = async (vals: DesignationFormData) => {
-    try {
-      if (editing) {
-        await dispatch(
-          updateDesignation({ id: editing._id, data: vals }) as any
-        ).unwrap();
-        toast.success("Designation updated successfully!");
-      } else {
-        await dispatch(createDesignation(vals) as any).unwrap();
-        toast.success("Designation created successfully!");
+  const handleFormSubmit = useCallback(
+    async (vals: DesignationFormData) => {
+      try {
+        if (editing) {
+          await dispatch(updateDesignation({ id: editing._id, data: vals }) as any).unwrap();
+          toast.success("Designation updated successfully!");
+        } else {
+          await dispatch(createDesignation(vals) as any).unwrap();
+          toast.success("Designation created successfully!");
+        }
+        closeForm();
+        await refresh();
+      } catch {
+        toast.error(editing ? "Failed to update designation" : "Failed to create designation");
       }
-      closeForm();
-      refresh();
-    } catch {
-      toast.error(
-        editing
-          ? "Failed to update designation"
-          : "Failed to create designation"
-      );
-    }
-  };
+    },
+    [dispatch, editing, closeForm, refresh]
+  );
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = useCallback(async () => {
     if (!deleting) return;
     try {
       await dispatch(deleteDesignation(deleting._id) as any).unwrap();
       toast.success("Designation deleted successfully!");
       closeDelete();
-      refresh();
+      await refresh();
     } catch {
       toast.error("Failed to delete designation");
     }
-  };
+  }, [dispatch, deleting, closeDelete, refresh]);
 
-  const list = useMemo(() => designations, [designations]);
+  const onGridReady = useCallback((params: GridReadyEvent) => {
+    setGridApi(params.api);
+  }, []);
 
-  const getDeptName = (deptId?: string) => {
-    // Use the departments list to get correct department name by ID
-    if (!deptId || !departments) return "-";
-    const dept = departments.find((d: Department) => d._id === deptId);
-    return dept ? dept.name : "-";
-  };
+  const handleExportCSV = useCallback(() => {
+    if (gridApi) {
+      gridApi.exportDataAsCsv({
+        fileName: `designations_${new Date().toISOString().split("T")[0]}.csv`,
+      });
+      toast.success("Designations exported successfully!");
+    }
+  }, [gridApi]);
 
+  // grid defs
+  const columnDefs = useMemo<ColDef[]>(
+    () => [
+      {
+        headerName: "Designation",
+        field: "name",
+        flex: 2,
+        minWidth: 220,
+        sortable: true,
+        filter: true,
+        cellRenderer: (p: ICellRendererParams) => {
+          const item = p.data as Designation;
+          return (
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: "#1f2937" }}>
+                {item.name}
+              </Typography>
+              {item.description && (
+                <Typography variant="caption" sx={{ color: "#6b7280", display: "block", mt: 0.5 }}>
+                  {item.description.length > 60
+                    ? `${item.description.substring(0, 60)}...`
+                    : item.description}
+                </Typography>
+              )}
+            </Box>
+          );
+        },
+      },
+      {
+        headerName: "Department",
+        field: "departmentId",
+        flex: 1.5,
+        minWidth: 180,
+        valueGetter: (p) => getDeptName((p.data as Designation).departmentId),
+      },
+      {
+        headerName: "Created",
+        field: "createdAt",
+        flex: 1.2,
+        minWidth: 130,
+        valueFormatter: (p) => formatDate(p.value),
+      },
+      {
+        headerName: "Updated",
+        field: "updatedAt",
+        flex: 1.2,
+        minWidth: 130,
+        valueFormatter: (p) => formatDate(p.value),
+      },
+      {
+        headerName: "Actions",
+        field: "actions",
+        cellRenderer: ActionsCellRenderer,
+        flex: 1,
+        minWidth: 120,
+        pinned: "right",
+      },
+    ],
+    [getDeptName]
+  );
+
+  const defaultColDef = useMemo<ColDef>(
+    () => ({
+      sortable: true,
+      filter: true,
+      resizable: true,
+      floatingFilter: false,
+    }),
+    []
+  );
+
+  const context = useMemo(
+    () => ({
+      onEdit: openEdit,
+      onDelete: openDelete,
+      onView: openView,
+      getDeptName, // pass for quick access in action renderer
+    }),
+    [openEdit, openDelete, openView, getDeptName]
+  );
+
+  // initial form values (always DesignationFormData)
+  const formInitialValues = useMemo<DesignationFormData>(() => {
+    return editing
+      ? {
+          departmentId: editing.departmentId || "",
+          name: editing.name,
+          description: editing.description || "",
+        }
+      : INITIAL_FORM;
+  }, [editing]);
+
+  // -------------------- Render --------------------
   return (
     <Box sx={{ p: 3, bgcolor: "#fafafa", minHeight: "100vh" }}>
       {/* Header */}
@@ -234,45 +375,121 @@ export default function DesignationManagement() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          flexWrap: "wrap",
+          gap: 2,
         }}
       >
-        <Box>
-          <Typography
-            variant="h4"
-            sx={{ fontWeight: 600, color: "#1f2937", mb: 1 }}
+        <Typography variant="h4" sx={{ fontWeight: 600, color: "#1f2937" }}>
+          Designation Management
+        </Typography>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={handleExportCSV}
+            disabled={filtered.length === 0}
+            sx={{
+              borderColor: "#d1d5db",
+              color: "#6b7280",
+              textTransform: "none",
+              px: 2.5,
+              py: 1,
+              fontWeight: 600,
+              "&:hover": { borderColor: "#9ca3af", bgcolor: alpha("#6b7280", 0.05) },
+              "&:disabled": { borderColor: "#e5e7eb", color: "#d1d5db" },
+            }}
           >
-            Designation Management
-          </Typography>
-          <Typography variant="body2" sx={{ color: "#6b7280" }}>
-            Map designations to departments and manage role titles
-          </Typography>
+            Export CSV
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={openAdd}
+            sx={{
+              bgcolor: "#10b981",
+              color: "white",
+              textTransform: "none",
+              px: 3,
+              py: 1,
+              fontWeight: 600,
+              "&:hover": { bgcolor: "#059669" },
+            }}
+          >
+            Add Designation
+          </Button>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={openAdd}
-          sx={{
-            bgcolor: "#10b981",
-            color: "white",
-            textTransform: "none",
-            px: 3,
-            py: 1.5,
-            fontSize: "1rem",
-            fontWeight: 600,
-            "&:hover": { bgcolor: "#059669" },
-          }}
-        >
-          Add Designation
-        </Button>
       </Box>
 
-      {/* Search */}
-      <Paper elevation={0} sx={{ mb: 2, p: 2, border: "1px solid #e5e7eb" }}>
+      {/* Stats Cards */}
+      <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
+        <Paper
+          elevation={0}
+          sx={{
+            flex: 1,
+            minWidth: 220,
+            p: 2.5,
+            border: "1px solid #e5e7eb",
+            borderLeft: "4px solid #3b82f6",
+            transition: "all 0.2s",
+            "&:hover": { boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)", transform: "translateY(-2px)" },
+          }}
+        >
+          <Typography variant="body2" sx={{ color: "#6b7280", mb: 0.5, fontWeight: 500 }}>
+            Total Designations
+          </Typography>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: "#1f2937" }}>
+            {stats.total}
+          </Typography>
+        </Paper>
+
+        <Paper
+          elevation={0}
+          sx={{
+            flex: 1,
+            minWidth: 220,
+            p: 2.5,
+            border: "1px solid #e5e7eb",
+            borderLeft: "4px solid #10b981",
+            transition: "all 0.2s",
+            "&:hover": { boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)", transform: "translateY(-2px)" },
+          }}
+        >
+          <Typography variant="body2" sx={{ color: "#6b7280", mb: 0.5, fontWeight: 500 }}>
+            Departments Covered
+          </Typography>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: "#1f2937" }}>
+            {stats.uniqueDeptCount}
+          </Typography>
+        </Paper>
+
+        <Paper
+          elevation={0}
+          sx={{
+            flex: 1,
+            minWidth: 220,
+            p: 2.5,
+            border: "1px solid #e5e7eb",
+            borderLeft: "4px solid #2563eb",
+            transition: "all 0.2s",
+            "&:hover": { boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)", transform: "translateY(-2px)" },
+          }}
+        >
+          <Typography variant="body2" sx={{ color: "#6b7280", mb: 0.5, fontWeight: 500 }}>
+            Added in Last 30 Days
+          </Typography>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: "#1f2937" }}>
+            {stats.recentCount}
+          </Typography>
+        </Paper>
+      </Box>
+
+      {/* Search Bar */}
+      <Paper elevation={0} sx={{ mb: 3, border: "1px solid #e5e7eb", "&:focus-within": { borderColor: "#3b82f6", boxShadow: "0 0 0 3px rgba(59,130,246,0.1)" } }}>
         <TextField
           fullWidth
-          placeholder="Search designations by name or department..."
+          placeholder="Search designations by name, department, or description..."
           value={searchTerm}
-          onChange={handleSearch}
+          onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -284,218 +501,72 @@ export default function DesignationManagement() {
                 <IconButton
                   size="small"
                   onClick={() => setSearchTerm("")}
-                  sx={{ color: "#6b7280" }}
+                  sx={{ color: "#6b7280", "&:hover": { color: "#ef4444", bgcolor: alpha("#ef4444", 0.1) } }}
                 >
                   <CloseIcon fontSize="small" />
                 </IconButton>
               </InputAdornment>
             ),
           }}
-          sx={{ "& .MuiOutlinedInput-root": { bgcolor: "white" } }}
+          sx={{ "& .MuiOutlinedInput-root": { bgcolor: "white", "& fieldset": { border: "none" } } }}
         />
       </Paper>
 
-      {/* Table */}
-      <Paper
-        elevation={0}
-        sx={{ border: "1px solid #e5e7eb", overflow: "hidden" }}
-      >
-        {isLoading && (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              py: 4,
-            }}
-          >
-            <CircularProgress />
+      {/* Grid */}
+      <Paper elevation={0} sx={{ border: "1px solid #e5e7eb", borderRadius: 2, overflow: "hidden" }}>
+        {isLoading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 8 }}>
+            <CircularProgress sx={{ color: "#3b82f6" }} />
           </Box>
-        )}
-
-        {!isLoading && error && (
+        ) : error ? (
           <Box sx={{ p: 3 }}>
             <Alert severity="error">{error}</Alert>
           </Box>
-        )}
-
-        {!isLoading && !error && list.length === 0 && (
-          <Box sx={{ textAlign: "center", py: 8, px: 3 }}>
-            <Typography variant="h6" sx={{ color: "#9ca3af", mb: 2 }}>
+        ) : filtered.length === 0 ? (
+          <Box sx={{ textAlign: "center", py: 8 }}>
+            <Typography variant="h6" sx={{ color: "#9ca3af", mb: 1 }}>
               No designations found
             </Typography>
             <Typography variant="body2" sx={{ color: "#d1d5db", mb: 3 }}>
-              {debouncedSearch
-                ? "Try adjusting your search terms"
-                : "Click 'Add Designation' to create your first designation"}
+              {debouncedSearch ? "Try adjusting your search terms" : "Click 'Add Designation' to create your first designation"}
             </Typography>
             {!debouncedSearch && (
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
                 onClick={openAdd}
-                sx={{
-                  bgcolor: "#10b981",
-                  color: "white",
-                  textTransform: "none",
-                  px: 3,
-                  py: 1.5,
-                  "&:hover": { bgcolor: "#059669" },
-                }}
+                sx={{ bgcolor: "#10b981", "&:hover": { bgcolor: "#059669" } }}
               >
                 Add Designation
               </Button>
             )}
           </Box>
-        )}
-
-        {!isLoading && !error && list.length > 0 && (
-          <>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ bgcolor: "#f9fafb" }}>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
-                      Designation
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
-                      Department
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
-                      Created
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#374151" }}>
-                      Updated
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{ fontWeight: 600, color: "#374151" }}
-                    >
-                      Actions
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {list.map((item) => (
-                    <TableRow
-                      key={item._id}
-                      sx={{
-                        "&:hover": { bgcolor: alpha("#3b82f6", 0.05) },
-                        transition: "background-color 0.2s",
-                      }}
-                    >
-                      <TableCell>
-                        <Box>
-                          <Typography
-                            variant="body2"
-                            sx={{ fontWeight: 600, color: "#1f2937" }}
-                          >
-                            {item.name}
-                          </Typography>
-                          {item.description && (
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: "#6b7280",
-                                display: "block",
-                                mt: 0.5,
-                              }}
-                            >
-                              {item.description.length > 60
-                                ? `${item.description.substring(0, 60)}...`
-                                : item.description}
-                            </Typography>
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={{ color: "#374151" }}>
-                        {getDeptName(item.departmentId)}
-                      </TableCell>
-                      <TableCell sx={{ color: "#6b7280" }}>
-                        {formatDate(item.createdAt)}
-                      </TableCell>
-                      <TableCell sx={{ color: "#6b7280" }}>
-                        {formatDate(item.updatedAt)}
-                      </TableCell>
-                      <TableCell align="center">
-                        <Box
-                          sx={{
-                            display: "flex",
-                            gap: 1,
-                            justifyContent: "center",
-                          }}
-                        >
-                          <Tooltip title="View">
-                            <IconButton
-                              size="small"
-                              onClick={() => openView(item)}
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": {
-                                  color: "#111827",
-                                  bgcolor: alpha("#111827", 0.06),
-                                },
-                              }}
-                            >
-                              <VisibilityIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Edit">
-                            <IconButton
-                              size="small"
-                              onClick={() => openEdit(item)}
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": {
-                                  color: "#3b82f6",
-                                  bgcolor: alpha("#3b82f6", 0.1),
-                                },
-                              }}
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete">
-                            <IconButton
-                              size="small"
-                              onClick={() => openDelete(item)}
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": {
-                                  color: "#ef4444",
-                                  bgcolor: alpha("#ef4444", 0.1),
-                                },
-                              }}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25, 50]}
-              component="div"
-              count={total}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              sx={{ borderTop: "1px solid #e5e7eb" }}
+        ) : (
+          <div className="ag-theme-alpine" style={{ height: 600, width: "100%" }}>
+            <AgGridReact
+              ref={gridRef}
+              rowData={filtered}
+              columnDefs={columnDefs}
+              defaultColDef={defaultColDef}
+              pagination={true}
+              paginationPageSize={10}
+              onGridReady={onGridReady}
+              animateRows={true}
+              rowHeight={60}
+              headerHeight={48}
+              context={context}
+              suppressCellFocus={true}
+              enableCellTextSelection={true}
             />
-          </>
+          </div>
         )}
       </Paper>
 
+      {/* Modals */}
       <DesignationFormModal
         open={formOpen}
         isEdit={!!editing}
-        initialValues={formValues}
+        initialValues={formInitialValues}
         isSubmitting={isLoading}
         onClose={closeForm}
         onSubmit={handleFormSubmit}
