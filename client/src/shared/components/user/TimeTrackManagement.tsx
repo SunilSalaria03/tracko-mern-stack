@@ -54,8 +54,6 @@ const TimeTrackManagement = () => {
   const tasks = useAppSelector((s) => s.task?.tasks ?? []);
   const isLoading = useAppSelector((s) => s.task?.isLoading ?? false);
 
-console.log({projectAssignments});
-
   const getProjectName = useCallback(
     (id: string) =>
       projectAssignments.find((p: any) => String(getDisplayId(p)) === id)?.name ?? id,

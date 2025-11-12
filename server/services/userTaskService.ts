@@ -30,16 +30,11 @@ export const getUserTasksService = async (params: IListParams) => {
 
     if (startDate && endDate) {
       searchQuery.date = { $gte: startDate, $lte: endDate };
-      console.log("Date range filter:", { startDate, endDate });
     } else if (startDate) {
       searchQuery.date = { $gte: startDate };
-      console.log("Start date filter:", startDate);
     } else if (endDate) {
       searchQuery.date = { $lte: endDate };
-      console.log("End date filter:", endDate);
     }
-
-    console.log("Search query:", JSON.stringify(searchQuery, null, 2));
 
     const sortObj: any = {};
     sortObj[sortBy] = sortOrder === "asc" ? 1 : -1;

@@ -97,7 +97,6 @@ export const signUpService = async (data: Partial<IUser>, files?: any) => {
       user.tenantId = tenant._id as any;
       await user.save({ validateBeforeSave: false });
     } else if(data.role == 2 || data.role == 3) {
-      console.log('data.addedByUserTenantId', data.addedByUserTenantId);
       user.tenantId = data.addedByUserTenantId;
       await user.save({ validateBeforeSave: false });
     }

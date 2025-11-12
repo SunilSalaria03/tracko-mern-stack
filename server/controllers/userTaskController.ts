@@ -142,7 +142,6 @@ export const finalSubmitUserTask = async (
   res: Response
 ): Promise<Response | void> => {
   try {
-    console.log(req.body);
     const { error, value: validatedData } = finalSubmitUserTaskValidation(req.body);
     if (error) {
       return helper.failed(res, error.details[0].message);

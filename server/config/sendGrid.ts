@@ -25,7 +25,6 @@ export const mailSender = async (mailData: IMailData): Promise<boolean> => {
         html: mailData.html,
       };
       await sgMail.send(msg);
-      console.log('✅ Email sent successfully to:', mailData.text);
       return true;
     } catch (error: any) {
       console.error('❌ SendGrid Error:', error.response?.body || error.message || error);

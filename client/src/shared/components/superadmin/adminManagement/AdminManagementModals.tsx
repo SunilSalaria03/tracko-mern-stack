@@ -69,7 +69,6 @@ export function AdminFormModal({
       await dispatch(fetchDepartments({}));
       await dispatch(fetchDesignations({}));
     } catch (error) {
-      console.log(error);
     }
   };
 
@@ -109,7 +108,6 @@ export function AdminFormModal({
       }
     },
   });
-  console.log("errors" , formik.errors)
 
   return (
     <Dialog

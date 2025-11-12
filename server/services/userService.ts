@@ -362,16 +362,12 @@ export const addUserService = async (data: Partial<IUser>, files?: any) => {
       const tenant = await tenantModel.create({
         adminUserId: user._id,
       });
-      console.log('tenant111111', tenant);
       user.tenantId = tenant._id as any;
       await user.save({ validateBeforeSave: false });
     } else {
-      console.log('data.addedByUserTenantId', data.addedByUserTenantId);
       user.tenantId = data.addedByUserTenantId;
       await user.save({ validateBeforeSave: false });
     }
-
-    console.log('user', user);
 
     const token = jwt.sign(
       { 
