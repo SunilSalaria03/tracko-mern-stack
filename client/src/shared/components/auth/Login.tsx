@@ -48,7 +48,7 @@ const Login: React.FC = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
 
     const emailErr = validateField("email", email, loginValidation);
@@ -58,7 +58,17 @@ const Login: React.FC = () => {
     setPasswordError(passwordErr);
 
     if (!emailErr && !passwordErr) {
-      dispatch(loginUser({ email, password }));
+      const response = await dispatch(loginUser({ email, password }));
+       const payload = response.payload;
+       if (payload && typeof payload === "object" && "user" in payload && payload.user) {
+        if (payload.user.tempPassword !== null) {
+          navigate(
+            `/reset-password?email=${payload.user.email}&token=${payload.user.tempPassword}`
+          );
+        } else {
+          navigate("/dashboard");
+        }
+      }
     }
   };
 

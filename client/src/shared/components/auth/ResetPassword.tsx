@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import {  useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -17,8 +17,8 @@ import {
   resetPasswordValidation,
   validateField,
 } from '../../../utils/validations/AuthValidations';
-import { resetPassword } from '../../../store/actions/authActions';
 import type { AppDispatch } from '../../../store';
+import { changePassword } from '../../../store/actions/userActions';
 
 const ResetPassword: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -32,8 +32,7 @@ const ResetPassword: React.FC = () => {
 
   const email = searchParams.get('email');
   const token = searchParams.get('token');
-
-  const dispatch = useDispatch<AppDispatch>();
+   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -61,10 +60,9 @@ const ResetPassword: React.FC = () => {
       setIsLoading(true);
       try {
         await dispatch(
-          resetPassword({
-            encryptedEmail: email,
-            resetPasswordToken: token,
-            password,
+          changePassword({
+            oldPassword: token,
+            newPassword: password,
           })
         ).unwrap();
         navigate('/login');
@@ -105,16 +103,14 @@ const ResetPassword: React.FC = () => {
     >
       <Paper elevation={6} sx={{ p: 5, width: '100%', borderRadius: 4 }}>
         <Typography variant="h5" align="center" fontWeight={600} mb={1} color="primary">
-          Set new password
+          Set New Password
         </Typography>
-        <Typography variant="body2" align="center" color="text.secondary" mb={4}>
-          Your new password must be different from previous password
-        </Typography>
+        
         <Box component="form" onSubmit={handleSubmit} noValidate>
           <Stack spacing={2}>
             <TextField
               id="password"
-              label="Password"
+              label="New Password"
               type={showPassword ? 'text' : 'password'}
               autoComplete="new-password"
               required
@@ -181,15 +177,7 @@ const ResetPassword: React.FC = () => {
             >
               {isLoading ? 'Resetting...' : 'Submit'}
             </Button>
-            <Typography variant="body2" align="center" sx={{ mt: 2 }}>
-              Back to{' '}
-              <Link
-                to="/login"
-                style={{ fontWeight: 500, textDecoration: 'underline' }}
-              >
-                Sign in
-              </Link>
-            </Typography>
+           
           </Stack>
         </Box>
       </Paper>

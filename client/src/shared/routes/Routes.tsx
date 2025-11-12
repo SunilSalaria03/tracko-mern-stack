@@ -18,9 +18,11 @@ const ManagementDashboardPage = lazy(
 const ManagementWelcomePage = lazy(
   () => import("../../pages/common/WelcomePage")
 );
- 
+
 const ProjectsPage = lazy(() => import("../../pages/admin/ProjectsPage"));
-const ProjectAssignmentPage = lazy(() => import("../../pages/admin/ProjectAssignmentPage"));
+const ProjectAssignmentPage = lazy(
+  () => import("../../pages/admin/ProjectAssignmentPage")
+);
 const UsersPage = lazy(() => import("../../pages/admin/UsersPage"));
 const WorkstreamsPage = lazy(() => import("../../pages/admin/WorkstreamsPage"));
 const AdminsPage = lazy(() => import("../../pages/superadmin/AdminsPage"));
@@ -33,7 +35,9 @@ const EmployeeWelcomePage = lazy(() => import("../../pages/user/WelcomePage"));
 const TimeTrackPage = lazy(() => import("../../pages/user/TimeTrackPage"));
 
 const ProfilePage = lazy(() => import("../../pages/common/ProfilePage"));
-const AccountSettingPage = lazy(() => import("../../pages/common/AccountSettingPage"));
+const AccountSettingPage = lazy(
+  () => import("../../pages/common/AccountSettingPage")
+);
 
 const ProtectedRoute = lazy(
   () => import("../components/common/ProtectedRoutes")
@@ -57,7 +61,6 @@ const AppRoutes: React.FC = () => (
         <Route path="/" element={<LoginPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         <Route element={<ProtectedRoute requiredRole={[0]} />}>
           <Route element={<MainLayout />}>
@@ -65,22 +68,22 @@ const AppRoutes: React.FC = () => (
           </Route>
         </Route>
 
-
         <Route element={<ProtectedRoute requiredRole={[0, 1, 2, 3]} />}>
           <Route element={<MainLayout />}>
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<AccountSettingPage />} />
           </Route>
         </Route>
-  
-
+        <Route element={<ProtectedRoute requiredRole={[0, 1, 2, 3]} />}>
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+        </Route>
 
         <Route element={<ProtectedRoute requiredRole={[0, 1, 2]} />}>
           <Route element={<MainLayout />}>
             <Route path="/home" element={<ManagementWelcomePage />} />
-            <Route path="/dashboard" element={<ManagementDashboardPage />} />    
+            <Route path="/dashboard" element={<ManagementDashboardPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
-             <Route path="/users" element={<UsersPage />} />
+            <Route path="/users" element={<UsersPage />} />
             <Route path="/workstreams" element={<WorkstreamsPage />} />
             <Route path="/departments" element={<DepartmentsPage />} />
             <Route path="/designations" element={<DesignationsPage />} />
@@ -88,7 +91,10 @@ const AppRoutes: React.FC = () => (
         </Route>
         <Route element={<ProtectedRoute requiredRole={[2]} />}>
           <Route element={<MainLayout />}>
-            <Route path="/project-assignments" element={<ProjectAssignmentPage />} />
+            <Route
+              path="/project-assignments"
+              element={<ProjectAssignmentPage />}
+            />
           </Route>
         </Route>
         <Route element={<ProtectedRoute requiredRole={[3]} />}>

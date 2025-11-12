@@ -1,4 +1,4 @@
-import type { User } from '../interfaces/userInterface';
+import type { User } from "../interfaces/userInterface";
 
 export interface LoginFormData {
   email: string;
@@ -28,3 +28,14 @@ export interface AuthResponse {
   token?: string;
   user?: User;
 }
+export type Credentials = { email: string; password: string,resetPasswordToken?: string };
+export type ServerAuthResponse = { authToken: string; [key: string]: unknown };
+export type SignUpData = {
+  email: string;
+  password: string;
+  name: string;
+  role: number;
+  phoneNumber: string;
+  countryCode: string;
+  dateOfBirth?: string;
+};

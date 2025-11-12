@@ -1,6 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { apiClient } from '../apiClient';
 import { handleApiError } from '../../utils/common/helpers';
+ import type {   ServerAuthResponse } from '../../utils/interfaces/authInterface';
 
 export function createGetThunk<T>(
   typePrefix: string,
@@ -56,6 +57,28 @@ export function createPostThunk<T, D>(
           return rejectWithValue(response.error || 'Request failed');
         }
         return response.body as T;
+      } catch (error) {
+        return rejectWithValue(handleApiError(error));
+      }
+    }
+  );
+}
+export function createAuthPostThunk<T, D>(
+  typePrefix: string,
+  getEndpoint: () => string
+) {
+  return createAsyncThunk<T, D, { rejectValue: string }>(
+    typePrefix,
+    async (data, { rejectWithValue }) => {
+      try {
+        const response = await apiClient.post<T, D>(getEndpoint(), data);
+        if (!response.success) {
+          return rejectWithValue(response.error || 'Request failed');
+        }
+        const serverData = (response.body || response.data) as ServerAuthResponse;
+        const { authToken, ...userData } = serverData;
+        // Explicitly cast the return value to T.
+        return { user: userData, token: authToken } as unknown as T;
       } catch (error) {
         return rejectWithValue(handleApiError(error));
       }

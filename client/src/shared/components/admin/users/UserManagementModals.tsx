@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useState, } from "react";
 import {
   Box,
   Button,
@@ -14,9 +14,9 @@ import {
   InputAdornment,
   IconButton,
 } from "@mui/material";
-import type { FormikProps } from "formik";
-import type {
+ import type {
   User,
+  UserFormDialogProps,
   UserRole,
 } from "../../../../utils/interfaces/userInterface";
 import { getRoleName } from "../../../../utils/interfaces/userInterface";
@@ -25,14 +25,7 @@ import { fetchDesignations } from "../../../../store/actions/designationActions"
 import { useAppDispatch, useAppSelector } from "../../../../store";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 
-type UserFormDialogProps = {
-  open: boolean;
-  onClose: () => void;
-  formik: FormikProps<any>;
-  combinedPhoneValue: string;
-  handleCombinedPhoneChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  editingId: string | null;
-};
+
 
 export const UserFormDialog = ({
   open,

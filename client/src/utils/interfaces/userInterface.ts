@@ -1,5 +1,15 @@
-export type UserRole = 0 | 1 | 2 | 3;
+import type { FormikProps } from "formik";
+import type { ChangeEvent } from "react";
 
+export type UserRole = 0 | 1 | 2 | 3;
+export type UserFormDialogProps = {
+  open: boolean;
+  onClose: () => void;
+  formik: FormikProps<any>;
+  combinedPhoneValue: string;
+  handleCombinedPhoneChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  editingId: string | null;
+};
 export type EditableUser = {
   _id?: string;
   email?: string;
@@ -37,6 +47,7 @@ export interface User {
   updatedAt?: string;
   designationId?: string;
   departmentId?: string;
+  resetPasswordToken?: string | null;
 }
 
 export interface UsersResponse {
