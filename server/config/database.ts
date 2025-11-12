@@ -10,7 +10,6 @@ const databaseConfig: DatabaseConfig = {
 export const connectDatabase = async (): Promise<void> => {
   try {
     const conn = await mongoose.connect(databaseConfig.uri, databaseConfig.options);
-    console.log('Database connected successfully');
     
     mongoose.connection.on('error', (err) => {
       console.error('MongoDB connection error:', err);
